@@ -92,9 +92,9 @@ export class GoalService {
                     this.frequency = goal.type
                     this.category = goal.category
                     this.name = goal.name
-
+                    const lastIdx = goals.deductionDates.length - 1
                     if (today.getDate() === goal.deductionDay.getDate()) {
-                        const lastMonth = goal.lastDeduction?.getMonth()
+                        const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
                         const thisMonth = today.getMonth()
                         if (lastMonth === thisMonth) continue;
                         if (goal.totalDeductions === this.duration) {
@@ -120,7 +120,7 @@ export class GoalService {
                         this.goalBalance += deductAmt
                         goal.currentAmt = this.goalBalance
                         user.netIncome -= deductAmt
-                        goal.lastDeduction = new Date()
+                        goal.deductionDates.push(new Date())
                         goal.totalDeductions += 1
                         const orgDate = new Date(goal.createdAt).getDate()
                         const currentDay = new Date()
@@ -159,8 +159,9 @@ export class GoalService {
             this.frequency = goal.type
             this.category = goal.category
             this.name = goal.name
+            const lastIdx = goals.deductionDates.length - 1
             let deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
-            const lastMonth = goal.lastDeduction?.getMonth()
+            const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Goal monthly amt already paid")
              if (this.targetAmount === 0 && deadlineInMonths !== 0) {
@@ -195,7 +196,7 @@ export class GoalService {
 
             this.goalBalance += amount
             goal.currentAmt = this.goalBalance
-            goal.lastDeduction = new Date()
+            goal.deductionDates.push(new Date())
             goal.totalDeductions += 1
             user.netIncome -= amount
 

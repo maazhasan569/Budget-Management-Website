@@ -55,12 +55,12 @@ const goalsSchema = new mongoose.Schema({
         type : Number,
         default : 0
     },
-    lastDeduction: {
+    deductionDay : {
         type : Date
     },
-    deductionDay:{
+    deductionDates:[{
         type : Date
-    }
+    }]
 
 }, {
     timestamps: true

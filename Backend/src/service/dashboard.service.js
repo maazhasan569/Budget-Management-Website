@@ -40,7 +40,33 @@ class dashboardService{
         //there will be 2 stages close and very close
         //close will be refered with yellow and very close with red
 
-        const 
+        const goals = Goal.find({userId : this.userId , manualDeduction})
+        goals.map((goal) => {
+            let deduction;
+            const lastIdx = goals.deductionDates.length - 1
+            
+            const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
+            const thisMonth = new Date().getMonth()
+            if (lastMonth === thisMonth) return
+            
+            if(goals.deductionDates.length){
+                const lastIdx = goals.deductionDates.length - 1
+                deduction = goals.deductionDates[lastIdx] - goal.deductionDay
+            }
+
+            deduction = goal.createdAt - goal.deductionDay
+
+            const dueDatePercentage = deduction/30 * 100
+
+            let dueDatealert;
+            if(dueDatePercentage <= 10) return dueDatealert = "very close"
+            if(dueDatePercentage <= 20) return dueDatealert = "close"
+
+            return {
+                dueDatealert,
+                goal
+            }
+        })
     }
     expenseAndIncome(){
     }
