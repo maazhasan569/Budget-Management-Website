@@ -1,18 +1,36 @@
+import { Goal } from "../models/budget/goals.models"
+import { Loan } from "../models/budget/loan.models"
 class dashboardService{
     constructor(userId){
         this.userId = userId
     }
 
-    savings(){}
+    
     financialScore(){}
-    goalProgress(goalId){
+    async goalProgress(goalId){
         //get goals
         //perform arithematic calc
         //to convert goal progress in percentage
         //return all goals 
+        const goals = await Goal.find({userId : this.userId})
+        goals.map((goal) => {
+            const progressPercent = goal.currentAmt/goal.targetAmount * 100
+            return {
+                goal,
+                progressPercent
+            }
+        })
     }
-    loanProgress(loanId){
+   async loanProgress(loanId){
         //same as goal progress
+        const loans = await Loan.find({userId : this.userId})
+        loans.map((loan) => {
+            const progressPercent = loan.currentAmt/loan.loanTargetAmt * 100
+            return {
+                loan,
+                progressPercent
+            }
+        })
     }
     alertUserForUpcomingGoalAndLoan(id){
         //get loan and goal
@@ -21,6 +39,8 @@ class dashboardService{
         //choose a x% to check if the due date is close
         //there will be 2 stages close and very close
         //close will be refered with yellow and very close with red
+
+        const 
     }
     expenseAndIncome(){
     }
