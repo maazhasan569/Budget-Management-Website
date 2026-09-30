@@ -11,13 +11,30 @@ class dashboardService {
 
     async financialScore() {
         const user = await Users.findById(this.userId)
-        const expenses = await Expense.find({userId : this.userId})
+        const loans = await Loan.find({ userId: this.userId })
+        const goals = await Goal.find({ userId: this.userId })
+        const spendingControl = 100 - ((user.budget / user.income - 0.70) /
+            0.30 * 100)
 
-        let totalExpenseAmt ;
-        for(const expense of expenses){
-            totalExpenseAmt += expense.amount
+        let totalLoanAmt;
+        let totalLoanAmtPaid;
+        for (const loan of loans) {
+            totalLoanAmt += loan.loanTargetAmt
+            totalLoanAmtPaid += loan.currentAmt
         }
-        const spendingControl = 100 - ((totalExpenseAmt))
+
+        let totalGoalAmt;
+        let totalGoalAmtPaid;
+        for (const goal of goals) {
+            totalGoalAmt += goal.targetAmount
+            totalGoalAmtPaid += goal.currentAmt
+        }
+
+        const deptPaid = totalLoanAmtPaid / totalLoanAmt * 100
+        const goalsFunded = totalGoalAmt / totalGoalAmt * 100
+
+        return spendingControl + deptPaid + goalsFunded / 3
+
     }
     async goalProgress(goalId) {
         //get goals
