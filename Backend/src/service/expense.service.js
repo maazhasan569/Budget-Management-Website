@@ -11,7 +11,7 @@ export class ExpenseTracker {
         if (!userId) {
             throw new ApiError(400, "No user Id")
         }
-        this.budget = budget,
+        this.remaingingBudget = budget ,
             this.userId = userId
 
     }
@@ -20,7 +20,7 @@ export class ExpenseTracker {
         if (!amount || amount <= 0) {
             throw new ApiError(400, "Invalid expense amount")
         }
-        if (amount > this.budget) {
+        if (amount > this.remaingingBudget) {
             throw new ApiError(400, "Expense amount exceeds budget")
         }
         
@@ -32,7 +32,6 @@ export class ExpenseTracker {
                 category,
                 name,
             })
-            console.log("expesne created" , createExpense)
             return createExpense;
         } catch (error) {
             throw new ApiError(500, error.message)
@@ -44,7 +43,7 @@ export class ExpenseTracker {
             throw new ApiError(400, "Invalid budget")
         }
 
-        if (amount > this.budget) {
+        if (amount > this.remaingingBudget) {
             throw new ApiError(400, "Expense amount exceeds budget")
         }
         try {
@@ -73,7 +72,7 @@ export class ExpenseTracker {
             const user = await Users.findByIdAndUpdate(
                 this.userId,
                 {
-                    budget: this.budget - expense.amount
+                    budget: this.remaingingBudget - expense.amount
                 },
                 { new: true }
             )

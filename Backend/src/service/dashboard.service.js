@@ -1,6 +1,7 @@
 import { Expense } from "../models/budget/expense.models"
 import { Goal } from "../models/budget/goals.models"
 import { Loan } from "../models/budget/loan.models"
+import { Users } from "../models/users.models"
 import ApiError from "../utils/ApiError"
 class dashboardService {
     constructor(userId) {
@@ -8,7 +9,16 @@ class dashboardService {
     }
 
 
-    financialScore() { }
+    async financialScore() {
+        const user = await Users.findById(this.userId)
+        const expenses = await Expense.find({userId : this.userId})
+
+        let totalExpenseAmt ;
+        for(const expense of expenses){
+            totalExpenseAmt += expense.amount
+        }
+        const spendingControl = 100 - ((totalExpenseAmt))
+    }
     async goalProgress(goalId) {
         //get goals
         //perform arithematic calc

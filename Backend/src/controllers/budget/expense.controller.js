@@ -16,7 +16,7 @@ const fieldCheck = (fields) => {
 }
 const getBudget = asyncHandler(async (req, res) => {
     const user = await Users.findById(req.user._id)
-    if (!user.budget) {
+    if (!user.remainingBudget) {
         throw new ApiError(404, "No user budget found")
     }
     return res.status(200)
@@ -29,6 +29,7 @@ const updatedBudget = asyncHandler(async (req, res) => {
     const user = await Users.findById(req.user._id)
     const isPrevBudget = user.budget > 0 ? true : false
     user.budget = user.budget + budget
+    user.remainingBudget += budget
     const updatedBudget = await user.save({ validateBeforeSave: false })
     if (!updatedBudget) {
         throw new ApiError(500, "Failed to save user budget")
@@ -52,7 +53,7 @@ const createExpense = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required")
     }
     const user = await Users.findById(req.user._id)
-    const userBudget = user.budget
+    const userBudget = user.remainingBudget
     if (!userBudget) {
         throw new ApiError(404, "No budget found")
     }
@@ -78,6 +79,7 @@ const editExpense = asyncHandler(async (req, res) => {
     const expenseDoc = await Expense.findById(expenseId)
     const userDoc = await Users.findById(req.user._id)
     userDoc.budget += expenseDoc.amount
+    userDoc.remainingBudget += expenseDoc.amount
 
     await userDoc.save({ validateBeforeSave: false })
     const updatedUser = await Users.findById(req.user._id)

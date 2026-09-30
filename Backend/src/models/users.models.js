@@ -46,6 +46,9 @@ const usersSchema = new mongoose.Schema({
         type : Number,
 
     },
+    remainingBudget : {
+        type : Number,
+    },
     publicId: {
         type: String,
     },
