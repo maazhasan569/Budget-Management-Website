@@ -97,8 +97,49 @@ class dashboardService {
             }
         })
     }
-    expenseAndIncome() {
-    }
+   
+
+    async spendingTrends() {
+            const expenses = await Expense.find({ userId: this.userId }).sort({ createdAt: 1 });
+
+            if (expenses.length === 0) {
+                return { granularity: "day", data: [] };
+            }
+
+            const largestDate = expenses[expenses.length - 1].createdAt;
+            const smallestDate = expenses[0].createdAt;
+
+            const dateDiffDays = (largestDate - smallestDate) / (1000 * 60 * 60 * 24);
+
+            let granularity;
+            if (dateDiffDays <= 31) granularity = "day";
+            else if (dateDiffDays <= 180) granularity = "week";
+            else if (dateDiffDays <= 730) granularity = "month";
+            else granularity = "year";
+
+            const keyFor = (date) => {
+                const d = new Date(date);
+                if (granularity === "day") return d.toISOString().slice(0, 10); // 2026-09-21
+                if (granularity === "week") {
+                    const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+                    const week = Math.ceil(((d - firstDayOfYear) / 86400000 + firstDayOfYear.getDay() + 1) / 7);
+                    return `${d.getFullYear()}-W${week}`;
+                }
+                if (granularity === "month") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                return `${d.getFullYear()}`;
+            };
+
+            const grouped = {};
+            for (const expense of expenses) {
+                const key = keyFor(expense.createdAt);
+                grouped[key] = (grouped[key] || 0) + expense.amount;
+            }
+
+            const data = Object.entries(grouped).map(([label, amount]) => ({ label, amount }));
+
+            return { granularity, data };
+        }
+
     async expenseCategoryPercentages() {
         //get expense doc
         //fetch each category
