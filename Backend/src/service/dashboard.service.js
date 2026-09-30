@@ -97,6 +97,22 @@ class dashboardService {
         return [...goalAlerts, ...loanAlerts];
     }
 
+    async getFlaggedDocs(){ // this will get overdue and no_fund status goal and loans
+        const goals = await Goal.find({ userId: this.userId });
+        const loans = await Loan.find({ userId: this.userId});
+
+       const flaggedGoals = goals.filter(
+        (goal) => goal.status === "unAchieved" || goal.status === "no_funds"
+    );
+
+       const flaggedLoans = loans.filter(
+        (loan) => loan.status === "Overdue" || loan.status === "no_funds"
+    );
+        return {
+            flaggedGoals,
+            flaggedLoans,
+        }
+    }
 
     async spendingTrends() {
         const expenses = await Expense.find({ userId: this.userId }).sort({ createdAt: 1 });
