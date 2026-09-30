@@ -62,83 +62,82 @@ class dashboardService {
         })
     }
     async alertUserForUpcomingGoalAndLoan(id) {
-        //get loan and goal
-        //filter out loan and goal
-        //filter those which due date is close
-        //choose a x% to check if the due date is close
-        //there will be 2 stages close and very close
-        //close will be refered with yellow and very close with red
+        const goals = await Goal.find({ userId: this.userId, autoDeduction: false });
+        const loans = await Loan.find({ userId: this.userId, autoDeduction: false });
 
-        const goals = await Goal.find({ userId: this.userId, manualDeduction })
-        goals.map((goal) => {
-            let deduction;
-            const lastIdx = goal.deductionDates.length - 1
+        const buildAlert = (item) => {
+            const lastIdx = item.deductionDates.length - 1;
+            const lastDeductionDate = item.deductionDates[lastIdx];
 
-            const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
-            const thisMonth = new Date().getMonth()
-            if (lastMonth === thisMonth) return
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear = now.getFullYear();
 
-            if (goals.deductionDates.length) {
-                deduction = goal.deductionDates[lastIdx] - goal.deductionDay
-            } else {
-                deduction = goal.createdAt - goal.deductionDay
 
+            if (lastDeductionDate && lastDeductionDate.getMonth() === thisMonth &&
+                lastDeductionDate.getFullYear() === thisYear) {
+                return null;
             }
 
-            const dueDatePercentage = deduction / 30 * 100
+            const dueDate = new Date(thisYear, thisMonth, item.deductionDay);
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const daysUntilDue = Math.round((dueDate - now) / msPerDay);
 
-            let dueDatealert;
-            if (dueDatePercentage <= 10) dueDatealert = "very close"
-            if (dueDatePercentage <= 20) dueDatealert = "close"
+            let dueDateAlert;
+            if (daysUntilDue <= 3) dueDateAlert = "very close";
+            else if (daysUntilDue <= 7) dueDateAlert = "close";
+            else return null;
 
-            return {
-                dueDatealert,
-                goal
-            }
-        })
+            return { dueDateAlert, daysUntilDue, item };
+        };
+
+        const goalAlerts = goals.map(buildAlert).filter(Boolean).map(a => ({ ...a, type: "goal" }));
+        const loanAlerts = loans.map(buildAlert).filter(Boolean).map(a => ({ ...a, type: "loan" }));
+
+        return [...goalAlerts, ...loanAlerts];
     }
-   
+
 
     async spendingTrends() {
-            const expenses = await Expense.find({ userId: this.userId }).sort({ createdAt: 1 });
+        const expenses = await Expense.find({ userId: this.userId }).sort({ createdAt: 1 });
 
-            if (expenses.length === 0) {
-                return { granularity: "day", data: [] };
-            }
-
-            const largestDate = expenses[expenses.length - 1].createdAt;
-            const smallestDate = expenses[0].createdAt;
-
-            const dateDiffDays = (largestDate - smallestDate) / (1000 * 60 * 60 * 24);
-
-            let granularity;
-            if (dateDiffDays <= 31) granularity = "day";
-            else if (dateDiffDays <= 180) granularity = "week";
-            else if (dateDiffDays <= 730) granularity = "month";
-            else granularity = "year";
-
-            const keyFor = (date) => {
-                const d = new Date(date);
-                if (granularity === "day") return d.toISOString().slice(0, 10); // 2026-09-21
-                if (granularity === "week") {
-                    const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
-                    const week = Math.ceil(((d - firstDayOfYear) / 86400000 + firstDayOfYear.getDay() + 1) / 7);
-                    return `${d.getFullYear()}-W${week}`;
-                }
-                if (granularity === "month") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                return `${d.getFullYear()}`;
-            };
-
-            const grouped = {};
-            for (const expense of expenses) {
-                const key = keyFor(expense.createdAt);
-                grouped[key] = (grouped[key] || 0) + expense.amount;
-            }
-
-            const data = Object.entries(grouped).map(([label, amount]) => ({ label, amount }));
-
-            return { granularity, data };
+        if (expenses.length === 0) {
+            return { granularity: "day", data: [] };
         }
+
+        const largestDate = expenses[expenses.length - 1].createdAt;
+        const smallestDate = expenses[0].createdAt;
+
+        const dateDiffDays = (largestDate - smallestDate) / (1000 * 60 * 60 * 24);
+
+        let granularity;
+        if (dateDiffDays <= 31) granularity = "day";
+        else if (dateDiffDays <= 180) granularity = "week";
+        else if (dateDiffDays <= 730) granularity = "month";
+        else granularity = "year";
+
+        const keyFor = (date) => {
+            const d = new Date(date);
+            if (granularity === "day") return d.toISOString().slice(0, 10); // 2026-09-21
+            if (granularity === "week") {
+                const firstDayOfYear = new Date(d.getFullYear(), 0, 1);
+                const week = Math.ceil(((d - firstDayOfYear) / 86400000 + firstDayOfYear.getDay() + 1) / 7);
+                return `${d.getFullYear()}-W${week}`;
+            }
+            if (granularity === "month") return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            return `${d.getFullYear()}`;
+        };
+
+        const grouped = {};
+        for (const expense of expenses) {
+            const key = keyFor(expense.createdAt);
+            grouped[key] = (grouped[key] || 0) + expense.amount;
+        }
+
+        const data = Object.entries(grouped).map(([label, amount]) => ({ label, amount }));
+
+        return { granularity, data };
+    }
 
     async expenseCategoryPercentages() {
         //get expense doc
