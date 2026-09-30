@@ -86,14 +86,15 @@ class dashboardService {
         }
 
 
+        let categoryPercentages = {};
+        let categoryTotals = {}
+        let grandTotal;
         for (const expense of expenses) {
             categoryTotals[expense.category] =
                 (categoryTotals[expense.category] || 0) + expense.amount;
 
             grandTotal += expense.amount;
         }
-
-        const categoryPercentages = {};
 
         for (const category in categoryTotals) {
             categoryPercentages[category] = Number(
