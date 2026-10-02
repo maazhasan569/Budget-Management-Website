@@ -16,9 +16,9 @@ router.route("/").get(verfiyJWTAccessToken ,showAllExpense)
 router.route("/budget").get(verfiyJWTAccessToken,getBudget)
 router.route("/update-budget").patch(verfiyJWTAccessToken,updatedBudget)
 router.route("/create-expense").post(verfiyJWTAccessToken,createExpense)
-router.route("/edit-expense/:expenseId").put(verfiyJWTAccessToken,editExpense)
-
 router.route("/category").get(verfiyJWTAccessToken,getExpenseCategory)
+
+router.route("/edit-expense/:expenseId").put(verfiyJWTAccessToken,editExpense)
 router.route("/:expenseId").get(verfiyJWTAccessToken,getExpenseById)
 router.route("/:expenseId").delete(verfiyJWTAccessToken,deleteExpense)
 export default router

@@ -47,7 +47,7 @@ const createExpense = asyncHandler(async (req, res) => {
     //check the spending trends of user->(frontend)
 
     const { name, amount, category } = req.body
-    const check = fieldCheck([name, category])
+    const check = fieldCheck([name, amount])
 
     if (check) {
         throw new ApiError(400, "All fields are required")

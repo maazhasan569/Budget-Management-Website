@@ -29,7 +29,7 @@ app.use("/api/v1/expenses", expenseRouter)
 app.use("/api/v1/goals",goalRouter)
 app.use("/api/v1/loans", loanRouter)
 app.use("/api/v1/tasks" ,taskRouter )
-app.use("api/v1/dashboard" , dashboardRouter)
+app.use("/api/v1/dashboard" , dashboardRouter)
 // app.use((err, req, res, next) => {
 //     let statusCode = err.statusCode || 500;
 //     let message = err.message || "Internal Server Error";

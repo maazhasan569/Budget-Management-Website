@@ -19,8 +19,7 @@ const goalProgress = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     const dashboard = new dashboardService(userId)
-    const userGoalProgress = dashboard.goalProgress()
-
+    const userGoalProgress = await dashboard.goalProgress()
     res.status(200)
         .json(
             new ApiResponse(200, "fetched user goal Progress", userGoalProgress)
@@ -69,10 +68,10 @@ const flaggedDocuments = asyncHandler(async(req,res) => {
 })
 
 const spendingTrends = asyncHandler(async(req,res) => {
-    const userId = req.user_.id
+    const userId = req.user._id
     
     const dashboard = new dashboardService(userId)
-    const userSpendingTrends = dashboard.spendingTrends()
+    const userSpendingTrends = await dashboard.spendingTrends()
 
     res.status(200)
         .json(

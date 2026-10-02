@@ -42,13 +42,13 @@ export class dashboardService {
         //to convert goal progress in percentage
         //return all goals 
         const goals = await Goal.find({ userId: this.userId })
-        goals.map((goal) => {
-            const progressPercent = goal.currentAmt / goal.targetAmount * 100
-            return {
-                goal,
-                progressPercent
-            }
+        const goalProgressArr = goals.map((goal) => {
+            const goalDoc = goal.toObject()
+            goalDoc.progressPercentage = (Number(goal.currentAmt / goal.targetAmount * 100)).toFixed(2)
+            return goalDoc
         })
+        console.log(goalProgressArr)
+        return goalProgressArr
     }
     async loanProgress() {
         //same as goal progress
@@ -97,17 +97,17 @@ export class dashboardService {
         return [...goalAlerts, ...loanAlerts];
     }
 
-    async flaggedDocs(){ // this will get overdue and no_fund status goal and loans
+    async flaggedDocs() { // this will get overdue and no_fund status goal and loans
         const goals = await Goal.find({ userId: this.userId });
-        const loans = await Loan.find({ userId: this.userId});
+        const loans = await Loan.find({ userId: this.userId });
 
-       const flaggedGoals = goals.filter(
-        (goal) => goal.status === "unAchieved" || goal.status === "no_funds"
-    );
+        const flaggedGoals = goals.filter(
+            (goal) => goal.status === "unAchieved" || goal.status === "no_funds"
+        );
 
-       const flaggedLoans = loans.filter(
-        (loan) => loan.status === "Overdue" || loan.status === "no_funds"
-    );
+        const flaggedLoans = loans.filter(
+            (loan) => loan.status === "Overdue" || loan.status === "no_funds"
+        );
         return {
             flaggedGoals,
             flaggedLoans,
@@ -116,7 +116,6 @@ export class dashboardService {
 
     async spendingTrends() {
         const expenses = await Expense.find({ userId: this.userId }).sort({ createdAt: 1 });
-
         if (expenses.length === 0) {
             return { granularity: "day", data: [] };
         }
@@ -151,7 +150,6 @@ export class dashboardService {
         }
 
         const data = Object.entries(grouped).map(([label, amount]) => ({ label, amount }));
-
         return { granularity, data };
     }
 

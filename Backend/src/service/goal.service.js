@@ -159,7 +159,7 @@ export class GoalService {
             this.frequency = goal.type
             this.category = goal.category
             this.name = goal.name
-            const lastIdx = goals.deductionDates.length - 1
+            const lastIdx = goal.deductionDates.length - 1
             let deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
             const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
