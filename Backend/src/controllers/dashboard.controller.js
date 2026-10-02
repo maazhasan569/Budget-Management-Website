@@ -31,8 +31,7 @@ const loanProgress = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     const dashboard = new dashboardService(userId)
-    const userLoanProgress = dashboard.LoanProgress()
-
+    const userLoanProgress = await dashboard.loanProgress()
     res.status(200)
         .json(
             new ApiResponse(200, "fetched user loan Progress", userLoanProgress)
@@ -81,10 +80,10 @@ const spendingTrends = asyncHandler(async(req,res) => {
 })
 
 const expenseCategoryPercentages = asyncHandler(async(req,res) => {
-    const userId = req.user_.id
+    const userId = req.user._id
     
     const dashboard = new dashboardService(userId)
-    const userExpenseCategory = dashboard.expenseCategoryPercentages()
+    const userExpenseCategory = await dashboard.expenseCategoryPercentages()
 
     res.status(200)
         .json(

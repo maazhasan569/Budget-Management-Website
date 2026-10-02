@@ -53,13 +53,12 @@ export class dashboardService {
     async loanProgress() {
         //same as goal progress
         const loans = await Loan.find({ userId: this.userId })
-        loans.map((loan) => {
-            const progressPercent = loan.currentAmt / loan.loanTargetAmt * 100
-            return {
-                loan,
-                progressPercent
-            }
+        const loanProgressArr = loans.map((loan) => {
+            const loanDoc = loan.toObject()
+            loanDoc.progressPercent = loan.currentAmt / loan.loanTargetAmt * 100
+            return loanDoc
         })
+        return loanProgressArr
     }
     async GoalLoanAlert() {
         const goals = await Goal.find({ userId: this.userId, autoDeduction: false });
@@ -169,19 +168,19 @@ export class dashboardService {
 
         let categoryPercentages = {};
         let categoryTotals = {}
-        let grandTotal;
+        let grandTotal = 0
         for (const expense of expenses) {
             categoryTotals[expense.category] =
                 (categoryTotals[expense.category] || 0) + expense.amount;
-
             grandTotal += expense.amount;
         }
-
         for (const category in categoryTotals) {
             categoryPercentages[category] = Number(
                 ((categoryTotals[category] / grandTotal) * 100).toFixed(2)
             );
         }
+
+        return categoryPercentages
 
     }
 
