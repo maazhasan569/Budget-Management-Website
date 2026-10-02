@@ -61,7 +61,7 @@ export class dashboardService {
             }
         })
     }
-    async alertUserForUpcomingGoalAndLoan() {
+    async GoalLoanAlert() {
         const goals = await Goal.find({ userId: this.userId, autoDeduction: false });
         const loans = await Loan.find({ userId: this.userId, autoDeduction: false });
 
@@ -97,7 +97,7 @@ export class dashboardService {
         return [...goalAlerts, ...loanAlerts];
     }
 
-    async getFlaggedDocs(){ // this will get overdue and no_fund status goal and loans
+    async flaggedDocs(){ // this will get overdue and no_fund status goal and loans
         const goals = await Goal.find({ userId: this.userId });
         const loans = await Loan.find({ userId: this.userId});
 
