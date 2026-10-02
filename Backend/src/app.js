@@ -22,12 +22,14 @@ import expenseRouter from "./routes/budget/expense.route.js"
 import goalRouter from "./routes/budget/goal.route.js"
 import loanRouter from "./routes/budget/loan.route.js"
 import taskRouter from  "./routes/task.route.js"
+import dashboardRouter from "./routes/dashboard.route.js"
 app.use("/api/v1/auth" , authRouter)
 app.use("/api/v1/user" , userRouter)
 app.use("/api/v1/expenses", expenseRouter)
 app.use("/api/v1/goals",goalRouter)
 app.use("/api/v1/loans", loanRouter)
 app.use("/api/v1/tasks" ,taskRouter )
+app.use("api/v1/dashboard" , dashboardRouter)
 // app.use((err, req, res, next) => {
 //     let statusCode = err.statusCode || 500;
 //     let message = err.message || "Internal Server Error";

@@ -1,6 +1,6 @@
-import { dashboardService } from "../service/dashboard.service";
-import ApiResponse from "../utils/ApiResponse";
-import asyncHandler from "../utils/asyncHandler";
+import { dashboardService } from "../service/dashboard.service.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import asyncHandler from "../utils/asyncHandler.js";
 
 const financialScore = asyncHandler(async (req, res) => {
     const userId = req.user._id
@@ -55,7 +55,7 @@ const GoalAndLoanAlert = asyncHandler(async (req,res) => {
         )
 })
 
-const getFlaggedDocument = asyncHandler(async(req,res) => {
+const flaggedDocuments = asyncHandler(async(req,res) => {
      const userId = req.user_.id
     
     const dashboard = new dashboardService(userId)
@@ -100,7 +100,7 @@ export {
     loanProgress,
     goalProgress,
     GoalAndLoanAlert,
-    flaggedDocs,
+    flaggedDocuments,
     spendingTrends,
     expenseCategoryPercentages
 }
