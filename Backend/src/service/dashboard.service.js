@@ -3,7 +3,7 @@ import { Goal } from "../models/budget/goals.models"
 import { Loan } from "../models/budget/loan.models"
 import { Users } from "../models/users.models"
 import ApiError from "../utils/ApiError"
-class dashboardService {
+export class dashboardService {
     constructor(userId) {
         this.userId = userId
     }
@@ -36,7 +36,7 @@ class dashboardService {
         return spendingControl + deptPaid + goalsFunded / 3
 
     }
-    async goalProgress(goalId) {
+    async goalProgress() {
         //get goals
         //perform arithematic calc
         //to convert goal progress in percentage
@@ -50,7 +50,7 @@ class dashboardService {
             }
         })
     }
-    async loanProgress(loanId) {
+    async loanProgress() {
         //same as goal progress
         const loans = await Loan.find({ userId: this.userId })
         loans.map((loan) => {
@@ -61,7 +61,7 @@ class dashboardService {
             }
         })
     }
-    async alertUserForUpcomingGoalAndLoan(id) {
+    async alertUserForUpcomingGoalAndLoan() {
         const goals = await Goal.find({ userId: this.userId, autoDeduction: false });
         const loans = await Loan.find({ userId: this.userId, autoDeduction: false });
 
