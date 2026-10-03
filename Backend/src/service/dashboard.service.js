@@ -13,27 +13,42 @@ export class dashboardService {
         const user = await Users.findById(this.userId)
         const loans = await Loan.find({ userId: this.userId })
         const goals = await Goal.find({ userId: this.userId })
-        const spendingControl = 100 - ((user.budget / user.income - 0.70) /
-            0.30 * 100)
+        const expenses = await Expense.find({ userId: this.userId })
+        let totalExpenses = 0
+        for (const expense of expenses) {
+            totalExpenses += expense.amount
+        }
 
-        let totalLoanAmt;
-        let totalLoanAmtPaid;
+        let spendingControl = 100 - ((totalExpenses / user.income - 0.70) / 0.30 * 100);
+        spendingControl = Math.max(0, Math.min(100, spendingControl));
+
+
+        let totalLoanAmt = 0
+        let totalLoanAmtPaid = 0
         for (const loan of loans) {
             totalLoanAmt += loan.loanTargetAmt
             totalLoanAmtPaid += loan.currentAmt
         }
 
-        let totalGoalAmt;
-        let totalGoalAmtPaid;
+        let totalGoalAmt = 0
+        let totalGoalAmtPaid = 0
         for (const goal of goals) {
             totalGoalAmt += goal.targetAmount
             totalGoalAmtPaid += goal.currentAmt
+
         }
 
-        const deptPaid = totalLoanAmtPaid / totalLoanAmt * 100
-        const goalsFunded = totalGoalAmt / totalGoalAmt * 100
+        const deptPaid = totalLoanAmt === 0 ? null : (totalLoanAmtPaid / totalLoanAmt * 100);
+        const goalsFunded = totalGoalAmt === 0 ? null : (totalGoalAmtPaid / totalGoalAmt * 100);
+        const spendingControlValue = !user.income ? null : spendingControl;
 
-        return spendingControl + deptPaid + goalsFunded / 3
+        const validVals = [deptPaid, goalsFunded, spendingControlValue].filter(f => f !== null)
+
+        const score = validVals.reduce((sum, f) => sum + f, 0) / validVals.length
+
+        return (score).toFixed(2)
+
+
 
     }
     async goalProgress() {

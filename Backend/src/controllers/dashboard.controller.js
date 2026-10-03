@@ -6,8 +6,7 @@ const financialScore = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     const dashboard = new dashboardService(userId)
-    const userFinancialScore = dashboard.financialScore()
-
+    const userFinancialScore = await dashboard.financialScore()
     res.status(200)
         .json(
             new ApiResponse(200, "fetched user financial score", userFinancialScore)
@@ -19,7 +18,8 @@ const goalProgress = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     const dashboard = new dashboardService(userId)
-    const userGoalProgress = await dashboard.goalProgress()
+    const userGoalProgress =  dashboard.goalProgress()
+    console.log(`userGoalProgress = ${userGoalProgress}`)
     res.status(200)
         .json(
             new ApiResponse(200, "fetched user goal Progress", userGoalProgress)
