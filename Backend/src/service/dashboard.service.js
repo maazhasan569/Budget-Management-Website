@@ -98,7 +98,7 @@ export class dashboardService {
             const daysUntilDue = Math.round((dueDate - now) / msPerDay);
 
             let dueDateAlert;
-            if (daysUntilDue <= 3) dueDateAlert = "very close";
+            if(daysUntilDue <= 3) dueDateAlert = "very close";
             else if (daysUntilDue <= 7) dueDateAlert = "close";
             else return null;
 
