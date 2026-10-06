@@ -17,7 +17,7 @@ import {
 const chartConfig = {
   spent: {
     label: "Spent",
-    color: "hsl(var(--primary))",
+    color: "var(--primary)",
   },
 }
 

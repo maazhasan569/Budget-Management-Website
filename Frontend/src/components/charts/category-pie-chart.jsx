@@ -1,6 +1,4 @@
-
-
-import { Label, Pie, PieChart } from "recharts"
+import { Cell, Label, Pie, PieChart } from "recharts"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   ChartContainer,
@@ -24,7 +22,7 @@ export function CategoryPieChart({
         item.category,
         {
           label: item.category,
-          color: `hsl(var(--chart-${index + 1}))`,
+          color: `var(--chart-${index + 1})`,
         },
       ])
     ),
@@ -55,6 +53,13 @@ export function CategoryPieChart({
               }
               labelLine={false}
             >
+              {data.map((entry) => (
+                <Cell
+                  key={entry.category}
+                  fill={`var(--color-${entry.category})`}
+                />
+              ))}
+
               <Label
                 content={({ viewBox }) => {
                   if (

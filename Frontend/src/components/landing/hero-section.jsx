@@ -6,13 +6,12 @@ import { AuroraBackground } from "./aurora-background"
 export function HeroSection() {
     return (
         <header className="relative overflow-hidden py-20">
-            <section className="relative overflow-hidden">
+           
                 <div className="absolute inset-0 -z-10">
                     <AuroraBackground />
                 </div>
 
-                {/* your existing hero content (heading, buttons, etc.) */}
-            </section>
+        
             <div className="relative z-10 mx-auto max-w-6xl px-6">
                 <div className="max-w-2xl">
                     <h1 className="font-serif text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
