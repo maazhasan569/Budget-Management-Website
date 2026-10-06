@@ -4,5 +4,8 @@ export default defineConfig({
     // configure where stuff comes from here
     registries: [],
     // configure where stuff goes here
-    paths: {},
+    paths: {
+		file: './src/component',
+		component: './src/component'
+	},
 });

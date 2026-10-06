@@ -1,7 +1,9 @@
-import Link from "next/link"
+// src/components/landing/navbar.jsx
+
+import { Link } from "react-router-dom"
 import { Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ShinyButton } from "@/components/landing/shiny-button"
+import { ShinyButton } from "./shiny-btn"
 
 export function Navbar() {
   return (
@@ -14,12 +16,16 @@ export function Navbar() {
           Finch
         </div>
         <div className="hidden gap-7 text-sm text-muted-foreground md:flex">
-          <Link href="#showcase" className="hover:text-foreground">The dashboard</Link>
-          <Link href="#features" className="hover:text-foreground">What it does</Link>
+          <a href="#showcase" className="hover:text-foreground">The dashboard</a>
+          <a href="#features" className="hover:text-foreground">What it does</a>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost">Sign in</Button>
-          <ShinyButton>Get started</ShinyButton>
+          <Button variant="ghost" asChild>
+            <Link to="/sign-in">Sign in</Link>
+          </Button>
+          <ShinyButton>
+            <Link to="/sign-up">Get started</Link>
+          </ShinyButton>
         </div>
       </div>
     </nav>

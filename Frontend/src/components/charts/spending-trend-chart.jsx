@@ -1,12 +1,14 @@
-"use client"
-
+// src/components/charts/spending-trend-chart.jsx
+import { TrendingUp, TrendingDown } from "lucide-react"
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
 import {
   Card,
   CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card"
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -19,48 +21,45 @@ const chartConfig = {
   },
 }
 
-export function SpendingTrendChart({
-  data,
-  width = "100%",
-  height = 250,
-}) {
-  return (
-    <Card style={{ width }}>
-      <CardContent className="pt-6">
-        <ChartContainer
-          config={chartConfig}
-          style={{ height }}
-        >
-          <LineChart
-            accessibilityLayer
-            data={data}
-            margin={{ left: 12, right: 12 }}
-          >
-            <CartesianGrid vertical={false} />
+export function SpendingTrendChart({ data, trendPercent }) {
+  const isUp = trendPercent >= 0
 
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Spending trend</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[220px] w-full">
+          <LineChart data={data} margin={{ left: 12, right: 12 }}>
+            <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="day"
+              dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 6)}
             />
-
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-            />
-
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Line
               dataKey="spent"
               type="monotone"
               stroke="var(--color-spent)"
-              strokeWidth={2.5}
+              strokeWidth={2}
               dot={false}
             />
           </LineChart>
         </ChartContainer>
       </CardContent>
+      <CardFooter className="flex-col items-start gap-2 text-sm">
+        <div className="flex gap-2 font-medium leading-none">
+          {isUp ? "Trending up" : "Trending down"} by {Math.abs(trendPercent)}% this month
+          {isUp ? (
+            <TrendingUp className="h-4 w-4" />
+          ) : (
+            <TrendingDown className="h-4 w-4" />
+          )}
+        </div>
+      </CardFooter>
     </Card>
   )
 }
