@@ -158,3 +158,6 @@
 @keyframes spin {
   to { --angle: 360deg; }
 }
+html {
+  scroll-behavior: smooth;
+}
