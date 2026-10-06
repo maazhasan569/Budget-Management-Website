@@ -3,9 +3,9 @@ import Aurora from "./Aurora";
 export function AuroraBackground() {
     return (<Aurora
         colorStops={["#7cff67", "#B497CF", "#5227FF"]}
-        blend={0.5}
+        blend={1.5}
         amplitude={1.0}
-        speed={1}
+        speed={0.5}
     />
     )
 }

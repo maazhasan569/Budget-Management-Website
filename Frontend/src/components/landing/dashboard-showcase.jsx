@@ -13,13 +13,13 @@ export function DashboardShowcase() {
             </div>
             <div className="grid gap-4 md:grid-cols-3">
                 <div className="md:col-span-2"><SpendingTrendChart data={[
-                    { day: "Oct 1", spent: 120 },
-                    { day: "Oct 5", spent: 340 },
-                    { day: "Oct 10", spent: 410 },
-                    { day: "Oct 15", spent: 560 },
-                    { day: "Oct 20", spent: 640 },
-                    { day: "Oct 25", spent: 780 },
-                ]} /></div>
+                    { date: "Oct 1", spent: 120 },
+                    { date: "Oct 5", spent: 340 },
+                    { date: "Oct 10", spent: 410 },
+                    { date: "Oct 15", spent: 560 },
+                    { date: "Oct 20", spent: 640 },
+                    { date: "Oct 25", spent: 780 },
+                ]} trendPercent={50} /></div>
                 <CategoryPieChart data={[
                     { category: "food", amount: 340, fill: "var(--color-food)" },
                     { category: "bills", amount: 260, fill: "var(--color-bills)" },

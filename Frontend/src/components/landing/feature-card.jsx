@@ -1,4 +1,3 @@
-"use client"
 import { useRef } from "react"
 
 export function FeatureCard({ icon, title, description, children }) {
@@ -20,7 +19,7 @@ export function FeatureCard({ icon, title, description, children }) {
     >
       <div
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: "radial-gradient(240px circle at var(--x,50%) var(--y,50%), hsl(var(--primary)/0.12), transparent 70%)" }}
+        style={{ background: "radial-gradient(240px circle at var(--x,50%) var(--y,50%), color-mix(in srgb, var(--primary) 12%, transparent), transparent 70%)" }}
       />
       <div className="relative z-10">
         <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">{icon}</div>
