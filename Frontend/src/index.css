@@ -151,3 +151,5 @@
 }
 @property --angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes spin { to { --angle: 360deg; } }
+@property --angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes spin { to { --angle: 360deg; } }
