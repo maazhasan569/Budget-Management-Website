@@ -36,7 +36,7 @@ export function CategoryPieChart({
           style={{ height }}
           className="mx-auto aspect-square"
         >
-          <PieChart>
+          <PieChart  margin={{ top: 24, right: 40, bottom: 24, left: 40 }}>
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
@@ -47,6 +47,7 @@ export function CategoryPieChart({
               dataKey="amount"
               nameKey="category"
               innerRadius={60}
+              outerRadius={85}
               strokeWidth={5}
               label={({ payload }) =>
                 chartConfig[payload.category]?.label

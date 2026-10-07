@@ -2,7 +2,7 @@ import { CheckCircle2 } from "lucide-react"
 import { ShinyButton } from "./shiny-btn"
 import { Button } from "@/components/ui/button"
 import { AuroraBackground } from "./aurora-background"
-
+import { HeroPreviewCards } from "./hero-section-card"
 export function HeroSection() {
     return (
         <header className="relative overflow-hidden py-20">
@@ -30,6 +30,7 @@ export function HeroSection() {
                         <CheckCircle2 className="h-4 w-4 text-success" /> No card needed to start
                     </p>
                 </div>
+            
             </div>
         </header>
     )
