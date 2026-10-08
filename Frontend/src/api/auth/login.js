@@ -1,8 +1,9 @@
 import axios from "axios";
-
+import apiClient from "../axiosClient";
 export const logIn = async (userData) => {
   try {
-    const response = await axios.post("/api/login", userData);
+    const response = await apiClient.post("/login", userData);
+    localStorage.setItem("isLoggedIn", "true"); 
     return response.data;
   } catch (error) {
     // Re-throw or format the error response for your UI component
