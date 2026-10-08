@@ -24,7 +24,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const navigate = useNavigate()
 
   const isSignIn = initialMode === "sign-in"
-
+  
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
@@ -206,7 +206,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           type="button"
           variant="outline"
           className="w-full gap-2 border-input bg-background hover:bg-muted"
-          onClick={oAuthGoogleRedirectionUrl}
+          onClick={() => oAuthGoogleRedirectionUrl(isSignIn)}
         >
           <GoogleIcon />
           Continue with Google
