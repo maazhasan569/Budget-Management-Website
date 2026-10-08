@@ -1,6 +1,8 @@
+import axios from "axios";
+
 export const logIn = async (userData) => {
   try {
-    const response = await API.post("/api/login", userData);
+    const response = await axios.post("/api/login", userData);
     return response.data;
   } catch (error) {
     // Re-throw or format the error response for your UI component
