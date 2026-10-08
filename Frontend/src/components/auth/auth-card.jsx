@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom"
 
 import { GoogleIcon } from "./google-icon"
 import { LogoHeader } from "./logo-header"
-
+import { signUp } from "@/api/auth/signup"
+import { logIn } from "@/api/auth/login"
+import oAuthGoogleRedirectionUrl from "@/api/auth/oAuth"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -171,7 +173,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           </div>
 
           {/* Submit */}
-          <Button type="submit" className="w-full font-medium">
+          <Button type="submit" className="w-full font-medium" onClick = {isSignIn ? signUp : logIn}>
             {isSignIn ? "Sign In" : "Create Account"}
           </Button>
         </form>
@@ -194,6 +196,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           type="button"
           variant="outline"
           className="w-full gap-2 border-input bg-background hover:bg-muted"
+          onClick = {oAuthGoogleRedirectionUrl}
         >
           <GoogleIcon />
           Continue with Google
