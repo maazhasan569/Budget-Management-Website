@@ -71,10 +71,12 @@ const logInUser = asyncHandler(async (req, res) => {
     if (!getUserByEmail) {
         throw new ApiError(404, "User not found by email")
     }
-    const isUserPasswordValid = await getUserByEmail.isPasswordValid(password)
-    if (!isUserPasswordValid) {
-        throw new ApiError(404, "User not found by password")
-    }
+    
+        const isUserPasswordValid = await getUserByEmail.isPasswordValid(password)
+        if (!isUserPasswordValid) {
+            throw new ApiError(404, "User not found by password")
+        }
+    
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(getUserByEmail._id)
     console.log(refreshToken)
     const loggedInUser = await Users.findById(getUserByEmail._id).select("-password -refreshToken")

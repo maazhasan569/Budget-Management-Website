@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { Loader2 } from "lucide-react"
 
 import { GoogleIcon } from "./google-icon"
 import { LogoHeader } from "./logo-header"
@@ -22,68 +23,65 @@ import { Label } from "@/components/ui/label"
 
 export function AuthCard({ initialMode = "sign-in" }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const isSignIn = initialMode === "sign-in"
-  
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
   const [errors, setErrors] = useState({
     email: "",
     password: "",
   })
+  const [serverError, setServerError] = useState("")
 
-  const handleAuthSubmit = async () => {
+  // Catch errors returned from OAuth redirect callbacks
+  useEffect(() => {
+    const errorParam = searchParams.get("error")
+    if (errorParam) {
+      setServerError(decodeURIComponent(errorParam))
+      searchParams.delete("error")
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
+  const isEmailValid = email.trim() !== "" && /\S+@\S+\.\S+/.test(email)
+  const isPasswordValid = password.length >= 8
+  const isFormValid = isEmailValid && isPasswordValid
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault()
+    if (!isFormValid || isLoading) return
+
+    setServerError("")
+    setIsLoading(true)
+
     try {
       if (isSignIn) {
-        await signIn({ email, password });
+        await signIn({ email, password })
+        navigate("/dashboard")
       } else {
-        signUp({email,password})
+        await signUp({ email, password })
+        navigate("/dashboard")
       }
     } catch (error) {
-      console.error("Authentication failed:", error);
+      // Display exact backend error message from ApiError response
+      const message =
+        error.message ||
+        error.data?.message ||
+        "An unexpected error occurred. Please try again."
+      setServerError(message)
+    } finally {
+      setIsLoading(false)
     }
-  };
-
-  const validateForm = () => {
-    const newErrors = {
-      email: "",
-      password: "",
-    }
-
-    // Email validation
-    if (!email.trim()) {
-      newErrors.email = "Email is required."
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Please enter a valid email address."
-    }
-
-    // Password validation
-    if (!password) {
-      newErrors.password = "Password is required."
-    } else if (password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters."
-    }
-
-    setErrors(newErrors)
-
-    return !newErrors.email && !newErrors.password
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-
-    const isValid = validateForm()
-
-    if (!isValid) {
-      return
-    }
-
-    // Authentication will be added here later.
-    console.log("Form submitted:", {
-      email,
-      password,
-    })
+  // Instant redirect without loading animation or text state
+  const handleGoogleAuth = () => {
+    setServerError("")
+    oAuthGoogleRedirectionUrl(isSignIn)
   }
 
   return (
@@ -103,8 +101,14 @@ export function AuthCard({ initialMode = "sign-in" }) {
       </CardHeader>
 
       <CardContent className="grid gap-4">
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        {/* Exact Server Error Display */}
+        {serverError && (
+          <div className="rounded-md bg-destructive/15 p-3 text-sm font-medium text-destructive border border-destructive/20 text-center">
+            {serverError}
+          </div>
+        )}
 
+        <form onSubmit={handleAuthSubmit} className="grid gap-4">
           {/* Email */}
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
@@ -114,26 +118,28 @@ export function AuthCard({ initialMode = "sign-in" }) {
               type="email"
               placeholder="m@example.com"
               value={email}
+              disabled={isLoading}
               onChange={(e) => {
-                setEmail(e.target.value)
+                const val = e.target.value
+                setEmail(val)
 
-                if (errors.email) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    email: "",
-                  }))
+                if (!val.trim()) {
+                  setErrors((prev) => ({ ...prev, email: "Email is required." }))
+                } else if (!/\S+@\S+\.\S+/.test(val)) {
+                  setErrors((prev) => ({ ...prev, email: "Please enter a valid email address." }))
+                } else {
+                  setErrors((prev) => ({ ...prev, email: "" }))
                 }
               }}
-              className={`bg-background text-foreground ${errors.email
+              className={`bg-background text-foreground ${
+                errors.email
                   ? "border-destructive focus-visible:ring-destructive"
                   : "border-input"
-                }`}
+              }`}
             />
 
             {errors.email && (
-              <p className="text-sm text-destructive">
-                {errors.email}
-              </p>
+              <p className="text-xs text-destructive">{errors.email}</p>
             )}
           </div>
 
@@ -146,9 +152,6 @@ export function AuthCard({ initialMode = "sign-in" }) {
                 <button
                   type="button"
                   className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors"
-                  onClick={() => {
-                    // Forgot password functionality will be added later.
-                  }}
                 >
                   Forgot password?
                 </button>
@@ -159,32 +162,45 @@ export function AuthCard({ initialMode = "sign-in" }) {
               id="password"
               type="password"
               value={password}
+              disabled={isLoading}
               onChange={(e) => {
-                setPassword(e.target.value)
+                const val = e.target.value
+                setPassword(val)
 
-                if (errors.password) {
-                  setErrors((prev) => ({
-                    ...prev,
-                    password: "",
-                  }))
+                if (!val) {
+                  setErrors((prev) => ({ ...prev, password: "Password is required." }))
+                } else if (val.length < 8) {
+                  setErrors((prev) => ({ ...prev, password: "Password must be at least 8 characters." }))
+                } else {
+                  setErrors((prev) => ({ ...prev, password: "" }))
                 }
               }}
-              className={`bg-background text-foreground ${errors.password
+              className={`bg-background text-foreground ${
+                errors.password
                   ? "border-destructive focus-visible:ring-destructive"
                   : "border-input"
-                }`}
+              }`}
             />
 
             {errors.password && (
-              <p className="text-sm text-destructive">
-                {errors.password}
-              </p>
+              <p className="text-xs text-destructive">{errors.password}</p>
             )}
           </div>
 
           {/* Submit */}
-          <Button type="submit" className="w-full font-medium" onClick={handleAuthSubmit}>
-            {isSignIn ? "Sign In" : "Create Account"}
+          <Button
+            type="submit"
+            className="w-full font-medium"
+            disabled={!isFormValid || isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isSignIn ? "Signing In..." : "Creating Account..."}
+              </>
+            ) : (
+              isSignIn ? "Sign In" : "Create Account"
+            )}
           </Button>
         </form>
 
@@ -195,18 +211,17 @@ export function AuthCard({ initialMode = "sign-in" }) {
           </div>
 
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">
-              Or
-            </span>
+            <span className="bg-card px-2 text-muted-foreground">Or</span>
           </div>
         </div>
 
-        {/* Google Login */}
+        {/* Google Login - Direct Redirect */}
         <Button
           type="button"
           variant="outline"
           className="w-full gap-2 border-input bg-background hover:bg-muted"
-          onClick={() => oAuthGoogleRedirectionUrl(isSignIn)}
+          disabled={isLoading}
+          onClick={handleGoogleAuth}
         >
           <GoogleIcon />
           Continue with Google
@@ -216,15 +231,14 @@ export function AuthCard({ initialMode = "sign-in" }) {
       {/* Switch Auth Mode */}
       <CardFooter className="justify-center border-t border-border pt-4 text-center">
         <p className="text-sm text-muted-foreground">
-          {isSignIn
-            ? "Don't have an account? "
-            : "Already have an account? "}
+          {isSignIn ? "Don't have an account? " : "Already have an account? "}
 
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              setServerError("")
               navigate(isSignIn ? "/sign-up" : "/sign-in")
-            }
+            }}
             className="font-medium text-primary hover:underline cursor-pointer"
           >
             {isSignIn ? "Create an account" : "Sign in"}
