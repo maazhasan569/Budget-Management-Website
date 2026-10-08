@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom"
+import { Wallet } from "lucide-react"
+
 export function LogoHeader() {
   return (
     <div className="flex justify-center pb-2">
