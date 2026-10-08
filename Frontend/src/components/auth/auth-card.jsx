@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { GoogleIcon } from "./google-icon"
 import { LogoHeader } from "./logo-header"
 import { signUp } from "@/api/auth/signup"
-import { logIn } from "@/api/auth/login"
+import { signIn } from "@/api/auth/login"
 import oAuthGoogleRedirectionUrl from "@/api/auth/oAuth"
 import { Button } from "@/components/ui/button"
 
@@ -32,6 +32,18 @@ export function AuthCard({ initialMode = "sign-in" }) {
     email: "",
     password: "",
   })
+
+  const handleAuthSubmit = async () => {
+    try {
+      if (isSignIn) {
+        await signIn({ email, password });
+      } else {
+        signUp({email,password})
+      }
+    } catch (error) {
+      console.error("Authentication failed:", error);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {
@@ -112,11 +124,10 @@ export function AuthCard({ initialMode = "sign-in" }) {
                   }))
                 }
               }}
-              className={`bg-background text-foreground ${
-                errors.email
+              className={`bg-background text-foreground ${errors.email
                   ? "border-destructive focus-visible:ring-destructive"
                   : "border-input"
-              }`}
+                }`}
             />
 
             {errors.email && (
@@ -158,11 +169,10 @@ export function AuthCard({ initialMode = "sign-in" }) {
                   }))
                 }
               }}
-              className={`bg-background text-foreground ${
-                errors.password
+              className={`bg-background text-foreground ${errors.password
                   ? "border-destructive focus-visible:ring-destructive"
                   : "border-input"
-              }`}
+                }`}
             />
 
             {errors.password && (
@@ -173,7 +183,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           </div>
 
           {/* Submit */}
-          <Button type="submit" className="w-full font-medium" onClick = {isSignIn ? signUp : logIn}>
+          <Button type="submit" className="w-full font-medium" onClick={handleAuthSubmit}>
             {isSignIn ? "Sign In" : "Create Account"}
           </Button>
         </form>
@@ -196,7 +206,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           type="button"
           variant="outline"
           className="w-full gap-2 border-input bg-background hover:bg-muted"
-          onClick = {oAuthGoogleRedirectionUrl}
+          onClick={oAuthGoogleRedirectionUrl}
         >
           <GoogleIcon />
           Continue with Google

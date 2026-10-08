@@ -2,8 +2,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-    baseURL: "/api",
-
+    baseURL: "/api/v1",
     withCredentials: true,
 });
 
@@ -15,11 +14,11 @@ apiClient.interceptors.response.use(
 
 
         if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest
+            originalRequest._retry = true
 
             try {
 
-            
+
                 await axios.post("/api/refresh-token", {}, { withCredentials: true });
 
                 return apiClient(originalRequest);
