@@ -12,49 +12,59 @@ const options = {
     secure: true
 }
 const createUserAccount = asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    const fieldCheck = [email, password].some((inpFields) => {
-        return !inpFields || inpFields.trim() === ""
-    })
+    try {
+        const { email, password } = req.body;
+        const fieldCheck = [email, password].some((inpFields) => {
+            return !inpFields || inpFields.trim() === ""
+        })
 
-    if (fieldCheck) {
-        throw new ApiError(400, "All field required")
-    }
-    const isUserfound = await Users.findOne({ email })
-    if (isUserfound) {
-        throw new ApiError(409,
-            isUserfound.email === email ? "Email already in use"
-                : "password already in use"
+        if (fieldCheck) {
+            throw new ApiError(400, "Please enter your email and password.")
+        }
+        const isUserfound = await Users.findOne({ email })
+        if (isUserfound) {
+            throw new ApiError(409, "An account with this email already exists. Try signing in instead.")
+        }
+        const username = await generateUsername(email)
+        const user = await Users.create({
+            email,
+            password,
+            username,
+        })
+
+        if (!user) {
+            throw new ApiError(500, "We couldn't create your account right now. Please try again.")
+        }
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+        const registeredUser = await Users.findByIdAndUpdate(
+            user._id,
+            {
+                refreshToken,
+            },
+            { new: true }
+        ).select("-password -refreshToken")
+        return res.status(
+            201
+        ).cookie(
+            "accessToken", accessToken, options
+        ).cookie(
+            "refreshToken", refreshToken, options
+        ).json(
+            new ApiResponse(201, "User created", { user, accessToken })
         )
-    }
-    const username = await generateUsername(email)
-    const user = await Users.create({
-        email,
-        password,
-        username,
-    })
+    } catch (error) {
+        const duplicateEmail = error?.code === 11000 &&
+            (error.keyPattern?.email || error.keyValue?.email)
+        const statusCode = duplicateEmail ? 409 : error?.statusCode || 500
+        const message = statusCode === 400
+            ? "Please enter your email and password."
+            : statusCode === 409
+                ? "An account with these details already exists. Try signing in or use different details."
+                : "We couldn't create your account right now. Please try again."
 
-    if (!user) {
-        throw new ApiError(500, "error occured while creating the user")
+        throw new ApiError(statusCode, message)
     }
-
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
-    const registeredUser = await Users.findByIdAndUpdate(
-        user._id,
-        {
-            refreshToken,
-        },
-        { new: true }
-    ).select("-password -refreshToken")
-    return res.status(
-        201
-    ).cookie(
-        "accessToken", accessToken, options
-    ).cookie(
-        "refreshToken", refreshToken, options
-    ).json(
-        new ApiResponse(201, "User created", { user, accessToken })
-    )
 
 })
 
@@ -64,30 +74,44 @@ const logInUser = asyncHandler(async (req, res) => {
     //compare with db password
     //return which details is correct
     //and which is not
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
+        if (!email?.trim() || !password?.trim()) {
+            throw new ApiError(400, "Please enter your email and password.")
+        }
 
-    const getUserByEmail = await Users.findOne({ email })
-    if (!getUserByEmail) {
-        throw new ApiError(401, "Invalid email or password")
-    }
-    
+        const getUserByEmail = await Users.findOne({ email })
+        if (!getUserByEmail) {
+            throw new ApiError(401, "Invalid email or password")
+        }
+
         const isUserPasswordValid = await getUserByEmail.isPasswordValid(password)
         if (!isUserPasswordValid) {
             throw new ApiError(401, "Invalid email or password")
         }
-    
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(getUserByEmail._id)
-    console.log(refreshToken)
-    const loggedInUser = await Users.findById(getUserByEmail._id).select("-password -refreshToken")
-    return res.status(200)
-        .cookie(
-            "accessToken", accessToken, options
-        ).cookie(
-            "refreshToken", refreshToken, options
-        ).json(
-            new ApiResponse(200, "user found", { loggedInUser, accessToken })
-        )
+
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(getUserByEmail._id)
+        console.log(refreshToken)
+        const loggedInUser = await Users.findById(getUserByEmail._id).select("-password -refreshToken")
+        return res.status(200)
+            .cookie(
+                "accessToken", accessToken, options
+            ).cookie(
+                "refreshToken", refreshToken, options
+            ).json(
+                new ApiResponse(200, "user found", { loggedInUser, accessToken })
+            )
+    } catch (error) {
+        const statusCode = error?.statusCode || 500
+        const message = statusCode === 400
+            ? "Please enter your email and password."
+            : statusCode === 401
+                ? "Email or password is incorrect. Please check your details and try again."
+                : "We couldn't sign you in right now. Please try again."
+
+        throw new ApiError(statusCode, message)
+    }
 
 
 })

@@ -11,9 +11,15 @@ apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+        const isPasswordAuthRequest =
+            originalRequest?.url?.includes("/auth/login") ||
+            originalRequest?.url?.includes("/auth/create-account")
 
-
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (
+            error.response?.status === 401 &&
+            !isPasswordAuthRequest &&
+            !originalRequest?._retry
+        ) {
             originalRequest._retry = true
 
             try {

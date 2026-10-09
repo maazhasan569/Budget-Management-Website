@@ -67,11 +67,19 @@ export function AuthCard({ initialMode = "sign-in" }) {
         navigate("/dashboard")
       }
     } catch (error) {
-      // Display exact backend error message from ApiError response
+      const statusCode = error.statusCode ?? error.response?.status
+      const messages = isSignIn
+        ? {
+            400: "Please enter your email and password.",
+            401: "Email or password is incorrect. Please check your details and try again.",
+          }
+        : {
+            400: "Please enter a valid email and password.",
+            409: "An account with this email already exists. Try signing in instead.",
+          }
       const message =
-        error.message ||
-        error.data?.message ||
-        "An unexpected error occurred. Please try again."
+        messages[statusCode] ||
+        "We couldn't complete your request. Please try again."
       setServerError(message)
     } finally {
       setIsLoading(false)
