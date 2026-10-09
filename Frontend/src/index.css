@@ -176,3 +176,26 @@ html {
     transition: background-color 9999s ease-in-out 0s;
   }
 }
+/* Finch currency dropdown scrollbar */
+.currency-command-list {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #111a2e;
+}
+
+.currency-command-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.currency-command-list::-webkit-scrollbar-track {
+  background: #111a2e;
+  border-radius: 8px;
+}
+
+.currency-command-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 8px;
+}
+
+.currency-command-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
