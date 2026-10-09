@@ -25,7 +25,7 @@ const FALLBACK_CURRENCIES = [
 export async function fetchCurrencies() {
   try {
     const response = await fetch(
-      "https://restcountries.com/v3.1/all?fields=name,currencies",
+      "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.min.json",
       { signal: AbortSignal.timeout(10000) }
     )
 
@@ -33,26 +33,47 @@ export async function fetchCurrencies() {
       throw new Error(`Currency request failed: ${response.status}`)
     }
 
-    const countries = await response.json()
-    const currencyMap = new Map()
-
-    for (const country of countries) {
-      for (const [code, currency] of Object.entries(
-        country.currencies || {}
-      )) {
-        if (!currencyMap.has(code)) {
-          currencyMap.set(code, {
-            code,
-            name: currency.name || code,
-            symbol: currency.symbol || code,
-          })
-        }
-      }
+    const currencyNames = await response.json()
+    if (!currencyNames || typeof currencyNames !== "object" || Array.isArray(currencyNames)) {
+      throw new Error("Invalid currency data returned")
     }
 
-    const currencies = [...currencyMap.values()].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )
+    const supportedCodes = typeof Intl.supportedValuesOf === "function"
+      ? new Set(Intl.supportedValuesOf("currency"))
+      : null
+
+    const currencies = Object.entries(currencyNames)
+      .filter(([code, name]) =>
+        /^[a-z]{3}$/i.test(code) &&
+        typeof name === "string" &&
+        name.trim() &&
+        (!supportedCodes || supportedCodes.has(code.toUpperCase()))
+      )
+      .map(([code, name]) => {
+        const upperCode = code.toUpperCase()
+        let symbol = upperCode
+
+        try {
+          symbol = new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: upperCode,
+            currencyDisplay: "narrowSymbol",
+          })
+            .formatToParts(0)
+            .find((part) => part.type === "currency")?.value || upperCode
+        } catch {
+          // Keep the code as the symbol when this runtime does not support it.
+        }
+
+        return {
+          code: upperCode,
+          name,
+          symbol: symbol || upperCode,
+        }
+      })
+      .sort((a, b) =>
+        a.name.localeCompare(b.name)
+      )
 
     if (currencies.length === 0) {
       throw new Error("No currencies returned")
