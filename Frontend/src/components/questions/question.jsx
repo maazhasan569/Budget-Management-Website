@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/command"
 
 import { cn } from "@/lib/utils"
+import { submitAnswers } from "@/api/auth/questions"
 
 const STEPS = ["identity", "income", "bankBalance", "budget", "currency"]
 
@@ -189,7 +190,7 @@ export function QuestionsPage() {
         return Object.keys(newErrors).length === 0
     }
 
-    function handleNext() {
+    async function handleNext() {
         if (!validateStep()) return
 
         if (stepIndex === STEPS.length - 1) {
@@ -202,10 +203,10 @@ export function QuestionsPage() {
                 budget: Number(answers.budget),
             }
 
-            
+            await submitAnswers(payload)       
             navigate("/dashboard")
             // Connect your onboarding submission API here.
-            return
+            return 
         }
 
         setStepIndex((index) =>
