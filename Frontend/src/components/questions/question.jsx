@@ -6,7 +6,7 @@ import {
     Loader2,
     Wallet,
 } from "lucide-react"
-
+import { useNavigate } from "react-router-dom"
 import { fetchCurrencies } from "@/api/external/currency"
 
 import { Button } from "@/components/ui/button"
@@ -56,7 +56,7 @@ const inputClass =
 export function QuestionsPage() {
     const [stepIndex, setStepIndex] = useState(0)
     const step = STEPS[stepIndex]
-
+    const navigate = useNavigate()
     const [answers, setAnswers] = useState({
         identity: "",
         income: "",
@@ -202,8 +202,8 @@ export function QuestionsPage() {
                 budget: Number(answers.budget),
             }
 
-            console.log("Submitting onboarding answers:", payload)
-
+            
+            navigate("/dashboard")
             // Connect your onboarding submission API here.
             return
         }
