@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { redirect, useNavigate, useSearchParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 
 import { GoogleIcon } from "./google-icon"
@@ -64,7 +64,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
         navigate("/dashboard")
       } else {
         await signUp({ email, password })
-        navigate("/dashboard")
+        navigate("/questions")
       }
     } catch (error) {
       const statusCode = error.statusCode ?? error.response?.status
@@ -90,6 +90,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const handleGoogleAuth = () => {
     setServerError("")
     oAuthGoogleRedirectionUrl(isSignIn)
+    if(!isSignIn) navigate("/questions")
   }
 
   return (

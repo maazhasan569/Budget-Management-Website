@@ -2,12 +2,13 @@
 import { LandingPage } from './components/landing/landing-page'
 import { AuthCard } from './components/auth/auth-card'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { QuestionsPage } from './components/questions/question'
 function App() {
 
   return (
     <>
       <Routes>
-        <Route path = "/" element = {<LandingPage/>}/>
+        <Route path="/" element={<LandingPage />} />
         <Route
           path="/sign-in"
           element={
@@ -26,7 +27,14 @@ function App() {
             </div>
           }
         />
+        <Route
+          path='/questions'
+          element={
+            <QuestionsPage />
+          }
+        />
       </Routes>
+
     </>
 
   )
