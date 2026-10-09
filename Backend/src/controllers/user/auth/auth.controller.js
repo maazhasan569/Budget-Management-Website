@@ -22,7 +22,7 @@ const createUserAccount = asyncHandler(async (req, res) => {
     }
     const isUserfound = await Users.findOne({ email })
     if (isUserfound) {
-        throw new ApiError(400,
+        throw new ApiError(409,
             isUserfound.email === email ? "Email already in use"
                 : "password already in use"
         )
@@ -69,12 +69,12 @@ const logInUser = asyncHandler(async (req, res) => {
 
     const getUserByEmail = await Users.findOne({ email })
     if (!getUserByEmail) {
-        throw new ApiError(404, "User not found by email")
+        throw new ApiError(401, "Invalid email or password")
     }
     
         const isUserPasswordValid = await getUserByEmail.isPasswordValid(password)
         if (!isUserPasswordValid) {
-            throw new ApiError(404, "User not found by password")
+            throw new ApiError(401, "Invalid email or password")
         }
     
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(getUserByEmail._id)
@@ -86,7 +86,7 @@ const logInUser = asyncHandler(async (req, res) => {
         ).cookie(
             "refreshToken", refreshToken, options
         ).json(
-            new ApiResponse(201, "user found", { loggedInUser, accessToken })
+            new ApiResponse(200, "user found", { loggedInUser, accessToken })
         )
 
 

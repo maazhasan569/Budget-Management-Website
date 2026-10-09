@@ -8,10 +8,11 @@ import { generateUsername } from "../../../utils/generateUsername.js"
 
 const getGoogleTokenAndPayload = async (code) => {
 
+    if (!code) {
+        throw new ApiError(400, "auth code not found")
+    }
+
     try {
-        if (!code) {
-            throw new ApiError(401, "auth code not found")
-        }
         const { tokens } = await oauthClient.getToken(code)
         oauthClient.setCredentials(tokens)
         const ticket = await oauthClient.verifyIdToken(
@@ -72,47 +73,55 @@ const registorUrl = asyncHandler((req, res) => {
 const loginOrRegistorGoogleUser = asyncHandler(async (req, res) => {
     //if user logging
     //
-    
-    const { code, state } = req.query;
-    const decodedState = decodeURIComponent(state)
-    const { payload, refresh_token, access_token } = await getGoogleTokenAndPayload(code)
-    const email = payload.email
-    const username = await generateUsername(payload.email)
-    const isUser = await Users.findOne({ email })
-    if (!isUser && state === 'action=login') {
-        throw new ApiError(404, "User account not found")
-    }
-    if (isUser && state === 'action=register') {
-        throw new ApiError(409, "account already present")
-    }
-    const user = isUser || await Users.create({
-        googleId: payload.sub,
-        username: username,
-        email: payload.email,
-        googleRefreshToken: refresh_token,
-    })
-    if (!user) {
-        throw new ApiError("failed to create new user do ")
-    }
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
-    user.googleRefreshToken = refresh_token
-    await user.save({ validateBeforeSave: false })
-    const userKeyName = state === 'action=register' ? "registoredUser" : "loggedInUser"
-    return res.status(200)
-        .cookie(
-            "accessToken", accessToken, options
-        )
-        .cookie(
-            "refreshToken", refreshToken, options
-        ).json(
-            new ApiResponse(200, "user logged in successfully", {
-                [userKeyName]: user,
-                accessToken,
-                googleAccessToken: access_token
-            })
-        )
+    try {
+        const { code, state } = req.query;
+        const decodedState = decodeURIComponent(state)
+        const { payload, refresh_token, access_token } = await getGoogleTokenAndPayload(code)
+        const email = payload.email
+        const username = await generateUsername(payload.email)
+        const isUser = await Users.findOne({ email })
+        if (!isUser && state === 'action=login') {
+            throw new ApiError(404, "User account not found")
+        }
+        if (isUser && state === 'action=register') {
+            throw new ApiError(409, "account already present")
+        }
+        const user = isUser || await Users.create({
+            googleId: payload.sub,
+            username: username,
+            email: payload.email,
+            googleRefreshToken: refresh_token,
+        })
+        if (!user) {
+            throw new ApiError(500, "failed to create new user")
+        }
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+        user.googleRefreshToken = refresh_token
+        await user.save({ validateBeforeSave: false })
+        const userKeyName = state === 'action=register' ? "registoredUser" : "loggedInUser"
+        return res.status(200)
+            .cookie(
+                "accessToken", accessToken, options
+            )
+            .cookie(
+                "refreshToken", refreshToken, options
+            ).json(
+                new ApiResponse(200, "user logged in successfully", {
+                    [userKeyName]: user,
+                    accessToken,
+                    googleAccessToken: access_token
+                })
+            )
 
+    } catch (error) {
+        const isRegistration = req.query.state === "action=register";
+        const authPage = isRegistration ? "sign-up" : "sign-in";
+        const message = error.message || "Google sign-in failed. Please try again.";
 
+        return res.redirect(
+            `${process.env.CORS_ORIGIN}${authPage}?error=${encodeURIComponent(message)}`
+        );
+    }
 })
 export {
     loginUrl,
