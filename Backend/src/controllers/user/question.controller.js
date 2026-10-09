@@ -22,7 +22,7 @@ export const questions = asyncHandler(async (req, res) => {
         throw new ApiError(400, "invalid income Or Budget must be below monthly income")
     }
 
-    if(!bankBalance > 0 || bankBalance < income ){
+    if(!bankBalance > 0){
         throw new ApiError(400 , "Invalid Bank Balance")
     }
 

@@ -2,7 +2,10 @@ import apiClient from "../axiosClient";
 
 export const submitAnswers= async (questionData) => {
     try {
-        const response = await apiClient.post("/user/questions", questionData)
+        console.log(questionData)
+        const response = await apiClient.post("/user/question", questionData)
+        
+        console.log(response)
         return response.data
     } catch (error) {
         throw error.response?.data || error.message;

@@ -32,7 +32,7 @@ apiClient.interceptors.response.use(
 
 
                 localStorage.removeItem("isLoggedIn");
-                window.location.href = "/login";
+                window.location.href = "/sign-in";
                 return Promise.reject(refreshError);
             }
         }
