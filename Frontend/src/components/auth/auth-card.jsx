@@ -90,7 +90,6 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const handleGoogleAuth = () => {
     setServerError("")
     oAuthGoogleRedirectionUrl(isSignIn)
-    navigate(isSignIn ? "/dashboard" : "/questions")
   }
 
   return (
