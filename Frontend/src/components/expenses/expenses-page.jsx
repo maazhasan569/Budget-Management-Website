@@ -304,8 +304,8 @@ function ExpenseRow({ expense, currency, onEdit, onDelete }) {
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5">
-        <p className="whitespace-nowrap text-base font-bold tabular-nums text-destructive sm:text-lg">
-          {formatCurrency(-Math.abs(Number(expense.amount)), currency)}
+        <p className="whitespace-nowrap text-base font-semibold tabular-nums text-foreground sm:text-lg">
+          {formatCurrency(Math.abs(Number(expense.amount)), currency)}
         </p>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`Edit ${expense.name}`} title={`Edit ${expense.name}`} onClick={() => onEdit(expense)}>
@@ -558,7 +558,7 @@ export function ExpensesPage() {
                   )}
                   <div className="flex items-baseline gap-2">
                     <span className="text-xs font-medium text-muted-foreground">Current page total</span>
-                    <span className="text-xl font-bold tabular-nums text-destructive sm:text-2xl">{formatCurrency(-visibleTotal, currency)}</span>
+                    <span className="text-xl font-bold tabular-nums text-foreground sm:text-2xl">{formatCurrency(visibleTotal, currency)}</span>
                   </div>
                 </div>
                 <div className="space-y-2.5">
