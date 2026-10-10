@@ -22,13 +22,13 @@ function App() {
       <Route path="/sign-up" element={<AuthRoutePage initialMode="sign-up" />} />
       <Route path="/questions" element={<QuestionsPage />} />
       <Route element={<AppShell />}>
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="expenses" element={<ExpensesPage />} />
-        <Route path="loans" element={<LoansPage />} />
-        <Route path="goals" element={<GoalsPage />} />
-        <Route path="financial-tasks" element={<FinancialTasksPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="history" element={<HistoryPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route path="/loans" element={<LoansPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/financial-tasks" element={<FinancialTasksPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/history" element={<HistoryPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
