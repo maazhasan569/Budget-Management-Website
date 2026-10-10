@@ -44,6 +44,9 @@ export function getFriendlyExpenseError(error, action = "load") {
   if (statusCode === 401 || statusCode === 403) {
     return "Your session may have expired. Sign in and try again."
   }
+  if (normalizedMessage.includes("no user id")) {
+    return "Your session may have expired. Sign in and try again."
+  }
 
   return fallbackMessages[action] ?? fallbackMessages.load
 }
