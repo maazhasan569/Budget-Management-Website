@@ -25,7 +25,7 @@ apiClient.interceptors.response.use(
             try {
 
 
-                await axios.post("/api/refresh-token", {}, { withCredentials: true });
+                await axios.post("/api/v1/auth/refresh-token", {}, { withCredentials: true });
 
                 return apiClient(originalRequest);
             } catch (refreshError) {
