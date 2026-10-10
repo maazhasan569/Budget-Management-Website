@@ -45,7 +45,9 @@ import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
@@ -424,25 +426,31 @@ export function ExpensesPage() {
                 value={category || ALL_CATEGORIES}
                 onValueChange={(value) => changeCategory(value === ALL_CATEGORIES ? "" : value)}
               >
-                <SelectTrigger className="h-9 min-w-40" aria-label="Filter expenses by category">
+                <SelectTrigger className="h-10 w-full px-3 sm:w-[240px]" aria-label="Filter expenses by category">
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
-                  {categories.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                <SelectContent className="p-1.5">
+                  <SelectGroup>
+                    <SelectLabel>Categories</SelectLabel>
+                    <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+                    {categories.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               <Select value={`${sortBy}:${sortType}`} onValueChange={changeSort}>
-                <SelectTrigger className="h-9 min-w-44" aria-label="Sort expenses">
+                <SelectTrigger className="h-10 w-full px-3 sm:w-[220px]" aria-label="Sort expenses">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
-                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
-                  <SelectItem value="amount:desc">Amount: high to low</SelectItem>
-                  <SelectItem value="amount:asc">Amount: low to high</SelectItem>
-                  <SelectItem value="name:asc">Name: A to Z</SelectItem>
-                  <SelectItem value="name:desc">Name: Z to A</SelectItem>
+                <SelectContent className="p-1.5">
+                  <SelectGroup>
+                    <SelectLabel>Sort by</SelectLabel>
+                    <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                    <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                    <SelectItem value="amount:desc">Amount: high to low</SelectItem>
+                    <SelectItem value="amount:asc">Amount: low to high</SelectItem>
+                    <SelectItem value="name:asc">Name: A to Z</SelectItem>
+                    <SelectItem value="name:desc">Name: Z to A</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
