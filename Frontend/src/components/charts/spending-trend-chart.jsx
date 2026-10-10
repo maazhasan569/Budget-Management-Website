@@ -1,6 +1,6 @@
 // src/components/charts/spending-trend-chart.jsx
 import { TrendingUp, TrendingDown } from "lucide-react"
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis } from "recharts"
 import {
   Card,
   CardContent,
@@ -23,6 +23,7 @@ const chartConfig = {
 
 export function SpendingTrendChart({ data, trendPercent, periodLabel = "month" }) {
   const isUp = trendPercent >= 0
+  const hasSinglePoint = data.length === 1 && Number.isFinite(Number(data[0]?.spent))
 
   return (
     <Card>
@@ -40,18 +41,29 @@ export function SpendingTrendChart({ data, trendPercent, periodLabel = "month" }
               tickMargin={8}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            {hasSinglePoint && (
+              <ReferenceLine
+                y={Number(data[0].spent)}
+                stroke="var(--color-spent)"
+                strokeWidth={2}
+              />
+            )}
             <Line
               dataKey="spent"
               type="monotone"
               stroke="var(--color-spent)"
               strokeWidth={2}
-              dot={false}
+              dot={hasSinglePoint ? { r: 4, fill: "var(--color-spent)", strokeWidth: 0 } : false}
             />
           </LineChart>
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
-        {trendPercent == null ? (
+        {hasSinglePoint ? (
+          <p className="font-medium text-muted-foreground">
+            One spending day recorded — the line marks that day’s total.
+          </p>
+        ) : trendPercent == null ? (
           <p className="font-medium text-muted-foreground">Spending totals by {periodLabel}</p>
         ) : trendPercent === 0 ? (
           <p className="flex items-center gap-2 font-medium leading-none">Spending is steady vs. the previous {periodLabel}</p>
