@@ -93,12 +93,15 @@ export class dashboardService {
                 return null;
             }
 
-            const dueDate = new Date(thisYear, thisMonth, item.deductionDay);
+            const deductionDate = new Date(item.deductionDay);
+            const dayOfMonth = deductionDate.getDate();
+
+            const dueDate = new Date(thisYear, thisMonth, dayOfMonth);
             const msPerDay = 1000 * 60 * 60 * 24;
             const daysUntilDue = Math.round((dueDate - now) / msPerDay);
 
             let dueDateAlert;
-            if(daysUntilDue <= 3) dueDateAlert = "very close";
+            if (daysUntilDue <= 3) dueDateAlert = "very close";
             else if (daysUntilDue <= 7) dueDateAlert = "close";
             else return null;
 

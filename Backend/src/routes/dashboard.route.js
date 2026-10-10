@@ -13,7 +13,7 @@ import { verfiyJWTAccessToken } from "../middlewares/verifyJWT.middleware.js";
 
 const router = Router()
 
-router.route(" ").get(verfiyJWTAccessToken, financialScore)
+router.route("/financial-score").get(verfiyJWTAccessToken, financialScore)
 router.route("/goal-progress").get(verfiyJWTAccessToken, goalProgress)
 router.route("/loan-progress").get(verfiyJWTAccessToken, loanProgress)
 router.route("/goal-loan-alerts").get(verfiyJWTAccessToken, GoalAndLoanAlert)

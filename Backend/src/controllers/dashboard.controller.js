@@ -18,7 +18,7 @@ const goalProgress = asyncHandler(async (req, res) => {
     const userId = req.user._id
 
     const dashboard = new dashboardService(userId)
-    const userGoalProgress =  dashboard.goalProgress()
+    const userGoalProgress = await dashboard.goalProgress()
     console.log(`userGoalProgress = ${userGoalProgress}`)
     res.status(200)
         .json(
@@ -41,10 +41,10 @@ const loanProgress = asyncHandler(async (req, res) => {
 })
 
 const GoalAndLoanAlert = asyncHandler(async (req,res) => {
-    const userId = req.user_.id
+    const userId = req.user._id
     
     const dashboard = new dashboardService(userId)
-    const alertUser = dashboard.GoalLoanAlert()
+    const alertUser = await dashboard.GoalLoanAlert()
 
     res.status(200)
         .json(
@@ -54,10 +54,10 @@ const GoalAndLoanAlert = asyncHandler(async (req,res) => {
 })
 
 const flaggedDocuments = asyncHandler(async(req,res) => {
-     const userId = req.user_.id
+     const userId = req.user._id
     
     const dashboard = new dashboardService(userId)
-    const userFlaggedDocuments = dashboard.flaggedDocs()
+    const userFlaggedDocuments = await dashboard.flaggedDocs()
 
     res.status(200)
         .json(

@@ -1,7 +1,8 @@
+import { DashboardPage as DashboardContent } from "@/components/dashboard/dashboard-page"
 import { SectionPlaceholder } from "@/components/layout/section-placeholder"
 
 export function DashboardPage() {
-  return <SectionPlaceholder title="Dashboard" description="Your financial overview will take shape here." />
+  return <DashboardContent />
 }
 
 export function ExpensesPage() {

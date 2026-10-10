@@ -21,7 +21,7 @@ const chartConfig = {
   },
 }
 
-export function SpendingTrendChart({ data, trendPercent }) {
+export function SpendingTrendChart({ data, trendPercent, periodLabel = "month" }) {
   const isUp = trendPercent >= 0
 
   return (
@@ -51,14 +51,16 @@ export function SpendingTrendChart({ data, trendPercent }) {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
-          {isUp ? "Trending up" : "Trending down"} by {Math.abs(trendPercent)}% this month
-          {isUp ? (
-            <TrendingUp className="h-4 w-4" />
-          ) : (
-            <TrendingDown className="h-4 w-4" />
-          )}
-        </div>
+        {trendPercent == null ? (
+          <p className="font-medium text-muted-foreground">Spending totals by {periodLabel}</p>
+        ) : trendPercent === 0 ? (
+          <p className="flex items-center gap-2 font-medium leading-none">Spending is steady vs. the previous {periodLabel}</p>
+        ) : (
+          <div className="flex gap-2 font-medium leading-none">
+            {isUp ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+            Spending {isUp ? "increased" : "decreased"} by {Math.abs(trendPercent)}% vs. the previous {periodLabel}
+          </div>
+        )}
       </CardFooter>
     </Card>
   )

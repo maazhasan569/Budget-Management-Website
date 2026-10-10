@@ -16,7 +16,7 @@ const fieldCheck = (fields) => {
 }
 const getBudget = asyncHandler(async (req, res) => {
     const user = await Users.findById(req.user._id)
-    if (!user.remainingBudget) {
+    if (typeof user.remainingBudget !== "number" || Number.isNaN(user.remainingBudget)) {
         throw new ApiError(404, "No user budget found")
     }
     return res.status(200)

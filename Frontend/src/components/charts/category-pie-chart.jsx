@@ -1,5 +1,5 @@
 import { Cell, Label, Pie, PieChart } from "recharts"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartContainer,
   ChartTooltip,
@@ -10,6 +10,10 @@ export function CategoryPieChart({
   data,
   width = "100%",
   height = 250,
+  title,
+  description,
+  centerValue,
+  centerCaption,
 }) {
   const total = data.reduce((sum, item) => sum + item.amount, 0)
 
@@ -18,11 +22,10 @@ export function CategoryPieChart({
       label: "Amount",
     },
     ...Object.fromEntries(
-      data.map((item, index) => [
+      data.map((item) => [
         item.category,
         {
           label: item.category,
-          color: `var(--chart-${index + 1})`,
         },
       ])
     ),
@@ -30,6 +33,12 @@ export function CategoryPieChart({
 
   return (
     <Card style={{ width }}>
+      {title && (
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          {description && <CardDescription>{description}</CardDescription>}
+        </CardHeader>
+      )}
       <CardContent className="pt-6">
         <ChartContainer
           config={chartConfig}
@@ -49,15 +58,13 @@ export function CategoryPieChart({
               innerRadius={60}
               outerRadius={85}
               strokeWidth={5}
-              label={({ payload }) =>
-                chartConfig[payload.category]?.label
-              }
+              label={({ payload }) => chartConfig[payload.category]?.label}
               labelLine={false}
             >
-              {data.map((entry) => (
+              {data.map((entry, index) => (
                 <Cell
                   key={entry.category}
-                  fill={`var(--color-${entry.category})`}
+                  fill={entry.fill ?? `var(--chart-${(index % 5) + 1})`}
                 />
               ))}
 
@@ -80,7 +87,7 @@ export function CategoryPieChart({
                           y={viewBox.cy}
                           className="fill-foreground text-2xl font-bold"
                         >
-                          ${total.toLocaleString()}
+                          {centerValue ?? `$${total.toLocaleString()}`}
                         </tspan>
 
                         <tspan
@@ -88,7 +95,7 @@ export function CategoryPieChart({
                           y={(viewBox.cy || 0) + 22}
                           className="fill-muted-foreground text-xs"
                         >
-                          Total spent
+                          {centerCaption ?? "Total spent"}
                         </tspan>
                       </text>
                     )
