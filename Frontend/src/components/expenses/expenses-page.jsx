@@ -319,9 +319,6 @@ export function ExpensesPage() {
     const isFirstLoad = !hasLoadedRef.current
 
     if (cachedResult) {
-      setExpenses(cachedResult.expenses)
-      setTotalPages(cachedResult.totalPages)
-      setTotalExpenses(cachedResult.totalDoc)
       hasLoadedRef.current = true
     }
 
