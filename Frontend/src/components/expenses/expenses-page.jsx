@@ -141,8 +141,8 @@ function ExpenseFormDialog({ open, onOpenChange, expense, categories, currency, 
         ...(category.trim() ? { category: category.trim() } : {}),
       })
       onOpenChange(false)
-    } catch {
-      setFormError(FRIENDLY_SAVE_ERROR)
+    } catch (error) {
+      setFormError(error?.message || FRIENDLY_SAVE_ERROR)
     } finally {
       setSaving(false)
     }
@@ -225,8 +225,8 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
     try {
       await onDelete(expense._id, { ans1, ans2 })
       onOpenChange(false)
-    } catch {
-      setFormError(FRIENDLY_DELETE_ERROR)
+    } catch (error) {
+      setFormError(error?.message || FRIENDLY_DELETE_ERROR)
     } finally {
       setDeleting(false)
     }

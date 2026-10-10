@@ -1,5 +1,6 @@
 import apiClient from "@/api/axiosClient"
 import { invalidateDashboardCache } from "@/api/dashboard/dashboard"
+import { getFriendlyExpenseError } from "@/api/expenses/errors"
 
 const BASE_PATH = "/expenses"
 const expenseCache = new Map()
@@ -104,19 +105,31 @@ export async function getAllExpenseCategories() {
 }
 
 export async function createExpense(expense) {
-  const response = await apiClient.post(`${BASE_PATH}/create-expense`, expense)
-  invalidateExpenseCache()
-  return getResponseData(response)
+  try {
+    const response = await apiClient.post(`${BASE_PATH}/create-expense`, expense)
+    invalidateExpenseCache()
+    return getResponseData(response)
+  } catch (error) {
+    throw new Error(getFriendlyExpenseError(error, "save"), { cause: error })
+  }
 }
 
 export async function updateExpense(expenseId, expense) {
-  const response = await apiClient.put(`${BASE_PATH}/edit-expense/${encodeURIComponent(expenseId)}`, expense)
-  invalidateExpenseCache()
-  return getResponseData(response)
+  try {
+    const response = await apiClient.put(`${BASE_PATH}/edit-expense/${encodeURIComponent(expenseId)}`, expense)
+    invalidateExpenseCache()
+    return getResponseData(response)
+  } catch (error) {
+    throw new Error(getFriendlyExpenseError(error, "update"), { cause: error })
+  }
 }
 
 export async function deleteExpense(expenseId, answers) {
-  const response = await apiClient.delete(`${BASE_PATH}/${encodeURIComponent(expenseId)}`, { data: answers })
-  invalidateExpenseCache()
-  return getResponseData(response)
+  try {
+    const response = await apiClient.delete(`${BASE_PATH}/${encodeURIComponent(expenseId)}`, { data: answers })
+    invalidateExpenseCache()
+    return getResponseData(response)
+  } catch (error) {
+    throw new Error(getFriendlyExpenseError(error, "delete"), { cause: error })
+  }
 }
