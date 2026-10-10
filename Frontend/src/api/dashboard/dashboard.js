@@ -1,5 +1,9 @@
 import apiClient from "@/api/axiosClient"
 
+let dashboardCache = null
+let dashboardRequest = null
+let dashboardCacheVersion = 0
+
 const endpointPaths = {
   budget: "/expenses/budget",
   goals: "/dashboard/goal-progress",
@@ -24,7 +28,7 @@ function hasRequestError(result) {
   return result.status === "rejected"
 }
 
-export async function getDashboardData() {
+async function fetchDashboardData() {
   const initialResults = await Promise.allSettled([
     requestData(endpointPaths.budget),
     requestData(endpointPaths.goals),
@@ -118,4 +122,36 @@ export async function getDashboardData() {
     hasScoreInputs,
     errors,
   }
+}
+
+export function getCachedDashboardData() {
+  return dashboardCache
+}
+
+export function invalidateDashboardCache() {
+  dashboardCacheVersion += 1
+  dashboardCache = null
+  dashboardRequest = null
+}
+
+export function getDashboardData({ forceRefresh = false } = {}) {
+  if (dashboardCache && !forceRefresh) return Promise.resolve(dashboardCache)
+  if (dashboardRequest && !forceRefresh) return dashboardRequest
+
+  if (forceRefresh) {
+    dashboardCacheVersion += 1
+    dashboardRequest = null
+  }
+
+  const requestVersion = dashboardCacheVersion
+  dashboardRequest = fetchDashboardData()
+    .then((data) => {
+      if (requestVersion === dashboardCacheVersion) dashboardCache = data
+      return data
+    })
+    .finally(() => {
+      if (requestVersion === dashboardCacheVersion) dashboardRequest = null
+    })
+
+  return dashboardRequest
 }

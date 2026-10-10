@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowDownWideNarrow,
   ArrowUpDown,
@@ -17,6 +17,8 @@ import {
 import {
   createExpense,
   deleteExpense,
+  getCachedExpenseCategories,
+  getCachedExpenses,
   getAllExpenseCategories,
   getExpenses,
   updateExpense,
@@ -290,32 +292,52 @@ function ExpensesError({ onRetry }) {
 }
 
 export function ExpensesPage() {
-  const [expenses, setExpenses] = useState([])
-  const [categories, setCategories] = useState([])
+  const initialQuery = { page: 1, limit: PAGE_SIZE, sortBy: "createdAt", sortType: "desc" }
+  const initialExpenses = getCachedExpenses(initialQuery)
+  const [expenses, setExpenses] = useState(initialExpenses?.expenses ?? [])
+  const [categories, setCategories] = useState(getCachedExpenseCategories() ?? [])
   const [category, setCategory] = useState("")
   const [sortBy, setSortBy] = useState("createdAt")
   const [sortType, setSortType] = useState("desc")
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(0)
-  const [totalExpenses, setTotalExpenses] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [totalPages, setTotalPages] = useState(initialExpenses?.totalPages ?? 0)
+  const [totalExpenses, setTotalExpenses] = useState(initialExpenses?.totalDoc ?? 0)
+  const [loading, setLoading] = useState(!initialExpenses)
+  const [listRefreshing, setListRefreshing] = useState(false)
+  const [listFailed, setListFailed] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
   const [formOpen, setFormOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
   const [deletingExpense, setDeletingExpense] = useState(null)
+  const hasLoadedRef = useRef(Boolean(initialExpenses))
 
   useEffect(() => {
     let active = true
+    const query = { page, limit: PAGE_SIZE, sortBy, sortType, category: category || undefined }
+    const cachedResult = getCachedExpenses(query)
+    const isFirstLoad = !hasLoadedRef.current
+
+    if (cachedResult) {
+      setExpenses(cachedResult.expenses)
+      setTotalPages(cachedResult.totalPages)
+      setTotalExpenses(cachedResult.totalDoc)
+      hasLoadedRef.current = true
+    }
+
+    setLoading(isFirstLoad && !cachedResult)
+    setListRefreshing(!isFirstLoad && !cachedResult)
+    setListFailed(false)
+    setLoadFailed(false)
+
     async function load() {
-      setLoading(true)
-      setLoadFailed(false)
       try {
         const [result, availableCategories] = await Promise.all([
-          getExpenses({ page, limit: PAGE_SIZE, sortBy, sortType, category: category || undefined }),
+          getExpenses(query),
           getAllExpenseCategories().catch(() => []),
         ])
         if (!active) return
+        hasLoadedRef.current = true
         if (result.expenses.length === 0 && page > 1 && result.totalPages > 0 && page > result.totalPages) {
           setPage(result.totalPages)
           return
@@ -324,10 +346,18 @@ export function ExpensesPage() {
         setTotalPages(result.totalPages)
         setTotalExpenses(result.totalDoc)
         setCategories(availableCategories)
+        setLoadFailed(false)
+        setListFailed(false)
       } catch {
-        if (active) setLoadFailed(true)
+        if (active) {
+          if (hasLoadedRef.current) setListFailed(true)
+          else setLoadFailed(true)
+        }
       } finally {
-        if (active) setLoading(false)
+        if (active) {
+          setLoading(false)
+          setListRefreshing(false)
+        }
       }
     }
     load()
@@ -464,7 +494,19 @@ export function ExpensesPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 pt-5">
+          <CardContent className="space-y-4 pt-5" aria-busy={listRefreshing}>
+            {listRefreshing && (
+              <p role="status" className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                Updating expense list…
+              </p>
+            )}
+            {listFailed && (
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">Couldn’t update this expense list. Your last loaded results are still shown.</span>
+                <Button size="sm" variant="outline" onClick={() => setReloadKey((key) => key + 1)}>Try again</Button>
+              </div>
+            )}
+            <div className={listRefreshing ? "opacity-60 transition-opacity" : "transition-opacity"}>
             {expenses.length === 0 ? (
               <EmptyDataState
                 icon={Tags}
@@ -513,6 +555,7 @@ export function ExpensesPage() {
                 )}
               </>
             )}
+            </div>
           </CardContent>
         </Card>
       )}

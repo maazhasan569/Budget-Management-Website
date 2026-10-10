@@ -14,7 +14,10 @@ import {
   Wallet,
 } from "lucide-react"
 
-import { getDashboardData } from "@/api/dashboard/dashboard"
+import {
+  getCachedDashboardData,
+  getDashboardData,
+} from "@/api/dashboard/dashboard"
 import { CategoryPieChart } from "@/components/charts/category-pie-chart"
 import { SpendingTrendChart } from "@/components/charts/spending-trend-chart"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
@@ -308,22 +311,30 @@ function ChartEmptyCard({ title, description, icon: Icon, actionLabel, actionTo 
 }
 
 export function DashboardPage() {
-  const [dashboard, setDashboard] = useState(null)
+  const [dashboard, setDashboard] = useState(getCachedDashboardData)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [refreshFailed, setRefreshFailed] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
   const retry = () => {
-    setDashboard(null)
     setLoadFailed(false)
+    setRefreshFailed(false)
     setReloadKey((key) => key + 1)
   }
 
   useEffect(() => {
     let active = true
-    getDashboardData().then((data) => {
-      if (active) setDashboard(data)
+    getDashboardData({ forceRefresh: reloadKey > 0 }).then((data) => {
+      if (active) {
+        setDashboard(data)
+        setLoadFailed(false)
+        setRefreshFailed(false)
+      }
     }).catch(() => {
-      if (active) setLoadFailed(true)
+      if (active) {
+        if (getCachedDashboardData()) setRefreshFailed(true)
+        else setLoadFailed(true)
+      }
     })
     return () => {
       active = false
@@ -366,6 +377,13 @@ export function DashboardPage() {
           <RefreshCw className="mr-2 size-4" aria-hidden="true" /> Refresh
         </Button>
       </header>
+
+      {refreshFailed && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm">
+          <span className="text-muted-foreground">We couldn’t refresh your dashboard. Showing the last loaded information.</span>
+          <Button variant="outline" size="sm" onClick={retry}>Try again</Button>
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
         <HealthScoreCard

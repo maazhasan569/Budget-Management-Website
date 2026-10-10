@@ -76,7 +76,6 @@ const logInUser = asyncHandler(async (req, res) => {
     //and which is not
     try {
         const { email, password } = req.body;
-
         if (!email?.trim() || !password?.trim()) {
             throw new ApiError(400, "Please enter your email and password.")
         }
