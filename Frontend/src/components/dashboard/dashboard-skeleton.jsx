@@ -36,13 +36,15 @@ export function DashboardSkeleton() {
         <SkeletonCard rows={2} />
       </div>
 
+      <div>
+        <SkeletonCard rows={4} />
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <SkeletonCard rows={3} />
         <SkeletonCard rows={3} />
         <SkeletonCard className="xl:col-span-2" rows={4} />
         <SkeletonCard className="xl:col-span-2" rows={3} />
-        <SkeletonCard rows={2} />
-        <SkeletonCard rows={2} />
       </div>
     </div>
   )
