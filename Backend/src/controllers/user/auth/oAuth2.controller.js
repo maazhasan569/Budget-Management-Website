@@ -99,19 +99,26 @@ const loginOrRegistorGoogleUser = asyncHandler(async (req, res) => {
         user.googleRefreshToken = refresh_token
         await user.save({ validateBeforeSave: false })
         const userKeyName = state === 'action=register' ? "registoredUser" : "loggedInUser"
+        const frontendUrl = new URL(
+            state === "action=register" ? "/questions" : "/dashboard",
+            process.env.CORS_ORIGIN
+        ).toString()
         return res.status(200)
             .cookie(
                 "accessToken", accessToken, options
             )
             .cookie(
                 "refreshToken", refreshToken, options
-            ).json(
+            )
+            .redirect(frontendUrl)
+            .json(
                 new ApiResponse(200, "user logged in successfully", {
                     [userKeyName]: user,
                     accessToken,
                     googleAccessToken: access_token
                 })
             )
+
 
     } catch (error) {
         const isRegistration = req.query.state === "action=register";

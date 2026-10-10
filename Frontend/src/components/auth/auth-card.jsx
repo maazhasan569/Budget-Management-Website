@@ -90,7 +90,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const handleGoogleAuth = () => {
     setServerError("")
     oAuthGoogleRedirectionUrl(isSignIn)
-    if(!isSignIn) navigate("/questions")
+    navigate(isSignIn ? "/dashboard" : "/questions")
   }
 
   return (
@@ -246,7 +246,6 @@ export function AuthCard({ initialMode = "sign-in" }) {
             type="button"
             onClick={() => {
               setServerError("")
-              navigate(isSignIn ? "/sign-up" : "/sign-in")
             }}
             className="font-medium text-primary hover:underline cursor-pointer"
           >
