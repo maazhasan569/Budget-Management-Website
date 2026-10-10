@@ -16,6 +16,7 @@ export function EmptyDataState({
   description,
   actionLabel,
   actionTo,
+  actionOnClick,
   className = "",
 }) {
   return (
@@ -27,11 +28,15 @@ export function EmptyDataState({
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
-      {actionLabel && actionTo && (
+      {actionLabel && (actionTo || actionOnClick) && (
         <EmptyContent>
-          <Button asChild size="sm">
-            <Link to={actionTo}>{actionLabel}</Link>
-          </Button>
+          {actionTo ? (
+            <Button asChild size="sm">
+              <Link to={actionTo}>{actionLabel}</Link>
+            </Button>
+          ) : (
+            <Button size="sm" onClick={actionOnClick}>{actionLabel}</Button>
+          )}
         </EmptyContent>
       )}
     </Empty>

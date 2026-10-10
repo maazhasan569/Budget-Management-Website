@@ -47,8 +47,8 @@ export class ExpenseTracker {
             throw new ApiError(400, "Expense amount exceeds budget")
         }
         try {
-            const updateUserExpense = await Expense.findByIdAndUpdate(
-                expenseId,
+            const updateUserExpense = await Expense.findOneAndUpdate(
+                {_id : expenseId , userId : this.userId},
                 {
                     amount,
                     category,
@@ -65,14 +65,14 @@ export class ExpenseTracker {
 
     }
     
-    async getAndSaveRemainingBudget(id) {
+    async getAndSaveRemainingBudget(expenseId) {
         try {
-            const expense = await Expense.findById(id)
-            console.log('expense found' , expense)
+            const expense = await Expense.findOne({_id : expenseId , userId : this.userId})
+            
             const user = await Users.findByIdAndUpdate(
                 this.userId,
                 {
-                    budget: this.remaingingBudget - expense.amount
+                    remainingBudget: this.remaingingBudget - expense.amount
                 },
                 { new: true }
             )
@@ -94,7 +94,7 @@ export class ExpenseTracker {
             throw new ApiError(400, "Answers must be 'Yes' or 'No'");
         }
 
-        const expense = await Expense.findById(expenseId);
+        const expense = await Expense.findOne({_id : expenseId , userId : this.userId})
         if (!expense) {
             throw new ApiError(404, "Expense not found");
         }
@@ -109,20 +109,20 @@ export class ExpenseTracker {
         let newBudget = null
         if (rule.restoreBudget) {
             newBudget = await Users.findByIdAndUpdate(this.userId, {
-                $inc: { budget: expense.amount }
+                $inc: { remainingBudget: expense.amount }
             },
                 { new: true });
         }
 
 
         if (rule.action === "HARD_DELETE") {
-            await Expense.findByIdAndDelete(expenseId);
+            await Expense.findOneAndDelete({_id : expenseId , userId : this.userId});
             return { message: "Expense permanently deleted", restoredBudget: rule.restoreBudget, newBudget };
         } else {
             
             await History.create({ expenses: expenseId, userId: this.userId });
             console.log('pushed to history' , {hllk: 31})
-            await Expense.findByIdAndDelete(expenseId);
+            await Expense.findOneAndDelete({_id : expenseId , userId : this.userId});
             return { message: "Expense archived to history", restoredBudget: rule.restoreBudget, newBudget };
         }
     }catch(err){

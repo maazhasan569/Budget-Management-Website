@@ -71,19 +71,19 @@ const createExpense = asyncHandler(async (req, res) => {
 const editExpense = asyncHandler(async (req, res) => {
     const { name, amount, category } = req.body
     const { expenseId } = req.params
+    const userId = req.user._id
     const check = fieldCheck([name, amount])
     if (check) {
         throw new ApiError(400, "All fields are required")
     }
 
-    const expenseDoc = await Expense.findById(expenseId)
+    const expenseDoc = await Expense.findOne({userId , _id : expenseId })
     const userDoc = await Users.findById(req.user._id)
-    userDoc.budget += expenseDoc.amount
     userDoc.remainingBudget += expenseDoc.amount
 
     await userDoc.save({ validateBeforeSave: false })
     const updatedUser = await Users.findById(req.user._id)
-    const expense = new ExpenseTracker(updatedUser.budget, req.user._id)
+    const expense = new ExpenseTracker(updatedUser.remainingBudget, req.user._id)
     const updateExpense = await expense.editExpense(expenseId, name, category, amount)
     const { updatedBudget } = await expense.getAndSaveRemainingBudget(updateExpense._id)
     return res.status(200)
@@ -157,7 +157,7 @@ const getExpenseCategory = asyncHandler(async (req, res) => {
 const getExpenseById = asyncHandler(async (req, res) => {
     const { expenseId } = req.params
     const userId = req.user._id
-    const getExpense = await Expense.findById({ expenseId, userId })
+    const getExpense = await Expense.findOne({ _id : expenseId, userId })
     if (!getExpense) {
         return res.status(200)
             .json(

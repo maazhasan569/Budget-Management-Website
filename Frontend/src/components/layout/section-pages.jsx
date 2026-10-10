@@ -1,4 +1,5 @@
 import { DashboardPage as DashboardContent } from "@/components/dashboard/dashboard-page"
+import { ExpensesPage as ExpensesContent } from "@/components/expenses/expenses-page"
 import { SectionPlaceholder } from "@/components/layout/section-placeholder"
 
 export function DashboardPage() {
@@ -6,7 +7,7 @@ export function DashboardPage() {
 }
 
 export function ExpensesPage() {
-  return <SectionPlaceholder title="Expenses" description="Keep every purchase in view and understand where your money goes." />
+  return <ExpensesContent />
 }
 
 export function LoansPage() {
