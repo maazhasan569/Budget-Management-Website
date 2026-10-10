@@ -394,6 +394,29 @@ export function DashboardPage() {
         <BudgetCard budget={dashboard.budget} hasError={dashboard.errors.budget} onRetry={retry} />
       </div>
 
+      <div>
+        {dashboard.errors.trends ? (
+          <Card>
+            <CardHeader><CardTitle>Spending trend</CardTitle></CardHeader>
+            <CardContent><SectionError message="Couldn’t load your spending trend. Please try again." onRetry={retry} /></CardContent>
+          </Card>
+        ) : trendData.length ? (
+          <SpendingTrendChart
+            data={trendData}
+            trendPercent={change}
+            periodLabel={periodName(dashboard.spending.granularity)}
+          />
+        ) : (
+          <ChartEmptyCard
+            title="Spending trend"
+            description={{ title: "No spending to chart yet", body: "Your expense history will build a trend here." }}
+            icon={ArrowUpRight}
+            actionLabel="Add an expense"
+            actionTo="/expenses"
+          />
+        )}
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
@@ -431,29 +454,6 @@ export function DashboardPage() {
             flaggedError={dashboard.errors.flagged}
             onRetry={retry}
           />
-        </div>
-
-        <div className="xl:col-span-2">
-          {dashboard.errors.trends ? (
-            <Card>
-              <CardHeader><CardTitle>Spending trend</CardTitle></CardHeader>
-              <CardContent><SectionError message="Couldn’t load your spending trend. Please try again." onRetry={retry} /></CardContent>
-            </Card>
-          ) : trendData.length ? (
-            <SpendingTrendChart
-              data={trendData}
-              trendPercent={change}
-              periodLabel={periodName(dashboard.spending.granularity)}
-            />
-          ) : (
-            <ChartEmptyCard
-              title="Spending trend"
-              description={{ title: "No spending to chart yet", body: "Your expense history will build a trend here." }}
-              icon={ArrowUpRight}
-              actionLabel="Add an expense"
-              actionTo="/expenses"
-            />
-          )}
         </div>
 
         <div className="xl:col-span-2">
