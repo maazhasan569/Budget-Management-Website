@@ -3,6 +3,7 @@ import { invalidateDashboardCache } from "@/api/dashboard/dashboard"
 
 const BASE_PATH = "/expenses"
 const expenseCache = new Map()
+const expenseRequests = new Map()
 let expenseCategoriesCache = null
 let expenseCacheVersion = 0
 let categoriesRequest = null
@@ -33,6 +34,7 @@ export function getCachedExpenseCategories() {
 function invalidateExpenseCache() {
   expenseCacheVersion += 1
   expenseCache.clear()
+  expenseRequests.clear()
   expenseCategoriesCache = null
   categoriesRequest = null
   invalidateDashboardCache()
@@ -47,29 +49,37 @@ export async function getExpenses({ page = 1, limit = 8, sortBy = "createdAt", s
   const cacheKey = getCacheKey(options)
   const cachedResult = getCachedExpenses(options)
   if (cachedResult) return cachedResult
+  const pendingRequest = expenseRequests.get(cacheKey)
+  if (pendingRequest) return pendingRequest
 
   const requestVersion = expenseCacheVersion
   const path = category ? `${BASE_PATH}/category` : BASE_PATH
-  const response = await apiClient.get(path, {
+  const request = apiClient.get(path, {
     params: { ...options, ...(category ? { category } : {}) },
-  })
-  const data = getResponseData(response)
+  }).then((response) => {
+    const data = getResponseData(response)
 
-  if (Array.isArray(data)) {
-    const result = { expenses: data, totalDoc: data.length, totalPages: 1, page, limit }
+    if (Array.isArray(data)) {
+      const result = { expenses: data, totalDoc: data.length, totalPages: 1, page, limit }
+      if (requestVersion === expenseCacheVersion) expenseCache.set(cacheKey, result)
+      return result
+    }
+
+    const result = {
+      expenses: Array.isArray(data?.fetchedDoc) ? data.fetchedDoc : [],
+      totalDoc: Number(data?.totalDoc) || 0,
+      totalPages: Number(data?.totalPages) || 0,
+      page: Number(data?.page) || page,
+      limit: Number(data?.limit) || limit,
+    }
     if (requestVersion === expenseCacheVersion) expenseCache.set(cacheKey, result)
     return result
-  }
+  }).finally(() => {
+    if (expenseRequests.get(cacheKey) === request) expenseRequests.delete(cacheKey)
+  })
 
-  const result = {
-    expenses: Array.isArray(data?.fetchedDoc) ? data.fetchedDoc : [],
-    totalDoc: Number(data?.totalDoc) || 0,
-    totalPages: Number(data?.totalPages) || 0,
-    page: Number(data?.page) || page,
-    limit: Number(data?.limit) || limit,
-  }
-  if (requestVersion === expenseCacheVersion) expenseCache.set(cacheKey, result)
-  return result
+  expenseRequests.set(cacheKey, request)
+  return request
 }
 
 export async function getAllExpenseCategories() {
