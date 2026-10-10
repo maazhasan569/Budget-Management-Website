@@ -43,6 +43,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -55,6 +62,7 @@ const PAGE_SIZE = 8
 const FRIENDLY_LOAD_ERROR = "We couldn’t load your expenses. Please try again."
 const FRIENDLY_SAVE_ERROR = "Could not save your expense. Please check the name and amount, then try again."
 const FRIENDLY_DELETE_ERROR = "Could not remove this expense. Please check your answers and try again."
+const ALL_CATEGORIES = "__all_categories__"
 
 function formatAmount(value) {
   const amount = Number(value)
@@ -412,30 +420,31 @@ export function ExpensesPage() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="sr-only" htmlFor="expense-category-filter">Filter by category</label>
-              <select
-                id="expense-category-filter"
-                className="h-9 min-w-40 rounded-lg border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-                value={category}
-                onChange={(event) => changeCategory(event.target.value)}
+              <Select
+                value={category || ALL_CATEGORIES}
+                onValueChange={(value) => changeCategory(value === ALL_CATEGORIES ? "" : value)}
               >
-                <option value="">All categories</option>
-                {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-              <label className="sr-only" htmlFor="expense-sort">Sort expenses</label>
-              <select
-                id="expense-sort"
-                className="h-9 min-w-44 rounded-lg border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-                value={`${sortBy}:${sortType}`}
-                onChange={(event) => changeSort(event.target.value)}
-              >
-                <option value="createdAt:desc">Newest first</option>
-                <option value="createdAt:asc">Oldest first</option>
-                <option value="amount:desc">Amount: high to low</option>
-                <option value="amount:asc">Amount: low to high</option>
-                <option value="name:asc">Name: A to Z</option>
-                <option value="name:desc">Name: Z to A</option>
-              </select>
+                <SelectTrigger className="h-9 min-w-40" aria-label="Filter expenses by category">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+                  {categories.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={`${sortBy}:${sortType}`} onValueChange={changeSort}>
+                <SelectTrigger className="h-9 min-w-44" aria-label="Sort expenses">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                  <SelectItem value="amount:desc">Amount: high to low</SelectItem>
+                  <SelectItem value="amount:asc">Amount: low to high</SelectItem>
+                  <SelectItem value="name:asc">Name: A to Z</SelectItem>
+                  <SelectItem value="name:desc">Name: Z to A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-5">
