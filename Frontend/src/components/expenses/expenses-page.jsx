@@ -427,7 +427,7 @@ export function ExpensesPage() {
                 onValueChange={(value) => changeCategory(value === ALL_CATEGORIES ? "" : value)}
               >
                 <SelectTrigger className="h-10 w-full px-3 sm:w-[240px]" aria-label="Filter expenses by category">
-                  <SelectValue placeholder="All categories" />
+                  <SelectValue>{category || "All categories"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="p-1.5">
                   <SelectGroup>
@@ -439,7 +439,16 @@ export function ExpensesPage() {
               </Select>
               <Select value={`${sortBy}:${sortType}`} onValueChange={changeSort}>
                 <SelectTrigger className="h-10 w-full px-3 sm:w-[220px]" aria-label="Sort expenses">
-                  <SelectValue />
+                  <SelectValue>
+                    {{
+                      "createdAt:desc": "Newest first",
+                      "createdAt:asc": "Oldest first",
+                      "amount:desc": "Amount: high to low",
+                      "amount:asc": "Amount: low to high",
+                      "name:asc": "Name: A to Z",
+                      "name:desc": "Name: Z to A",
+                    }[`${sortBy}:${sortType}`]}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="p-1.5">
                   <SelectGroup>
