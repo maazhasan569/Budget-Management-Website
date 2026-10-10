@@ -1,17 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
-  ArrowDownWideNarrow,
-  ArrowUpDown,
+  BookOpen,
+  Car,
   CalendarDays,
   CircleAlert,
   CircleDollarSign,
+  Fuel,
+  HeartPulse,
   Pencil,
+  Plane,
   Plus,
   ReceiptText,
   RotateCw,
+  Shirt,
+  ShoppingCart,
   Tags,
   Trash2,
+  Utensils,
   Wallet,
+  WalletCards,
+  Zap,
 } from "lucide-react"
 
 import {
@@ -25,7 +33,6 @@ import {
 } from "@/api/expenses/expenses"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
 import { ExpensesSkeleton } from "@/components/expenses/expenses-skeleton"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -61,6 +68,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { formatCurrency, getSelectedCurrency } from "@/lib/currency"
 
 const PAGE_SIZE = 8
 const FRIENDLY_LOAD_ERROR = "We couldn’t load your expenses. Please try again."
@@ -68,11 +76,31 @@ const FRIENDLY_SAVE_ERROR = "Could not save your expense. Please check the name 
 const FRIENDLY_DELETE_ERROR = "Could not remove this expense. Please check your answers and try again."
 const ALL_CATEGORIES = "__all_categories__"
 
-function formatAmount(value) {
-  const amount = Number(value)
-  return Number.isFinite(amount)
-    ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(amount)
-    : "—"
+const CATEGORY_ICON_RULES = [
+  { terms: ["car", "auto", "vehicle", "transport"], icon: Car },
+  { terms: ["fuel", "gas", "petrol"], icon: Fuel },
+  { terms: ["grocer", "grocery", "shopping", "market", "store"], icon: ShoppingCart },
+  { terms: ["food", "dining", "restaurant", "cafe"], icon: Utensils },
+  { terms: ["utility", "electric", "power", "water", "bill"], icon: Zap },
+  { terms: ["health", "medical", "pharmacy"], icon: HeartPulse },
+  { terms: ["travel", "flight", "air"], icon: Plane },
+  { terms: ["education", "school", "book"], icon: BookOpen },
+  { terms: ["clothing", "clothes", "apparel", "fashion"], icon: Shirt },
+]
+
+const SORT_LABELS = {
+  "createdAt:desc": "Newest",
+  "createdAt:asc": "Oldest",
+  "amount:desc": "High to low",
+  "amount:asc": "Low to high",
+  "name:asc": "Name A–Z",
+  "name:desc": "Name Z–A",
+}
+
+function categoryColor(category) {
+  const hash = [...String(category || "General").toLowerCase()]
+    .reduce((value, character) => value + character.charCodeAt(0), 0)
+  return `var(--chart-${(hash % 5) + 1})`
 }
 
 function formatDate(value) {
@@ -83,7 +111,7 @@ function formatDate(value) {
     : new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date)
 }
 
-function ExpenseFormDialog({ open, onOpenChange, expense, categories, onSave }) {
+function ExpenseFormDialog({ open, onOpenChange, expense, categories, currency, onSave }) {
   const editing = Boolean(expense)
   const [name, setName] = useState(expense?.name ?? "")
   const [amount, setAmount] = useState(expense?.amount == null ? "" : String(expense.amount))
@@ -143,7 +171,7 @@ function ExpenseFormDialog({ open, onOpenChange, expense, categories, onSave }) 
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="expense-amount">Amount</Label>
+              <Label htmlFor="expense-amount">Amount{currency ? ` · ${currency}` : ""}</Label>
               <Input
                 id="expense-amount"
                 type="number"
@@ -244,31 +272,50 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
   )
 }
 
-function ExpenseRow({ expense, onEdit, onDelete }) {
+function ExpenseRow({ expense, currency, onEdit, onDelete }) {
+  const category = expense.category || "General"
+  const normalizedCategory = category.toLowerCase()
+  const Icon = CATEGORY_ICON_RULES.find(({ terms }) =>
+    terms.some((term) => normalizedCategory.includes(term))
+  )?.icon ?? (normalizedCategory === "general" ? Tags : WalletCards)
+  const color = categoryColor(category)
+  const categoryStyle = {
+    color,
+    backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+    borderColor: `color-mix(in srgb, ${color} 32%, transparent)`,
+  }
+
   return (
-    <article className="group grid gap-3 rounded-xl border border-border/80 p-4 transition-colors hover:bg-muted/30 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-5">
+    <article className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1.5 rounded-xl border border-border/80 bg-card p-3 transition-colors hover:bg-muted/30 sm:p-4">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <ReceiptText className="size-[18px]" aria-hidden="true" />
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl" style={{ ...categoryStyle, backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)` }}>
+          <Icon className="size-[18px]" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="truncate font-medium">{expense.name || "Untitled expense"}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CalendarDays className="size-3.5" aria-hidden="true" />{formatDate(expense.createdAt)}
-          </p>
+          <p className="break-words text-base font-semibold leading-tight sm:text-[17px]">{expense.name || "Untitled expense"}</p>
+          <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-xs font-medium" style={categoryStyle}>
+              {category}
+            </span>
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <CalendarDays className="size-3.5" aria-hidden="true" />{formatDate(expense.createdAt)}
+            </span>
+          </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-4 sm:justify-end">
-        <Badge variant="secondary" className="max-w-40 truncate font-normal"><Tags className="mr-1" aria-hidden="true" />{expense.category || "General"}</Badge>
-        <p className="whitespace-nowrap font-semibold tabular-nums">{formatAmount(expense.amount)}</p>
-      </div>
-      <div className="flex justify-end gap-1">
-        <Button variant="ghost" size="icon" aria-label={`Edit ${expense.name}`} onClick={() => onEdit(expense)}>
+      <div className="flex flex-col items-end gap-1.5">
+        <p className="whitespace-nowrap text-base font-bold tabular-nums text-destructive sm:text-lg">
+          {formatCurrency(-Math.abs(Number(expense.amount)), currency)}
+        </p>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`Edit ${expense.name}`} title={`Edit ${expense.name}`} onClick={() => onEdit(expense)}>
           <Pencil className="size-4" aria-hidden="true" />
-        </Button>
-        <Button variant="ghost" size="icon" aria-label={`Remove ${expense.name}`} className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive" onClick={() => onDelete(expense)}>
-          <Trash2 className="size-4" aria-hidden="true" />
-        </Button>
+          </Button>
+          <span aria-hidden="true" className="h-6 border-l border-border" />
+          <Button variant="ghost" size="icon" className="size-10 text-destructive/80 hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${expense.name}`} title={`Delete ${expense.name}`} onClick={() => onDelete(expense)}>
+            <Trash2 className="size-4" aria-hidden="true" />
+          </Button>
+        </div>
       </div>
     </article>
   )
@@ -296,6 +343,7 @@ export function ExpensesPage() {
   const initialExpenses = getCachedExpenses(initialQuery)
   const [expenses, setExpenses] = useState(initialExpenses?.expenses ?? [])
   const [categories, setCategories] = useState(getCachedExpenseCategories() ?? [])
+  const [currency] = useState(getSelectedCurrency)
   const [category, setCategory] = useState("")
   const [sortBy, setSortBy] = useState("createdAt")
   const [sortType, setSortType] = useState("desc")
@@ -441,19 +489,19 @@ export function ExpensesPage() {
         </Card>
       ) : (
         <Card>
-          <CardHeader className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <CardHeader className="flex flex-col gap-3 border-b border-border/70 pb-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2"><ReceiptText className="size-4 text-primary" aria-hidden="true" />Expense log</CardTitle>
               <CardDescription className="mt-1">
                 {totalExpenses} {totalExpenses === 1 ? "expense" : "expenses"}{category ? ` in ${category}` : " recorded"}
               </CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center">
               <Select
                 value={category || ALL_CATEGORIES}
                 onValueChange={(value) => changeCategory(value === ALL_CATEGORIES ? "" : value)}
               >
-                <SelectTrigger className="h-10 w-full px-3 sm:w-[240px]" aria-label="Filter expenses by category">
+                <SelectTrigger className="h-9 min-w-0 w-full px-2.5 text-xs sm:w-[220px] sm:px-3 sm:text-sm" aria-label="Filter expenses by category">
                   <SelectValue>{category || "All categories"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="p-1.5">
@@ -465,17 +513,8 @@ export function ExpensesPage() {
                 </SelectContent>
               </Select>
               <Select value={`${sortBy}:${sortType}`} onValueChange={changeSort}>
-                <SelectTrigger className="h-10 w-full px-3 sm:w-[220px]" aria-label="Sort expenses">
-                  <SelectValue>
-                    {{
-                      "createdAt:desc": "Newest first",
-                      "createdAt:asc": "Oldest first",
-                      "amount:desc": "Amount: high to low",
-                      "amount:asc": "Amount: low to high",
-                      "name:asc": "Name: A to Z",
-                      "name:desc": "Name: Z to A",
-                    }[`${sortBy}:${sortType}`]}
-                  </SelectValue>
+                <SelectTrigger className="h-9 min-w-0 w-full px-2.5 text-xs sm:w-[160px] sm:px-3 sm:text-sm" aria-label="Sort expenses">
+                  <SelectValue>{SORT_LABELS[`${sortBy}:${sortType}`]}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="p-1.5">
                   <SelectGroup>
@@ -491,7 +530,7 @@ export function ExpensesPage() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 pt-5" aria-busy={listRefreshing}>
+          <CardContent className="space-y-3 pt-3" aria-busy={listRefreshing}>
             {listRefreshing && (
               <p role="status" className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
                 Updating expense list…
@@ -513,18 +552,21 @@ export function ExpensesPage() {
               />
             ) : (
               <>
-                <div className="mb-2 flex items-center justify-between gap-3 rounded-xl bg-muted/45 px-4 py-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    {sortBy === "amount" ? <ArrowDownWideNarrow className="size-4" aria-hidden="true" /> : <ArrowUpDown className="size-4" aria-hidden="true" />}
-                    <span>Showing {expenses.length} of {totalExpenses}</span>
+                <div className="mb-1 flex items-center justify-end gap-3 rounded-xl bg-muted/45 px-3 py-2.5 sm:px-4">
+                  {totalPages > 1 && (
+                    <p className="mr-auto text-xs text-muted-foreground">Page {page} of {totalPages}</p>
+                  )}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Current page total</span>
+                    <span className="text-xl font-bold tabular-nums text-destructive sm:text-2xl">{formatCurrency(-visibleTotal, currency)}</span>
                   </div>
-                  <p className="text-sm font-semibold tabular-nums">Page total <span className="ml-1">{formatAmount(visibleTotal)}</span></p>
                 </div>
                 <div className="space-y-2.5">
                   {expenses.map((expense) => (
                     <ExpenseRow
                       key={expense._id}
                       expense={expense}
+                      currency={currency}
                       onEdit={(selected) => { setEditingExpense(selected); setFormOpen(true) }}
                       onDelete={setDeletingExpense}
                     />
@@ -564,6 +606,7 @@ export function ExpensesPage() {
           onOpenChange={setFormOpen}
           expense={editingExpense}
           categories={categories}
+          currency={currency}
           onSave={saveExpense}
         />
       )}
