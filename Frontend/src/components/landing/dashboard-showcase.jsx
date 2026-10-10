@@ -21,10 +21,10 @@ export function DashboardShowcase() {
                     { date: "Oct 25", spent: 780 },
                 ]} trendPercent={50} /></div>
                 <CategoryPieChart data={[
-                    { category: "food", amount: 340, fill: "var(--color-food)" },
-                    { category: "bills", amount: 260, fill: "var(--color-bills)" },
-                    { category: "transport", amount: 220, fill: "var(--color-transport)" },
-                    { category: "other", amount: 180, fill: "var(--color-other)" },
+                    { category: "food", amount: 340, fill: "var(--chart-1)" },
+                    { category: "bills", amount: 260, fill: "var(--chart-2)" },
+                    { category: "transport", amount: 220, fill: "var(--chart-3)" },
+                    { category: "other", amount: 180, fill: "var(--chart-4)" },
                 ]} />
                 <div className="md:col-span-3"><GoalLoanAlerts /></div>
             </div>
