@@ -21,7 +21,7 @@ const getBudget = asyncHandler(async (req, res) => {
     }
     return res.status(200)
         .json(
-            new ApiResponse(200, "fetched user budget", user.budget)
+            new ApiResponse(200, "fetched user budget", user.remainingBudget)
         )
 })
 const updatedBudget = asyncHandler(async (req, res) => {
