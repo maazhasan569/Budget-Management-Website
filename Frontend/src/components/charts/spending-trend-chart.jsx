@@ -13,6 +13,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { formatCurrency, getSelectedCurrency } from "@/lib/currency"
 
 const chartConfig = {
   spent: {
@@ -21,7 +22,7 @@ const chartConfig = {
   },
 }
 
-export function SpendingTrendChart({ data, trendPercent, periodLabel = "month" }) {
+export function SpendingTrendChart({ data, trendPercent, periodLabel = "month", currency = getSelectedCurrency() }) {
   const isUp = trendPercent >= 0
   const hasSinglePoint = data.length === 1 && Number.isFinite(Number(data[0]?.spent))
 
@@ -40,7 +41,10 @@ export function SpendingTrendChart({ data, trendPercent, periodLabel = "month" }
               axisLine={false}
               tickMargin={8}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent formatter={(value) => formatCurrency(value, currency)} />}
+            />
             {hasSinglePoint && (
               <ReferenceLine
                 y={Number(data[0].spent)}
