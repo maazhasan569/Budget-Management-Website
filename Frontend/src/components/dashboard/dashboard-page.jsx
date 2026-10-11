@@ -32,6 +32,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { formatCurrency, getSelectedCurrency } from "@/lib/currency"
 
 function formatNumber(value) {
   return Number(value ?? 0).toLocaleString(undefined, {
@@ -120,17 +121,17 @@ function HealthScoreCard({ score, hasInputs, hasError }) {
   )
 }
 
-function BudgetCard({ budget, hasError, onRetry }) {
+function BudgetCard({ budget, currency, hasError, onRetry }) {
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
-            <Wallet className="size-4 text-primary" aria-hidden="true" /> Monthly budget
+            <Wallet className="size-4 text-primary" aria-hidden="true" /> Budget left
           </CardTitle>
-          <CardDescription className="mt-1">Your planned spending for the month</CardDescription>
+          <CardDescription className="mt-1">Available from your monthly budget</CardDescription>
         </div>
-        <Badge variant="secondary">Budget</Badge>
+        <Badge variant="secondary">Remaining</Badge>
       </CardHeader>
       <CardContent>
         {hasError ? (
@@ -139,12 +140,12 @@ function BudgetCard({ budget, hasError, onRetry }) {
           <EmptyDataState
             icon={CircleDollarSign}
             title="No budget details yet"
-            description="Your monthly budget will appear here once it’s set up."
+            description="Your remaining budget will appear here once it’s set up."
           />
         ) : (
           <div className="rounded-xl bg-muted/50 p-5">
-            <p className="font-display text-3xl font-semibold tabular-nums">{formatNumber(budget)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">allocated for this month</p>
+            <p className="font-display text-3xl font-semibold tabular-nums">{formatCurrency(budget, currency)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">remaining this month</p>
           </div>
         )}
       </CardContent>
@@ -311,6 +312,7 @@ function ChartEmptyCard({ title, description, icon: Icon, actionLabel, actionTo 
 }
 
 export function DashboardPage() {
+  const currency = getSelectedCurrency()
   const [dashboard, setDashboard] = useState(getCachedDashboardData)
   const [loadFailed, setLoadFailed] = useState(false)
   const [refreshFailed, setRefreshFailed] = useState(false)
@@ -391,7 +393,7 @@ export function DashboardPage() {
           hasInputs={dashboard.hasScoreInputs}
           hasError={dashboard.errors.score}
         />
-        <BudgetCard budget={dashboard.budget} hasError={dashboard.errors.budget} onRetry={retry} />
+        <BudgetCard budget={dashboard.budget} currency={currency} hasError={dashboard.errors.budget} onRetry={retry} />
       </div>
 
       <div>
@@ -405,12 +407,38 @@ export function DashboardPage() {
             data={trendData}
             trendPercent={change}
             periodLabel={periodName(dashboard.spending.granularity)}
+            currency={currency}
           />
         ) : (
           <ChartEmptyCard
             title="Spending trend"
             description={{ title: "No spending to chart yet", body: "Your expense history will build a trend here." }}
             icon={ArrowUpRight}
+            actionLabel="Add an expense"
+            actionTo="/expenses"
+          />
+        )}
+      </div>
+
+      <div>
+        {dashboard.errors.categories ? (
+          <Card>
+            <CardHeader><CardTitle>Spending by category</CardTitle></CardHeader>
+            <CardContent><SectionError message="Couldn’t load spending categories. Please try again." onRetry={retry} /></CardContent>
+          </Card>
+        ) : categoryData.length ? (
+          <CategoryPieChart
+            data={categoryData}
+            title="Spending by category"
+            description="Share of your recorded expenses"
+            centerValue={`${categoryShare.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`}
+            centerCaption="of expenses"
+          />
+        ) : (
+          <ChartEmptyCard
+            title="Spending by category"
+            description={{ title: "No categories to show", body: "Add expenses to see how they’re split by category." }}
+            icon={ArrowDownRight}
             actionLabel="Add an expense"
             actionTo="/expenses"
           />
@@ -456,30 +484,6 @@ export function DashboardPage() {
           />
         </div>
 
-        <div className="xl:col-span-2">
-          {dashboard.errors.categories ? (
-            <Card>
-              <CardHeader><CardTitle>Spending by category</CardTitle></CardHeader>
-              <CardContent><SectionError message="Couldn’t load spending categories. Please try again." onRetry={retry} /></CardContent>
-            </Card>
-          ) : categoryData.length ? (
-            <CategoryPieChart
-              data={categoryData}
-              title="Spending by category"
-              description="Share of your recorded expenses"
-              centerValue={`${categoryShare.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`}
-              centerCaption="of expenses"
-            />
-          ) : (
-            <ChartEmptyCard
-              title="Spending by category"
-              description={{ title: "No categories to show", body: "Add expenses to see how they’re split by category." }}
-              icon={ArrowDownRight}
-              actionLabel="Add an expense"
-              actionTo="/expenses"
-            />
-          )}
-        </div>
       </div>
     </div>
   )
