@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { redirect, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 
 import { GoogleIcon } from "./google-icon"
@@ -241,15 +241,15 @@ export function AuthCard({ initialMode = "sign-in" }) {
         <p className="text-sm text-muted-foreground">
           {isSignIn ? "Don't have an account? " : "Already have an account? "}
 
-          <button
-            type="button"
+          <Link
+            to={isSignIn ? "/sign-up" : "/sign-in"}
             onClick={() => {
               setServerError("")
             }}
             className="font-medium text-primary hover:underline cursor-pointer"
           >
             {isSignIn ? "Create an account" : "Sign in"}
-          </button>
+          </Link>
         </p>
       </CardFooter>
     </Card>
