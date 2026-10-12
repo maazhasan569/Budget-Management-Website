@@ -192,7 +192,7 @@ export class LoanService {
                                 loan.status = "Completed"
                                 const loan = await loan.save()
                                 const deleteLoan = await Loan.findById(loan._id)
-                                await pushToHistory(this.userId, deleteLoan._id, "loans")
+                                await pushToHistory(Loan , this.userId, deleteLoan._id, "loans")
                             }
                             continue;
                         }
@@ -275,7 +275,7 @@ export class LoanService {
                 if (this.loanTargetAmt !== this.totalPaid) throw new ApiError(400, "Loan is overDued")
                 loan.status = "Completed"
                 const updatedLoan = await loan.save()
-                await pushToHistory(this.user, updatedLoan._id, "loans")
+                await pushToHistory(Loan , this.user, updatedLoan._id, "loans")
                 return { updatedLoan, pushToHistory: true }
             }
             if (!amount || amount < 0) {
