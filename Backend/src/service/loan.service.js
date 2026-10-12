@@ -31,8 +31,12 @@ export class LoanService {
             throw new ApiError(400, "Enter All fields")
         }
 
-        if (this.loanTargetAmt < 0) {
+        if (this.loanTargetAmt <= 0) {
             throw new ApiError(400, "Enter a Valid amt")
+        }
+
+        if (this.duration <= 0) {
+            throw new ApiError(400, "Enter a Valid duration")
         }
     }
 
@@ -112,7 +116,7 @@ export class LoanService {
                     autoDeduction: this.autoDeduction,
                     category: this.category
                 },
-                { returnDocument: after }
+                { returnDocument: "after" }
             );
 
             if (!updateLoan) {
@@ -128,13 +132,17 @@ export class LoanService {
             const userLoans = await Loan.find({ userId: this.userId })
             const userHistoryData = await History.findOne({ userId: this.userId })
 
-            for (let i = 0; i < userHistoryData.loans.length; i++) {
+            let histroyLoanAmt = 0
 
+            if (userHistoryData.loan.length > 0) {
+                for (let i = 0; i < userHistoryData.loans.length; i++) {
+                    const loandoc = userHistoryData.loan[i]
+                    histroyLoanAmt += loandoc.currentAmt || 0
+                }
             }
-
             if (!userLoans) return 0
             const totalPaid = userLoans.reduce((sum, loan) => sum + loan.currentAmt, 0)
-            return totalPaid
+            return totalPaid + histroyLoanAmt
         } catch (err) {
             throw new ApiError(500, err.message)
         }
@@ -143,7 +151,10 @@ export class LoanService {
         try {
             const userLoans = await Loan.find({ userId: this.userId })
             if (!userLoans) return 0
-            const loansAmtRemaining = userLoans.reduce((sum, loan) => sum + loan.loanTargetAmt, 0)
+            const totalAmt = userLoans.reduce((sum, loan) => sum + loan.loanTargetAmt, 0)
+
+            const loansAmtRemaining = totalAmt - this.totalPaid
+
             return loansAmtRemaining
         } catch (err) {
             throw new ApiError(500, err.msg)
@@ -247,7 +258,7 @@ export class LoanService {
             this.totalPaid = loan.currentAmt
             this.duration = loan.duration
             this.autoDeduction = loan.autoDeduction
-            this.frequency = loan.type
+            this.frequency = loan.loanType
             this.category = loan.category
             this.name = loan.name
 
@@ -262,10 +273,10 @@ export class LoanService {
             }
             if (loan.totalDeductions + 1 > deadlineInMonths || loan.totalDeductions + 1 === this.duration) {
                 if (this.loanTargetAmt !== this.totalPaid) throw new ApiError(400, "Loan is overDued")
-                    loan.status = "Completed"
-                    const updatedLoan = await loan.save()
-                    await pushToHistory(this.user, updatedLoan._id, "loans")
-                    return {updatedLoan , pushToHistory : true}
+                loan.status = "Completed"
+                const updatedLoan = await loan.save()
+                await pushToHistory(this.user, updatedLoan._id, "loans")
+                return { updatedLoan, pushToHistory: true }
             }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter not given or Invalid amount")
@@ -297,7 +308,7 @@ export class LoanService {
 
             const updatedLoan = await loan.save()
             const updatedUser = await user.save()
-            return { updatedLoan, updatedUser , pushedToHistory : false }
+            return { updatedLoan, updatedUser, pushedToHistory: false }
         } catch (err) {
             throw new ApiError(500, err.message)
         }
