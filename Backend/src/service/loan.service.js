@@ -5,6 +5,7 @@ import cron from "node-cron"
 import { isValidObjectId } from "mongoose"
 import pushToHistory from "../utils/pushToHistory.js"
 import { convertToSnakeCase } from "../utils/convertToSnakeCase.js"
+import { History } from "../models/history.models.js"
 export class LoanService {
     constructor(userId, config = {}) {
         this.userId = userId,
@@ -45,6 +46,13 @@ export class LoanService {
         this.setTargetDate(this.duration, this.frequency)
         this.validateLoan()
         try {
+            const currentDay = new Date()
+            let targetMonth = currentDay.getMonth() + 1
+            let targetYear = currentDay.getFullYear()
+            const daysInNextMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            const deductionDay = new Date(targetYear, targetMonth, daysInNextMonth)
+
+            
             console.log(this.userId)
             const newLoan = await Loan.create({
                 userId: this.userId,
@@ -56,7 +64,8 @@ export class LoanService {
                 loanType: this.frequency,
                 autoDeduction: this.autoDeduction,
                 category: this.category,
-                status: "in_progress"
+                status: "in_progress",
+                deductionDay,
             })
             const updateUserBankbalance = await Users.findByIdAndUpdate(
                 this.userId,
@@ -133,13 +142,14 @@ export class LoanService {
             const userHistoryData = await History.findOne({ userId: this.userId })
 
             let histroyLoanAmt = 0
-
-            if (userHistoryData.loan.length > 0) {
+            if(userHistoryData?.loans){
+            if (userHistoryData.loans.length > 0) {
                 for (let i = 0; i < userHistoryData.loans.length; i++) {
-                    const loandoc = userHistoryData.loan[i]
+                    const loandoc = userHistoryData.loans[i]
                     histroyLoanAmt += loandoc.currentAmt || 0
                 }
             }
+        }
             if (!userLoans) return 0
             const totalPaid = userLoans.reduce((sum, loan) => sum + loan.currentAmt, 0)
             return totalPaid + histroyLoanAmt
@@ -151,10 +161,15 @@ export class LoanService {
         try {
             const userLoans = await Loan.find({ userId: this.userId })
             if (!userLoans) return 0
-            const totalAmt = userLoans.reduce((sum, loan) => sum + loan.loanTargetAmt, 0)
+            // const totalAmt = userLoans.reduce((sum, loan) => sum + loan.loanTargetAmt, 0)
+            // const totalPaid = await this.totalPaid()
+            // const loansAmtRemaining = totalAmt - this.totalPaid
 
-            const loansAmtRemaining = totalAmt - this.totalPaid
-
+            const loansAmtRemaining = userLoans.reduce(
+                (sum, loan) =>
+                    sum + Math.max(0, Number(loan.loanTargetAmt) - Number(loan.currentAmt)),
+                0
+            );
             return loansAmtRemaining
         } catch (err) {
             throw new ApiError(500, err.msg)
@@ -176,7 +191,7 @@ export class LoanService {
                     this.totalPaid = loan.currentAmt
                     this.duration = loan.duration
                     this.autoDeductAmt = loan.autoDeduction
-                    this.frequency = loan.type
+                    this.frequency = loan.loanType
                     this.category = loan.category
                     this.name = loan.name
 
@@ -192,7 +207,7 @@ export class LoanService {
                                 loan.status = "Completed"
                                 const loan = await loan.save()
                                 const deleteLoan = await Loan.findById(loan._id)
-                                await pushToHistory(Loan , this.userId, deleteLoan._id, "loans")
+                                await pushToHistory(Loan, this.userId, deleteLoan._id, "loans")
                             }
                             continue;
                         }
@@ -275,14 +290,14 @@ export class LoanService {
                 if (this.loanTargetAmt !== this.totalPaid) throw new ApiError(400, "Loan is overDued")
                 loan.status = "Completed"
                 const updatedLoan = await loan.save()
-                await pushToHistory(Loan , this.user, updatedLoan._id, "loans")
+                await pushToHistory(Loan, this.userId, updatedLoan._id, "loans")
                 return { updatedLoan, pushToHistory: true }
             }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter not given or Invalid amount")
             }
 
-            if (amount > this.loanTargetAmt) {
+            if (amount > this.loanTargetAmt - loan.currentAmt) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
 
@@ -395,9 +410,8 @@ export class LoanService {
                     $inc: { bankBalance: loan.currentAmt }
                 }
             )
-            const deletedLoan = await Loan.findByIdAndDelete(loanId)
-            const history = await pushToHistory(this.userId, deletedLoan._id, "loans")
-            return { history, deletedLoan, updatedUserBankBalance }
+            const history = await pushToHistory(Loan , this.userId, loanId, "loans")
+            return { history, updatedUserBankBalance }
         } catch (err) {
             throw new ApiError(400, err.message)
         }
@@ -406,10 +420,10 @@ export class LoanService {
     async setOverdueStatus() {
         try {
 
-            const loans = await Loan.find(this.userId)
+            const loans = await Loan.find({ userId: this.userId })
             for (const loan of loans) {
-                if (loan.totalDeductions === this.duration) {
-                    if (this.loanTargetAmt !== 0) {
+                if (loan.totalDeductions === loan.duration) {
+                    if (loan.currentAmt < loan.loanTargetAmt) {
                         loan.status = "Overdue"
                         const updatedLoan = await loan.save()
                         return updatedLoan
