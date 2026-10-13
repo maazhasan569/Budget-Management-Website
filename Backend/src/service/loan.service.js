@@ -87,17 +87,17 @@ export class LoanService {
         date.setHours(0, 0, 0, 0)
         this.targetDate = date
     }
-    getDeadlineTime(duration, frequency) {
-        const now = new Date();
-        this.setTargetDate(duration, frequency)
-        const target = new Date(this.targetDate);
+    // getDeadlineTime(duration, frequency) {
+    //     const now = new Date();
+    //     this.setTargetDate(duration, frequency)
+    //     const target = new Date(this.targetDate);
 
-        const yearDiff = target.getFullYear() - now.getFullYear();
-        const monthDiff = target.getMonth() - now.getMonth();
+    //     const yearDiff = target.getFullYear() - now.getFullYear();
+    //     const monthDiff = target.getMonth() - now.getMonth();
 
-        const totalMonths = yearDiff * 12 + monthDiff;
-        return totalMonths
-    }
+    //     const totalMonths = yearDiff * 12 + monthDiff;
+    //     return totalMonths
+    // }
     async editLoan(loanId) {
         try {
             if (!loanId) {
@@ -119,7 +119,6 @@ export class LoanService {
                     loanName: this.name,
                     loanTargetAmt: this.loanTargetAmt,
                     duration: this.duration,
-                    currentAmt: this.totalPaid,
                     dueDate: this.targetDate,
                     loanType: this.frequency,
                     autoDeduction: this.autoDeduction,
@@ -150,8 +149,7 @@ export class LoanService {
                 }
             }
         }
-            if (!userLoans) return 0
-            const totalPaid = userLoans.reduce((sum, loan) => sum + loan.currentAmt, 0)
+            const totalPaid = userLoans.reduce((sum, loan) => sum + (loan.currentAmt || 0), 0)
             return totalPaid + histroyLoanAmt
         } catch (err) {
             throw new ApiError(500, err.message)
@@ -220,7 +218,7 @@ export class LoanService {
                             continue;
                         }
 
-                        const deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
+                        const deadlineInMonths = this.duration
                         const deductAmt = (this.loanTargetAmt - this.totalPaid) / deadlineInMonths
                         this.totalPaid += deductAmt
 
@@ -278,7 +276,7 @@ export class LoanService {
             this.name = loan.name
 
             const lastDeductionIdx = loan.deductionDates.length - 1
-            let deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
+            let deadlineInMonths = this.duration
             const lastMonth = loan.deductionDates[lastDeductionIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Loan monthly amt already paid")
