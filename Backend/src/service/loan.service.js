@@ -251,7 +251,13 @@ export class LoanService {
 
                 if (lastMonth === thisMonth) continue;
 
-                if (loan.totalDeductions === this.duration) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(loan.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (today > dueDate && this.loanTargetAmt !== this.totalPaid) continue;
+
+
                     if (this.loanTargetAmt === this.totalPaid) {
                         loan.status = "Completed";
                         const savedLoan = await loan.save();
@@ -262,10 +268,11 @@ export class LoanService {
                             deleteLoan._id,
                             "loans"
                         );
+                        continue;
                     }
 
-                    continue;
-                }
+                    
+                
 
                 const user = await Users.findByIdAndUpdate(this.userId);
                 const income = user.income * 0.25;
@@ -331,7 +338,6 @@ export class LoanService {
             this.name = loan.name
 
             const lastDeductionIdx = loan.deductionDates.length - 1
-            let deadlineInMonths = this.duration
             const lastMonth = loan.deductionDates[lastDeductionIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Loan monthly amt already paid")
@@ -343,7 +349,7 @@ export class LoanService {
             const dueDate = new Date(loan.dueDate);
             dueDate.setHours(0, 0, 0, 0);
 
-            if (today >= loan.dueDate && this.loanTargetAmt !== this.totalPaid) {
+            if (today > loan.dueDate && this.loanTargetAmt !== this.totalPaid) {
                 throw new ApiError(400, "Loan is overDued")
             }
 
@@ -486,9 +492,14 @@ export class LoanService {
     async setOverdueStatus() {
         try {
 
+
             const loans = await Loan.find({ userId: this.userId })
             for (const loan of loans) {
-                if (loan.totalDeductions === loan.duration) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(loan.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (today > dueDate) {
                     if (loan.currentAmt < loan.loanTargetAmt) {
                         loan.status = "Overdue"
                         const updatedLoan = await loan.save()
