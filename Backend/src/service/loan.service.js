@@ -174,135 +174,135 @@ export class LoanService {
         }
     }
     async autoDeductAmt() {
-    try {
-        
-        const autoDeductionTasks = new Map();
-        const userId = this.userId;
-        const taskKey = String(userId);
-        const query = {
-            autoDeduction: true,
-            userId,
-            status: "in_progress",
-        };
+        try {
 
-        const hasAutoLoans = await Loan.exists(query);
-        const existingTask = autoDeductionTasks.get(taskKey);
+            const autoDeductionTasks = new Map();
+            const userId = this.userId;
+            const taskKey = String(userId);
+            const query = {
+                autoDeduction: true,
+                userId,
+                status: "in_progress",
+            };
 
-        if (!hasAutoLoans) {
-            if (existingTask) {
-                existingTask.stop();
-                existingTask.destroy();
-                autoDeductionTasks.delete(taskKey);
-            }
+            const hasAutoLoans = await Loan.exists(query);
+            const existingTask = autoDeductionTasks.get(taskKey);
 
-            return { autodeductionLoan: false };
-        }
-
-        if (existingTask) {
-            return { autodeductionLoan: true, alreadyScheduled: true };
-        }
-
-        const task = cron.schedule("0 0 * * *", async () => {
-            // Fetch current loan documents on every scheduled run.
-            const latestLoans = await Loan.find(query);
-
-            if (!latestLoans.length) {
-                task.stop();
-                task.destroy();
-                autoDeductionTasks.delete(taskKey);
-                return;
-            }
-
-            await this.processAutoLoans(latestLoans);
-
-            const stillHasAutoLoans = await Loan.exists(query);
-            if (!stillHasAutoLoans) {
-                task.stop();
-                task.destroy();
-                autoDeductionTasks.delete(taskKey);
-            }
-        });
-
-        autoDeductionTasks.set(taskKey, task);
-
-        return { autodeductionLoan: true, alreadyScheduled: false };
-    } catch (err) {
-        throw new ApiError(400, err.message);
-    }
-}
-
-async processAutoLoans(autoDeductionLoans) {
-    const today = new Date();
-
-    for (const loan of autoDeductionLoans) {
-        this.loanTargetAmt = loan.loanTargetAmt;
-        this.totalPaid = loan.currentAmt;
-        this.duration = loan.duration;
-        this.autoDeductAmt = loan.autoDeduction;
-        this.frequency = loan.loanType;
-        this.category = loan.category;
-        this.name = loan.name;
-
-        const lastdeductionidx = loan.deductionDates.length - 1;
-
-        if (today.getDate() === loan.deductionDay.getDate()) {
-            const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
-            const thisMonth = today.getMonth();
-
-            if (lastMonth === thisMonth) continue;
-
-            if (loan.totalDeductions === this.duration) {
-                if (this.loanTargetAmt === this.totalPaid) {
-                    loan.status = "Completed";
-                    const savedLoan = await loan.save();
-                    const deleteLoan = await Loan.findById(savedLoan._id);
-                    await pushToHistory(
-                        Loan,
-                        this.userId,
-                        deleteLoan._id,
-                        "loans"
-                    );
+            if (!hasAutoLoans) {
+                if (existingTask) {
+                    existingTask.stop();
+                    existingTask.destroy();
+                    autoDeductionTasks.delete(taskKey);
                 }
 
-                continue;
+                return { autodeductionLoan: false };
             }
 
-            const user = await Users.findByIdAndUpdate(this.userId);
-            const income = user.income * 0.25;
-
-            if (user.netIncome <= income) {
-                loan.status = "no_funds";
-                await loan.save();
-                continue;
+            if (existingTask) {
+                return { autodeductionLoan: true, alreadyScheduled: true };
             }
 
-            const deadlineInMonths = this.duration;
-            const deductAmt =
-                (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
+            const task = cron.schedule("0 0 * * *", async () => {
+                // Fetch current loan documents on every scheduled run.
+                const latestLoans = await Loan.find(query);
 
-            this.totalPaid += deductAmt;
-            loan.currentAmt = this.totalPaid;
-            user.netIncome -= deductAmt;
-            loan.deductionDates.push(new Date());
-            loan.totalDeductions += 1;
+                if (!latestLoans.length) {
+                    task.stop();
+                    task.destroy();
+                    autoDeductionTasks.delete(taskKey);
+                    return;
+                }
 
-            const orgDate = new Date(loan.createdAt).getDate();
-            const currentDay = new Date();
-            let targetMonth = currentDay.getMonth() + 1;
-            let targetYear = currentDay.getFullYear();
-            const daysInNextMonth =
-                new Date(targetYear, targetMonth + 1, 0).getDate();
-            const safeDay = Math.min(daysInNextMonth, orgDate);
+                await this.processAutoLoans(latestLoans);
 
-            loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
+                const stillHasAutoLoans = await Loan.exists(query);
+                if (!stillHasAutoLoans) {
+                    task.stop();
+                    task.destroy();
+                    autoDeductionTasks.delete(taskKey);
+                }
+            });
 
-            const updatedLoan = await loan.save();
-            const updatedUser = await user.save();
+            autoDeductionTasks.set(taskKey, task);
 
-            return { updatedLoan, updatedUser };
+            return { autodeductionLoan: true, alreadyScheduled: false };
+        } catch (err) {
+            throw new ApiError(400, err.message);
         }
     }
-}
+
+    async processAutoLoans(autoDeductionLoans) {
+        const today = new Date();
+
+        for (const loan of autoDeductionLoans) {
+            this.loanTargetAmt = loan.loanTargetAmt;
+            this.totalPaid = loan.currentAmt;
+            this.duration = loan.duration;
+            this.autoDeductAmt = loan.autoDeduction;
+            this.frequency = loan.loanType;
+            this.category = loan.category;
+            this.name = loan.name;
+
+            const lastdeductionidx = loan.deductionDates.length - 1;
+
+            if (today.getDate() === loan.deductionDay.getDate()) {
+                const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
+                const thisMonth = today.getMonth();
+
+                if (lastMonth === thisMonth) continue;
+
+                if (loan.totalDeductions === this.duration) {
+                    if (this.loanTargetAmt === this.totalPaid) {
+                        loan.status = "Completed";
+                        const savedLoan = await loan.save();
+                        const deleteLoan = await Loan.findById(savedLoan._id);
+                        await pushToHistory(
+                            Loan,
+                            this.userId,
+                            deleteLoan._id,
+                            "loans"
+                        );
+                    }
+
+                    continue;
+                }
+
+                const user = await Users.findByIdAndUpdate(this.userId);
+                const income = user.income * 0.25;
+
+                if (user.netIncome <= income) {
+                    loan.status = "no_funds";
+                    await loan.save();
+                    continue;
+                }
+
+                const deadlineInMonths = this.duration;
+                const deductAmt =
+                    (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
+
+                this.totalPaid += deductAmt;
+                loan.currentAmt = this.totalPaid;
+                user.netIncome -= deductAmt;
+                loan.deductionDates.push(new Date());
+                loan.totalDeductions += 1;
+
+                const orgDate = new Date(loan.createdAt).getDate();
+                const currentDay = new Date();
+                let targetMonth = currentDay.getMonth() + 1;
+                let targetYear = currentDay.getFullYear();
+                const daysInNextMonth =
+                    new Date(targetYear, targetMonth + 1, 0).getDate();
+                const safeDay = Math.min(daysInNextMonth, orgDate);
+
+                loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
+
+                const updatedLoan = await loan.save();
+                const updatedUser = await user.save();
+
+                return { updatedLoan, updatedUser };
+            }
+        }
+    }
     async manualDeduction(amount, loanId) {
         if (!loanId) {
             throw new ApiError(400, "loan id is required")
@@ -336,11 +336,18 @@ async processAutoLoans(autoDeductionLoans) {
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Loan monthly amt already paid")
 
-            if (this.loanTargetAmt === this.totalPaid && deadlineInMonths !== 0) {
-                deadlineInMonths = 0
+
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(loan.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
+
+            if (today >= loan.dueDate && this.loanTargetAmt !== this.totalPaid) {
+                throw new ApiError(400, "Loan is overDued")
             }
-            if (loan.totalDeductions + 1 > deadlineInMonths || loan.totalDeductions + 1 === this.duration) {
-                if (this.loanTargetAmt !== this.totalPaid) throw new ApiError(400, "Loan is overDued")
+
+            if (this.loanTargetAmt === this.totalPaid) {
                 loan.status = "Completed"
                 const updatedLoan = await loan.save()
                 await pushToHistory(Loan, this.userId, updatedLoan._id, "loans")
