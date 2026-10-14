@@ -52,7 +52,7 @@ export class LoanService {
             const daysInNextMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
             const deductionDay = new Date(targetYear, targetMonth, daysInNextMonth)
 
-            
+
             console.log(this.userId)
             const newLoan = await Loan.create({
                 userId: this.userId,
@@ -141,14 +141,14 @@ export class LoanService {
             const userHistoryData = await History.findOne({ userId: this.userId })
 
             let histroyLoanAmt = 0
-            if(userHistoryData?.loans){
-            if (userHistoryData.loans.length > 0) {
-                for (let i = 0; i < userHistoryData.loans.length; i++) {
-                    const loandoc = userHistoryData.loans[i]
-                    histroyLoanAmt += loandoc.currentAmt || 0
+            if (userHistoryData?.loans) {
+                if (userHistoryData.loans.length > 0) {
+                    for (let i = 0; i < userHistoryData.loans.length; i++) {
+                        const loandoc = userHistoryData.loans[i]
+                        histroyLoanAmt += loandoc.currentAmt || 0
+                    }
                 }
             }
-        }
             const totalPaid = userLoans.reduce((sum, loan) => sum + (loan.currentAmt || 0), 0)
             return totalPaid + histroyLoanAmt
         } catch (err) {
@@ -174,80 +174,135 @@ export class LoanService {
         }
     }
     async autoDeductAmt() {
-        try {
-            cron.schedule('0 0 * * * ', async () => {
-                const today = new Date()
-                const autoDeductionLoans = await Loan.find({
-                    autoDeduction: true,
-                    userId: this.userId,
-                    status: "in_progress"
-                })
+    try {
+        
+        const autoDeductionTasks = new Map();
+        const userId = this.userId;
+        const taskKey = String(userId);
+        const query = {
+            autoDeduction: true,
+            userId,
+            status: "in_progress",
+        };
 
-                for (const loan of autoDeductionLoans) {
+        const hasAutoLoans = await Loan.exists(query);
+        const existingTask = autoDeductionTasks.get(taskKey);
 
-                    this.loanTargetAmt = loan.loanTargetAmt
-                    this.totalPaid = loan.currentAmt
-                    this.duration = loan.duration
-                    this.autoDeductAmt = loan.autoDeduction
-                    this.frequency = loan.loanType
-                    this.category = loan.category
-                    this.name = loan.name
+        if (!hasAutoLoans) {
+            if (existingTask) {
+                existingTask.stop();
+                existingTask.destroy();
+                autoDeductionTasks.delete(taskKey);
+            }
 
-                    const lastdeductionidx = loan.deductionDates.length - 1
-                    if (today.getDate() === loan.deductionDay.getDate()) {
-                        const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth()
-                        const thisMonth = today.getMonth()
-                        if (lastMonth === thisMonth) continue;
+            return { autodeductionLoan: false };
+        }
 
+        if (existingTask) {
+            return { autodeductionLoan: true, alreadyScheduled: true };
+        }
 
-                        if (loan.totalDeductions === this.duration) {
-                            if (this.loanTargetAmt === this.totalPaid) {
-                                loan.status = "Completed"
-                                const loan = await loan.save()
-                                const deleteLoan = await Loan.findById(loan._id)
-                                await pushToHistory(Loan, this.userId, deleteLoan._id, "loans")
-                            }
-                            continue;
-                        }
+        const task = cron.schedule("0 0 * * *", async () => {
+            // Fetch current loan documents on every scheduled run.
+            const latestLoans = await Loan.find(query);
 
-                        const user = await Users.findByIdAndUpdate(this.userId)
-                        const income = user.income * 0.25
-                        if (user.netIncome <= income) {
-                            loan.status = "no_funds"
-                            await loan.save()
-                            continue;
-                        }
+            if (!latestLoans.length) {
+                task.stop();
+                task.destroy();
+                autoDeductionTasks.delete(taskKey);
+                return;
+            }
 
-                        const deadlineInMonths = this.duration
-                        const deductAmt = (this.loanTargetAmt - this.totalPaid) / deadlineInMonths
-                        this.totalPaid += deductAmt
+            await this.processAutoLoans(latestLoans);
 
-                        loan.currentAmt = this.totalPaid
-                        user.netIncome -= deductAmt
-                        loan.deductionDates.push(new Date)
-                        loan.totalDeductions += 1
+            const stillHasAutoLoans = await Loan.exists(query);
+            if (!stillHasAutoLoans) {
+                task.stop();
+                task.destroy();
+                autoDeductionTasks.delete(taskKey);
+            }
+        });
 
-                        const orgDate = new Date(loan.createdAt).getDate()
-                        const currentDay = new Date()
-                        let targetMonth = currentDay.getMonth() + 1
-                        let targetYear = currentDay.getFullYear()
-                        const daysInNextMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-                        const safeDay = Math.min(daysInNextMonth, orgDate)
-                        loan.deductionDay = new Date(targetYear, targetMonth, safeDay)
+        autoDeductionTasks.set(taskKey, task);
 
-                        const updatedLoan = await loan.save()
-                        const updatedUser = await user.save()
+        return { autodeductionLoan: true, alreadyScheduled: false };
+    } catch (err) {
+        throw new ApiError(400, err.message);
+    }
+}
 
-                        return { updatedLoan, updatedUser }
+async processAutoLoans(autoDeductionLoans) {
+    const today = new Date();
 
+    for (const loan of autoDeductionLoans) {
+        this.loanTargetAmt = loan.loanTargetAmt;
+        this.totalPaid = loan.currentAmt;
+        this.duration = loan.duration;
+        this.autoDeductAmt = loan.autoDeduction;
+        this.frequency = loan.loanType;
+        this.category = loan.category;
+        this.name = loan.name;
 
-                    }
+        const lastdeductionidx = loan.deductionDates.length - 1;
+
+        if (today.getDate() === loan.deductionDay.getDate()) {
+            const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
+            const thisMonth = today.getMonth();
+
+            if (lastMonth === thisMonth) continue;
+
+            if (loan.totalDeductions === this.duration) {
+                if (this.loanTargetAmt === this.totalPaid) {
+                    loan.status = "Completed";
+                    const savedLoan = await loan.save();
+                    const deleteLoan = await Loan.findById(savedLoan._id);
+                    await pushToHistory(
+                        Loan,
+                        this.userId,
+                        deleteLoan._id,
+                        "loans"
+                    );
                 }
-            })
-        } catch (err) {
-            throw new ApiError(400, err.message)
+
+                continue;
+            }
+
+            const user = await Users.findByIdAndUpdate(this.userId);
+            const income = user.income * 0.25;
+
+            if (user.netIncome <= income) {
+                loan.status = "no_funds";
+                await loan.save();
+                continue;
+            }
+
+            const deadlineInMonths = this.duration;
+            const deductAmt =
+                (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
+
+            this.totalPaid += deductAmt;
+            loan.currentAmt = this.totalPaid;
+            user.netIncome -= deductAmt;
+            loan.deductionDates.push(new Date());
+            loan.totalDeductions += 1;
+
+            const orgDate = new Date(loan.createdAt).getDate();
+            const currentDay = new Date();
+            let targetMonth = currentDay.getMonth() + 1;
+            let targetYear = currentDay.getFullYear();
+            const daysInNextMonth =
+                new Date(targetYear, targetMonth + 1, 0).getDate();
+            const safeDay = Math.min(daysInNextMonth, orgDate);
+
+            loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
+
+            const updatedLoan = await loan.save();
+            const updatedUser = await user.save();
+
+            return { updatedLoan, updatedUser };
         }
     }
+}
     async manualDeduction(amount, loanId) {
         if (!loanId) {
             throw new ApiError(400, "loan id is required")
@@ -384,8 +439,11 @@ export class LoanService {
             if (!isValidObjectId(loanId)) {
                 throw new ApiError(400, "Invalid mongoose objId")
             }
-
-            const userReason = convertToSnakeCase(deletionReason)
+            const loan = await Loan.findOne({ _id: loanId, userId: this.userId })
+            if (!loan) {
+                throw new ApiError(400, "Loan not found")
+            }
+            const userReason = convertToSnakeCase(deletionReason) // loan deletion reason from user
             const validReasons = [
                 "created_by_mistake",
                 "no_longer_needed",
@@ -394,10 +452,7 @@ export class LoanService {
                 "other"
             ]
 
-            const loan = await Loan.findOne({ _id: loanId, userId: this.userId })
-            if (!loan) {
-                throw new ApiError(400, "Loan not found")
-            }
+
             if (!validReasons.includes(userReason)) {
                 throw new ApiError(400, "Invalid loan deletion reason")
             }
@@ -408,7 +463,13 @@ export class LoanService {
                     $inc: { bankBalance: loan.currentAmt }
                 }
             )
-            const history = await pushToHistory(Loan , this.userId, loanId, "loans")
+            const updatedLoan = await Loan.findOneAndUpdate(
+                { userId: this.userId, _id: loanId },
+                {
+                    deletionReason: userReason
+                }
+            )
+            const history = await pushToHistory(Loan, this.userId, loanId, "loans")
             return { history, updatedUserBankBalance }
         } catch (err) {
             throw new ApiError(400, err.message)

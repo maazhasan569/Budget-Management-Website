@@ -1,5 +1,5 @@
 
-const pushToHistory = async (Model, userId, docId, field) => {
+ const pushToHistory = async (Model, userId, docId, field) => {
   const modelDoc = await Model.findOne({ _id: docId, userId })
   if (!modelDoc) {
     throw new Error("Document not found or does not belong to this user")
@@ -18,3 +18,5 @@ const pushToHistory = async (Model, userId, docId, field) => {
 
   return historyDoc
 }
+
+export default pushToHistory
