@@ -64,18 +64,7 @@ export class GoalService {
         date.setHours(0, 0, 0, 0)
         this.targetDate = date
     }
-    getDeadlineTime(duration, frequency) {
-        const now = new Date();
-        this.setTargetDate(duration, frequency)
-        const target = new Date(this.targetDate);
-
-        const yearDiff = target.getFullYear() - now.getFullYear();
-        const monthDiff = target.getMonth() - now.getMonth();
-
-        const totalMonths = yearDiff * 12 + monthDiff;
-        return totalMonths
-    }
-
+    
     async autoDeductAmt() {
         try {
 
@@ -116,7 +105,7 @@ export class GoalService {
                     return;
                 }
 
-                await this.processAutoLoans(latestGoals);
+                await this.processAutoGoals(latestGoals);
 
                 const stillHasAutoGoals = await Goal.exists(query);
                 if (!stillHasAutoGoals) {
@@ -134,7 +123,7 @@ export class GoalService {
         }
     }
 
-    async processAutoLoans(autoDeductionGoals) {
+    async processAutoGoals(autoDeductionGoals) {
         const today = new Date();
 
         for (const goal of autoDeductionGoals) {
@@ -180,8 +169,8 @@ export class GoalService {
                 }
 
 
-                const deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
-                const deductAmt = (this.targetAmount - this.goalBalance) / deadlineInMonths
+
+                const deductAmt = (this.targetAmount - this.goalBalance) / this.duration
                 this.goalBalance += deductAmt
                 goal.currentAmt = this.goalBalance
                 user.netIncome -= deductAmt
@@ -221,7 +210,6 @@ export class GoalService {
             this.category = goal.category
             this.name = goal.name
             const lastIdx = goal.deductionDates.length - 1
-            let deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
             const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Goal monthly amt already paid")
