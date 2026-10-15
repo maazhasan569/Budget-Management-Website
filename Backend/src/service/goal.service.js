@@ -75,7 +75,7 @@ export class GoalService {
         const totalMonths = yearDiff * 12 + monthDiff;
         return totalMonths
     }
-    
+
     async autoDeductAmt() {
         try {
 
@@ -134,82 +134,71 @@ export class GoalService {
         }
     }
 
-    async processAutoLoans(autoDeductionLoans) {
+    async processAutoLoans(autoDeductionGoals) {
         const today = new Date();
 
-        for (const loan of autoDeductionLoans) {
-            this.loanTargetAmt = loan.loanTargetAmt;
-            this.totalPaid = loan.currentAmt;
-            this.duration = loan.duration;
-            this.autoDeductAmt = loan.autoDeduction;
-            this.frequency = loan.loanType;
-            this.category = loan.category;
-            this.name = loan.name;
+        for (const goal of autoDeductionGoals) {
 
-            const lastdeductionidx = loan.deductionDates.length - 1;
-
-            if (today.getDate() === loan.deductionDay.getDate()) {
-                const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
-                const thisMonth = today.getMonth();
-
+            this.targetAmount = goal.targetAmount
+            this.goalBalance = goal.currentAmt
+            this.duration = goal.duration
+            this.autoDeduction = goal.autoDeduction
+            this.frequency = goal.type
+            this.category = goal.category
+            this.name = goal.name
+            const lastIdx = goal.deductionDates.length - 1
+            if (today.getDate() === goal.deductionDay.getDate()) {
+                const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
+                const thisMonth = today.getMonth()
                 if (lastMonth === thisMonth) continue;
 
-                const today = new Date();
+                const currentDate = new Date();
                 today.setHours(0, 0, 0, 0);
-                const dueDate = new Date(loan.dueDate);
+                const dueDate = new Date(goal.dueDate);
                 dueDate.setHours(0, 0, 0, 0);
-                if (today > dueDate && this.loanTargetAmt !== this.totalPaid) continue;
+                if (currentDate > dueDate && this.targetAmount !== this.goalBalance) continue;
 
+                if (this.targetAmount === this.goalBalance) {
+                    goal.status = "Achieved";
+                    const savedGoal = await goal.save();
 
-                    if (this.loanTargetAmt === this.totalPaid) {
-                        loan.status = "Completed";
-                        const savedLoan = await loan.save();
-                        const deleteLoan = await Loan.findById(savedLoan._id);
-                        await pushToHistory(
-                            Loan,
-                            this.userId,
-                            deleteLoan._id,
-                            "loans"
-                        );
-                        continue;
-                    }
-
-                    
-                
-
-                const user = await Users.findByIdAndUpdate(this.userId);
-                const income = user.income * 0.25;
-
-                if (user.netIncome <= income) {
-                    loan.status = "no_funds";
-                    await loan.save();
+                    await pushToHistory(
+                        Goal,
+                        this.userId,
+                        savedGoal._id,
+                        "goals"
+                    );
                     continue;
                 }
 
-                const deadlineInMonths = this.duration;
-                const deductAmt =
-                    (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
+                const user = await Users.findById(this.userId)
+                const income = user.income * 0.25
+                if (user.netIncome <= income) {
+                    goal.status = "no_funds"
+                    await goal.save()
+                    continue;
+                }
 
-                this.totalPaid += deductAmt;
-                loan.currentAmt = this.totalPaid;
-                user.netIncome -= deductAmt;
-                loan.deductionDates.push(new Date());
-                loan.totalDeductions += 1;
 
-                const orgDate = new Date(loan.createdAt).getDate();
-                const currentDay = new Date();
-                let targetMonth = currentDay.getMonth() + 1;
-                let targetYear = currentDay.getFullYear();
-                const daysInNextMonth =
-                    new Date(targetYear, targetMonth + 1, 0).getDate();
-                const safeDay = Math.min(daysInNextMonth, orgDate);
+                const deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
+                const deductAmt = (this.targetAmount - this.goalBalance) / deadlineInMonths
+                this.goalBalance += deductAmt
+                goal.currentAmt = this.goalBalance
+                user.netIncome -= deductAmt
+                goal.deductionDates.push(new Date())
+                goal.totalDeductions += 1
+                const orgDate = new Date(goal.createdAt).getDate()
+                const currentDay = new Date()
+                let targetMonth = currentDay.getMonth() + 1
+                let targetYear = currentDay.getFullYear()
+                const getTargetDate = new Date(targetYear, targetMonth + 1, 0).getDate();
+                const safeDay = Math.min(getTargetDate, orgDate)
+                goal.deductionDay = new Date(targetYear, targetMonth, safeDay)
 
-                loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
+                const updatedGoal = await goal.save();
+                const updatedUser = await user.save()
 
-                const updatedLoan = await loan.save();
-                const updatedUser = await user.save();
-
-                return { updatedLoan, updatedUser };
+                return { updatedGoal, updatedUser }
             }
         }
     }
@@ -236,18 +225,18 @@ export class GoalService {
             const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Goal monthly amt already paid")
-             if (this.targetAmount === 0 && deadlineInMonths !== 0) {
+            if (this.targetAmount === 0 && deadlineInMonths !== 0) {
                 deadlineInMonths = 0
             }
-            // as soon as user payes his monthly goal check whether the cond passes
+
             if (goal.totalDeductions + 1 > deadlineInMonths || goal.totalDeductions + 1 === this.duration) {
-                if(this.targetAmount !== this.goalBalance) throw new ApiError(400 , "Loan overdued")
-                
+                if (this.targetAmount !== this.goalBalance) throw new ApiError(400, "Loan overdued")
+
                 goal.status = "Achieved"
                 const updatedGoal = await goal.save()
                 await pushToHistory(this.userId, delGoal._id, "goals")
                 return { updatedGoal, pushedToHistory: true }
-                // if passed automaticly push the goal to history
+
             }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter a valid amount")
@@ -272,7 +261,7 @@ export class GoalService {
             goal.totalDeductions += 1
             user.netIncome -= amount
 
-           
+
             const updatedGoal = await goal.save()
             const updatedUser = await user.save()
 
@@ -366,18 +355,22 @@ export class GoalService {
 
     async setUnachievedStatus() {
         try {
-
-                const goals = await Goal.find(this.userId)
-                for (const goal of goals) {
-                    if (goal.totalDeductions === this.duration) {
-                       if(this.targetAmount !== 0) goal.status = "UnAchieved"
-                        const updatedGoal = await goal.save()
-                        return updatedGoal
-                    }
-
+            
+            const goals = await Goal.find(this.userId)
+            for (const goal of goals) {
+                const currentDate = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(goal.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (currentDate > dueDate) {
+                    if (this.targetAmount !== 0) goal.status = "UnAchieved"
+                    const updatedGoal = await goal.save()
+                    return updatedGoal
                 }
-        }catch(err){
-            throw new ApiError(500 , err.message)
+
+            }
+        } catch (err) {
+            throw new ApiError(500, err.message)
         }
     }
 

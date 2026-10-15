@@ -261,11 +261,10 @@ export class LoanService {
                     if (this.loanTargetAmt === this.totalPaid) {
                         loan.status = "Completed";
                         const savedLoan = await loan.save();
-                        const deleteLoan = await Loan.findById(savedLoan._id);
                         await pushToHistory(
                             Loan,
                             this.userId,
-                            deleteLoan._id,
+                            savedLoan._id,
                             "loans"
                         );
                         continue;
