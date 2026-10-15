@@ -75,70 +75,142 @@ export class GoalService {
         const totalMonths = yearDiff * 12 + monthDiff;
         return totalMonths
     }
-    async autoDeductAmount() {
+    
+    async autoDeductAmt() {
         try {
-            cron.schedule('0 0 * * *', async () => {
-                const today = new Date()
-                const autoDeductionGoals = await Goal.find({
-                    autoDeduction: true,
-                    userId: this.userId,
-                    status: "in_progress"
-                })
-                for (const goal of autoDeductionGoals) {
-                    this.targetAmount = goal.targetAmount
-                    this.goalBalance = goal.currentAmt
-                    this.duration = goal.duration
-                    this.autoDeduction = goal.autoDeduction
-                    this.frequency = goal.type
-                    this.category = goal.category
-                    this.name = goal.name
-                    const lastIdx = goals.deductionDates.length - 1
-                    if (today.getDate() === goal.deductionDay.getDate()) {
-                        const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
-                        const thisMonth = today.getMonth()
-                        if (lastMonth === thisMonth) continue;
-                        if (goal.totalDeductions === this.duration) {
-                            if(this.targetAmount === this.goalBalance) {
-                            goal.status = "Achieved"
-                            await goal.save()
-                            await pushToHistory(this.userId, delGoal._id, "goals")
-                            }
-                            continue;
-                        }
 
-                        const user = await Users.findById(this.userId)
-                        const income = user.income * 0.25
-                        if (user.netIncome <= income) {
-                            goal.status = "no_funds"
-                            await goal.save()
-                            continue;
-                        }
+            const autoDeductionTasks = new Map();
+            const userId = this.userId;
+            const taskKey = String(userId);
+            const query = {
+                autoDeduction: true,
+                userId,
+                status: "in_progress",
+            };
 
+            const hasAutoGoals = await Goal.exists(query);
+            const existingTask = autoDeductionTasks.get(taskKey);
 
-                        const deadlineInMonths = this.getDeadlineTime(this.duration, this.frequency)
-                        const deductAmt = (this.targetAmount - this.goalBalance) / deadlineInMonths
-                        this.goalBalance += deductAmt
-                        goal.currentAmt = this.goalBalance
-                        user.netIncome -= deductAmt
-                        goal.deductionDates.push(new Date())
-                        goal.totalDeductions += 1
-                        const orgDate = new Date(goal.createdAt).getDate()
-                        const currentDay = new Date()
-                        let targetMonth = currentDay.getMonth() + 1
-                        let targetYear = currentDay.getFullYear()
-                        const getTargetDate = new Date(targetYear, targetMonth + 1, 0).getDate();
-                        const safeDay = Math.min(getTargetDate, orgDate)
-                        goal.deductionDay = new Date(targetYear, targetMonth, safeDay)
-
-                        const updatedGoal = await goal.save();
-                        const updatedUser = await user.save()
-
-                        return { updatedGoal, updatedUser }
-                    }
+            if (!hasAutoGoals) {
+                if (existingTask) {
+                    existingTask.stop();
+                    existingTask.destroy();
+                    autoDeductionTasks.delete(taskKey);
                 }
-            })
+
+                return { autodeductionLoan: false };
+            }
+
+            if (existingTask) {
+                return { autodeductionLoan: true, alreadyScheduled: true };
+            }
+
+            const task = cron.schedule("0 0 * * *", async () => {
+                // Fetch current loan documents on every scheduled run.
+                const latestGoals = await Goal.find(query);
+
+                if (!latestGoals.length) {
+                    task.stop();
+                    task.destroy();
+                    autoDeductionTasks.delete(taskKey);
+                    return;
+                }
+
+                await this.processAutoLoans(latestGoals);
+
+                const stillHasAutoGoals = await Goal.exists(query);
+                if (!stillHasAutoGoals) {
+                    task.stop();
+                    task.destroy();
+                    autoDeductionTasks.delete(taskKey);
+                }
+            });
+
+            autoDeductionTasks.set(taskKey, task);
+
+            return { autodeductionLoan: true, alreadyScheduled: false };
         } catch (err) {
-            throw new ApiError(500, err.message)
+            throw new ApiError(400, err.message);
+        }
+    }
+
+    async processAutoLoans(autoDeductionLoans) {
+        const today = new Date();
+
+        for (const loan of autoDeductionLoans) {
+            this.loanTargetAmt = loan.loanTargetAmt;
+            this.totalPaid = loan.currentAmt;
+            this.duration = loan.duration;
+            this.autoDeductAmt = loan.autoDeduction;
+            this.frequency = loan.loanType;
+            this.category = loan.category;
+            this.name = loan.name;
+
+            const lastdeductionidx = loan.deductionDates.length - 1;
+
+            if (today.getDate() === loan.deductionDay.getDate()) {
+                const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
+                const thisMonth = today.getMonth();
+
+                if (lastMonth === thisMonth) continue;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dueDate = new Date(loan.dueDate);
+                dueDate.setHours(0, 0, 0, 0);
+                if (today > dueDate && this.loanTargetAmt !== this.totalPaid) continue;
+
+
+                    if (this.loanTargetAmt === this.totalPaid) {
+                        loan.status = "Completed";
+                        const savedLoan = await loan.save();
+                        const deleteLoan = await Loan.findById(savedLoan._id);
+                        await pushToHistory(
+                            Loan,
+                            this.userId,
+                            deleteLoan._id,
+                            "loans"
+                        );
+                        continue;
+                    }
+
+                    
+                
+
+                const user = await Users.findByIdAndUpdate(this.userId);
+                const income = user.income * 0.25;
+
+                if (user.netIncome <= income) {
+                    loan.status = "no_funds";
+                    await loan.save();
+                    continue;
+                }
+
+                const deadlineInMonths = this.duration;
+                const deductAmt =
+                    (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
+
+                this.totalPaid += deductAmt;
+                loan.currentAmt = this.totalPaid;
+                user.netIncome -= deductAmt;
+                loan.deductionDates.push(new Date());
+                loan.totalDeductions += 1;
+
+                const orgDate = new Date(loan.createdAt).getDate();
+                const currentDay = new Date();
+                let targetMonth = currentDay.getMonth() + 1;
+                let targetYear = currentDay.getFullYear();
+                const daysInNextMonth =
+                    new Date(targetYear, targetMonth + 1, 0).getDate();
+                const safeDay = Math.min(daysInNextMonth, orgDate);
+
+                loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
+
+                const updatedLoan = await loan.save();
+                const updatedUser = await user.save();
+
+                return { updatedLoan, updatedUser };
+            }
         }
     }
     async manualDeduction(amount, goalId) {
