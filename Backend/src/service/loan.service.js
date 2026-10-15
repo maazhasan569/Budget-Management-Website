@@ -159,10 +159,7 @@ export class LoanService {
         try {
             const userLoans = await Loan.find({ userId: this.userId })
             if (!userLoans) return 0
-            // const totalAmt = userLoans.reduce((sum, loan) => sum + loan.loanTargetAmt, 0)
-            // const totalPaid = await this.totalPaid()
-            // const loansAmtRemaining = totalAmt - this.totalPaid
-
+          
             const loansAmtRemaining = userLoans.reduce(
                 (sum, loan) =>
                     sum + Math.max(0, Number(loan.loanTargetAmt) - Number(loan.currentAmt)),

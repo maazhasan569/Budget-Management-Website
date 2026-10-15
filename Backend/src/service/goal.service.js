@@ -229,12 +229,17 @@ export class GoalService {
                 deadlineInMonths = 0
             }
 
-            if (goal.totalDeductions + 1 > deadlineInMonths || goal.totalDeductions + 1 === this.duration) {
-                if (this.targetAmount !== this.goalBalance) throw new ApiError(400, "Loan overdued")
+            const currentDate = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueDate = new Date(goal.dueDate);
+            dueDate.setHours(0, 0, 0, 0);
 
+            if (currentDate > dueDate && this.goalBalance != this.targetAmount) throw new ApiError(400, "Loan overdued")
+
+            if (this.targetAmount === this.goalBalance) {
                 goal.status = "Achieved"
                 const updatedGoal = await goal.save()
-                await pushToHistory(this.userId, delGoal._id, "goals")
+                await pushToHistory(this.userId, updatedGoal._id, "goals")
                 return { updatedGoal, pushedToHistory: true }
 
             }
@@ -335,19 +340,33 @@ export class GoalService {
     async AmtPaid() {
         try {
             const userGoals = await Goal.find({ userId: this.userId })
-            if (!userGoals) return 0
-            const totalPaid = userGoals.reduce((sum, goal) => sum + goal.currentAmt, 0)
-            return totalPaid
+            const userHistoryData = await History.findOne({ userId: this.userId })
+            let histroyGoalAmt = 0
+            if (userHistoryData?.goals) {
+                if (userHistoryData.goals.length > 0) {
+                    for (let i = 0; i < userHistoryData.goals.length; i++) {
+                        const goaldoc = userHistoryData.goals[i]
+                        histroyGoalAmt += goaldoc.currentAmt || 0
+                    }
+                }
+            }
+            const totalPaid = userGoals.reduce((sum, goal) => sum + goal.currentAmt || 0, 0)
+            return totalPaid + histroyGoalAmt
         } catch (err) {
             throw new ApiError(500, err.message)
         }
     }
     async AmtRemaining() {
         try {
-            const userGoals = await Goal.find({ userId: this.userId })
+            const userGoals = await Loan.find({ userId: this.userId })
             if (!userGoals) return 0
-            const goalAmtRemaining = userGoals.reduce((sum, goal) => sum + goal.targetAmount, 0)
-            return goalAmtRemaining
+
+            const GoalsAmtRemaining = userGoals.reduce(
+                (sum, goal) =>
+                    sum + Math.max(0, Number(goal.targetAmount) - Number(goal.currentAmt)),
+                0
+            );
+            return GoalsAmtRemaining
         } catch (err) {
             throw new ApiError(500, err.msg)
         }
@@ -355,7 +374,7 @@ export class GoalService {
 
     async setUnachievedStatus() {
         try {
-            
+
             const goals = await Goal.find(this.userId)
             for (const goal of goals) {
                 const currentDate = new Date();
@@ -363,11 +382,11 @@ export class GoalService {
                 const dueDate = new Date(goal.dueDate);
                 dueDate.setHours(0, 0, 0, 0);
                 if (currentDate > dueDate) {
-                    if (this.targetAmount !== 0) goal.status = "UnAchieved"
+                    if (goal.currentAmt < goal.targetAmount) goal.status = "UnAchieved"
                     const updatedGoal = await goal.save()
                     return updatedGoal
                 }
-
+                return { unAchievedGoals: [] }
             }
         } catch (err) {
             throw new ApiError(500, err.message)
