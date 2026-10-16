@@ -3,6 +3,7 @@ import { Expense } from "../models/budget/expense.models.js"
 import { Users } from "../models/users.models.js"
 import { paginate } from "../utils/pagination.js"
 import { History } from "../models/history.models.js"
+import pushToHistory from "../utils/pushToHistory.js"
 export class ExpenseTracker {
     constructor(budget, userId) {
         if (!budget || budget <= 0) {
@@ -120,9 +121,7 @@ export class ExpenseTracker {
             return { message: "Expense permanently deleted", restoredBudget: rule.restoreBudget, newBudget };
         } else {
             
-            await History.create({ expenses: expenseId, userId: this.userId });
-            console.log('pushed to history' , {hllk: 31})
-            await Expense.findOneAndDelete({_id : expenseId , userId : this.userId});
+            await pushToHistory(Expense , this.userId , expenseId , "expenses")
             return { message: "Expense archived to history", restoredBudget: rule.restoreBudget, newBudget };
         }
     }catch(err){
