@@ -120,13 +120,13 @@ const deleteExpense = asyncHandler(async (req, res) => {
     //Q1 : Did money actually leave your account for this?
     //Q2 : Did you receive money back (a refund)
     const { expenseId } = req.params
-    const { ans1, ans2 } = req.body
+    const { ans } = req.body
     const user = await Users.findById(req.user._id)
     const expense = new ExpenseTracker(user.budget, user._id)
-    const { message, restoreBudget, newBudget } = await expense.delExpense(expenseId, ans1, ans2)
+    const { newBudget , userAns } = await expense.delExpense(expenseId, ans)
     return res.status(200)
         .json(
-            new ApiResponse(200, message, { restoreBudget, newBudget })
+            new ApiResponse(200, "Expense deleted" , { newBudget , userAns })
         )
 
 
