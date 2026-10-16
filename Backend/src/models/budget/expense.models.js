@@ -17,6 +17,9 @@ const expenseSchema = new mongoose.Schema({
     name : {
         type : String,
         required : true,
+    },
+    deletionReason : {
+        type : String,
     }
     //
 } , {timestamps : true})

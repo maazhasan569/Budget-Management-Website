@@ -4,6 +4,7 @@ import { Users } from "../models/users.models.js"
 import { paginate } from "../utils/pagination.js"
 import { History } from "../models/history.models.js"
 import pushToHistory from "../utils/pushToHistory.js"
+import pushToHistory from "../utils/pushToHistory.js"
 export class ExpenseTracker {
     constructor(budget, userId) {
         if (!budget || budget <= 0) {
@@ -12,7 +13,7 @@ export class ExpenseTracker {
         if (!userId) {
             throw new ApiError(400, "No user Id")
         }
-        this.remaingingBudget = budget ,
+        this.remaingingBudget = budget,
             this.userId = userId
 
     }
@@ -24,8 +25,8 @@ export class ExpenseTracker {
         if (amount > this.remaingingBudget) {
             throw new ApiError(400, "Expense amount exceeds budget")
         }
-        
-        
+
+
         try {
             const createExpense = await Expense.create({
                 userId: this.userId,
@@ -49,7 +50,7 @@ export class ExpenseTracker {
         }
         try {
             const updateUserExpense = await Expense.findOneAndUpdate(
-                {_id : expenseId , userId : this.userId},
+                { _id: expenseId, userId: this.userId },
                 {
                     amount,
                     category,
@@ -57,7 +58,7 @@ export class ExpenseTracker {
                 },
                 { new: true }
             )
-            
+
             return updateUserExpense;
 
         } catch (error) {
@@ -65,11 +66,11 @@ export class ExpenseTracker {
         }
 
     }
-    
+
     async getAndSaveRemainingBudget(expenseId) {
         try {
-            const expense = await Expense.findOne({_id : expenseId , userId : this.userId})
-            
+            const expense = await Expense.findOne({ _id: expenseId, userId: this.userId })
+
             const user = await Users.findByIdAndUpdate(
                 this.userId,
                 {
@@ -77,56 +78,57 @@ export class ExpenseTracker {
                 },
                 { new: true }
             )
-            return { updatedBudget: user.budget}
+            return { updatedBudget: user.budget }
         } catch (error) {
             throw new ApiError(500, error.message)
         }
 
     }
 
-    async delExpense(expenseId, ans1, ans2) {
-        try{
-        if (ans1 === "No" && !ans2) {
-            ans2 = "No";
-        }
-
-        const validAnswers = ["Yes", "No"];
-        if (!validAnswers.includes(ans1) || !validAnswers.includes(ans2)) {
-            throw new ApiError(400, "Answers must be 'Yes' or 'No'");
-        }
-
-        const expense = await Expense.findOne({_id : expenseId , userId : this.userId})
-        if (!expense) {
-            throw new ApiError(404, "Expense not found");
-        }
-        const DELETION_RULES = {
-            "No_No": { action: "HARD_DELETE", restoreBudget: true },
-            "No_Yes": { action: "HARD_DELETE", restoreBudget: true },
-            "Yes_Yes": { action: "STORE_HISTORY", restoreBudget: true },
-            "Yes_No": { action: "STORE_HISTORY", restoreBudget: false }
-        };
-
-        const rule = DELETION_RULES[`${ans1}_${ans2}`];
-        let newBudget = null
-        if (rule.restoreBudget) {
-            newBudget = await Users.findByIdAndUpdate(this.userId, {
-                $inc: { remainingBudget: expense.amount }
-            },
-                { new: true });
-        }
+    async delExpense(expenseId, ans) {
+        try {
 
 
-        if (rule.action === "HARD_DELETE") {
-            await Expense.findOneAndDelete({_id : expenseId , userId : this.userId});
-            return { message: "Expense permanently deleted", restoredBudget: rule.restoreBudget, newBudget };
-        } else {
-            
-            await pushToHistory(Expense , this.userId , expenseId , "expenses")
-            return { message: "Expense archived to history", restoredBudget: rule.restoreBudget, newBudget };
+            const userAns =
+                ["I added it by mistake",
+                    "I paid, but got a refund",
+                    "I paid and didn't get a refund"]
+
+            const expense = await Expense.findOne({ _id: expenseId, userId: this.userId })
+            if (!expense) {
+                throw new ApiError(404, "Expense not found");
+            }
+
+            if (!userAns.includes(ans)) {
+                throw new ApiError(400, "Invalid expense deletion ans")
+            }
+
+            await Expense.findOneAndUpdate(
+                { _id: expenseId, userId: this.userId },
+                {
+                    deletionReason: ans
+                },
+                { new: true }
+            )
+            let newBudget;
+            if (ans === userAns[0] || ans === userAns[1]) {
+                newBudget = await Users.findByIdAndUpdate(this.userId, {
+                    $inc: { remainingBudget: expense.amount }
+                },
+                    { new: true });
+
+                await pushToHistory(this.userId, expense._id, "expenses")
+
+            } else {
+                await pushToHistory(this.userId, expense._id, "expenses")
+            }
+
+
+
+            return { newBudget, userAns: ans }
+        } catch (err) {
+            throw new ApiError(500, err.message)
         }
-    }catch(err){
-        throw new ApiError(500 , err.message)
-    }
     }
 
 
