@@ -283,6 +283,9 @@ export function GoalsPage() {
   const visibleData = cachedData ?? data
   const goals = visibleData?.goals ?? []
   const categories = [...new Set((data?.goals ?? []).map((goal) => goal.category).filter(Boolean))].sort()
+  const editingGoalId = editingGoal?._id ?? null
+  const contributingGoalId = contributingGoal?._id ?? null
+  const deletingGoalId = deletingGoal?._id ?? null
 
   useEffect(() => {
     let active = true
@@ -332,7 +335,7 @@ export function GoalsPage() {
   }
 
   async function saveGoal(values) {
-    if (editingGoal) await updateGoal(editingGoal._id, values)
+    if (editingGoalId) await updateGoal(editingGoalId, values)
     else {
       await createGoal(values)
       setPage(1)
@@ -343,14 +346,16 @@ export function GoalsPage() {
   }
 
   async function recordContribution(amount) {
-    await makeGoalContribution(contributingGoal._id, amount)
+    if (!contributingGoalId) return
+    await makeGoalContribution(contributingGoalId, amount)
     await syncSchedulerAfterMutation()
     setContributingGoal(null)
     refresh()
   }
 
   async function removeGoal() {
-    await deleteGoal(deletingGoal._id)
+    if (!deletingGoalId) return
+    await deleteGoal(deletingGoalId)
     await syncSchedulerAfterMutation()
     if (goals.length === 1 && page > 1) setPage((current) => current - 1)
     else refresh()
@@ -487,7 +492,7 @@ export function GoalsPage() {
 
       {formOpen && (
         <GoalFormDialog
-          key={editingGoal?._id ?? "new-goal"}
+          key={editingGoalId ?? "new-goal"}
           open
           onOpenChange={setFormOpen}
           goal={editingGoal}
@@ -497,7 +502,7 @@ export function GoalsPage() {
       )}
       {contributingGoal && (
         <GoalContributionDialog
-          key={contributingGoal._id}
+          key={contributingGoalId}
           open
           onOpenChange={(open) => { if (!open) setContributingGoal(null) }}
           goal={contributingGoal}
@@ -507,7 +512,7 @@ export function GoalsPage() {
       )}
       {deletingGoal && (
         <DeleteGoalDialog
-          key={deletingGoal._id}
+          key={deletingGoalId}
           open
           onOpenChange={(open) => { if (!open) setDeletingGoal(null) }}
           goal={deletingGoal}
