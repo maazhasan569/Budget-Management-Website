@@ -4,6 +4,12 @@ import { Users } from "../models/users.models.js";
 import ApiError from "../utils/ApiError.js";
 import cron from "node-cron"
 import pushToHistory from "../utils/pushToHistory.js";
+import { History } from "../models/history.models.js";
+
+
+
+const autoDeductionTasks = new Map();
+
 export class GoalService {
     constructor(userId, config = {}) {
         this.userId = userId;
@@ -38,6 +44,11 @@ export class GoalService {
         this.setTargetDate(this.duration, this.frequency)
         this.validateGoal()
         try {
+            const currentDay = new Date()
+            let targetMonth = currentDay.getMonth() + 1
+            let targetYear = currentDay.getFullYear()
+            const daysInNextMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            const deductionDay = new Date(targetYear, targetMonth, daysInNextMonth)
             const newGoal = await Goal.create({
                 userId: this.userId,
                 goalName: this.name,
@@ -48,6 +59,7 @@ export class GoalService {
                 duration: this.duration,
                 autoDeduction: this.autoDeduction,
                 category: this.category,
+                deductionDay,
 
             })
             return newGoal
@@ -64,11 +76,11 @@ export class GoalService {
         date.setHours(0, 0, 0, 0)
         this.targetDate = date
     }
-    
+
+
     async autoDeductAmt() {
         try {
 
-            const autoDeductionTasks = new Map();
             const userId = this.userId;
             const taskKey = String(userId);
             const query = {
@@ -87,11 +99,11 @@ export class GoalService {
                     autoDeductionTasks.delete(taskKey);
                 }
 
-                return { autodeductionLoan: false };
+                return { autodeductionGoal: false };
             }
 
             if (existingTask) {
-                return { autodeductionLoan: true, alreadyScheduled: true };
+                return { autodeductionGoal: true, alreadyScheduled: true };
             }
 
             const task = cron.schedule("0 0 * * *", async () => {
@@ -143,7 +155,7 @@ export class GoalService {
 
                 const currentDate = new Date();
                 today.setHours(0, 0, 0, 0);
-                const dueDate = new Date(goal.dueDate);
+                const dueDate = new Date(goal.achievementDate);
                 dueDate.setHours(0, 0, 0, 0);
                 if (currentDate > dueDate && this.targetAmount !== this.goalBalance) continue;
 
@@ -213,13 +225,9 @@ export class GoalService {
             const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
             const thisMonth = new Date().getMonth()
             if (lastMonth === thisMonth) throw new ApiError(400, "Goal monthly amt already paid")
-            if (this.targetAmount === 0 && deadlineInMonths !== 0) {
-                deadlineInMonths = 0
-            }
 
             const currentDate = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dueDate = new Date(goal.dueDate);
+            const dueDate = new Date(goal.achievementDate);
             dueDate.setHours(0, 0, 0, 0);
 
             if (currentDate > dueDate && this.goalBalance != this.targetAmount) throw new ApiError(400, "Loan overdued")
@@ -227,14 +235,14 @@ export class GoalService {
             if (this.targetAmount === this.goalBalance) {
                 goal.status = "Achieved"
                 const updatedGoal = await goal.save()
-                await pushToHistory(this.userId, updatedGoal._id, "goals")
+                await pushToHistory(Goal, this.userId, updatedGoal._id, "goals")
                 return { updatedGoal, pushedToHistory: true }
 
             }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter a valid amount")
             }
-            if (amount > this.targetAmount) {
+            if (amount > this.targetAmount - this.goalBalance) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
             const user = await Users.findById(this.userId)
@@ -272,7 +280,7 @@ export class GoalService {
             if (!goalId) {
                 throw new ApiError(400, "No goal id found")
             }
-            this.setTargetDate(duration, frequency)
+            this.setTargetDate(this.duration, this.frequency)
             this.validateGoal()
             const updatedGoal = await Goal.findOneAndUpdate(
                 {
@@ -281,7 +289,7 @@ export class GoalService {
                 },
                 {
                     goalName: this.name,
-                    achievmentDate: this.targetDate,
+                    achievementDate: this.targetDate,
                     targetAmount: this.targetAmount,
                     autoDeduction: this.autoDeduction,
                     type: this.frequency,
@@ -305,20 +313,20 @@ export class GoalService {
             //delete the goal 
             //add the deleted goal to history
             const updateGoal = await Goal.findOneAndUpdate(
-                { _id: goalId },
+                { _id: goalId , userId : this.userId },
                 {
                     $set: { status: "Abandoned" }
                 },
                 { returnDocument: 'after' }
             );
-            if (!updateGoal) return null
-            const deletedGoal = await Goal.findByIdAndDelete(goalId)
-            const history = await pushToHistory(this.userId, deletedGoal._id, "goals")
+
+            if(!updateGoal) return null
+            const history = await pushToHistory(Goal , this.userId, updateGoal._id, "goals")
             const user = await Users.findById(this.userId)
             user.netIncome += updateGoal.currentAmt
             const updatedUser = await user.save()
             const updatedUserNetIncome = updatedUser.netIncome
-            return { updatedUserNetIncome, deletedGoal, history }
+            return { updatedUserNetIncome, deletedGoal : updateGoal, history }
 
 
         } catch (err) {
@@ -346,7 +354,7 @@ export class GoalService {
     }
     async AmtRemaining() {
         try {
-            const userGoals = await Loan.find({ userId: this.userId })
+            const userGoals = await Goal.find({ userId: this.userId })
             if (!userGoals) return 0
 
             const GoalsAmtRemaining = userGoals.reduce(
@@ -362,19 +370,20 @@ export class GoalService {
 
     async setUnachievedStatus() {
         try {
-
-            const goals = await Goal.find(this.userId)
+            const today = new Date()
+            const goals = await Goal.find({ userId: this.userId })
+            if(!goals) return null
             for (const goal of goals) {
                 const currentDate = new Date();
                 today.setHours(0, 0, 0, 0);
-                const dueDate = new Date(goal.dueDate);
+                const dueDate = new Date(goal.achievementDate);
                 dueDate.setHours(0, 0, 0, 0);
                 if (currentDate > dueDate) {
-                    if (goal.currentAmt < goal.targetAmount) goal.status = "UnAchieved"
-                    const updatedGoal = await goal.save()
-                    return updatedGoal
+                    if (goal.currentAmt < goal.targetAmount) goal.status = "unAchieved"
+                    await goal.save()
                 }
-                return { unAchievedGoals: [] }
+                
+                
             }
         } catch (err) {
             throw new ApiError(500, err.message)

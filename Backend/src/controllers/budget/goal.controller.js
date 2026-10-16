@@ -85,7 +85,7 @@ const getGoalsByCategory = asyncHandler(async (req, res) => {
 const editGoal = asyncHandler(async (req, res) => {
     const { name, targetAmount, type, duration, category , autoDeduction} = req.body
     const { goalId } = req.params
-    const goal = new GoalService(req.user, {
+    const goal = new GoalService(req.user._id, {
         name,
         targetAmount,
         frequency : type,
@@ -124,7 +124,7 @@ const autoDeductAmt = asyncHandler(async (req, res) => {
     //fetch user goal
     const userId = req.user._id
     const goal = new GoalService(userId)
-    const deductAmtData = await goal.autoDeductAmount()
+    const deductAmtData = await goal.autoDeductAmt()
 
     return res.status(200)
         .json(
