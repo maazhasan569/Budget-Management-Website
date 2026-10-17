@@ -5,8 +5,7 @@ import { Users } from "../../models/users.models.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import asyncHandler from "../../utils/asyncHandler.js";
-
-export const questions = asyncHandler(async (req, res) => {
+const questions = asyncHandler(async (req, res) => {
     const { identity, currency, income, budget , bankBalance } = req.body
     const fieldCheck = [identity, currency, income, budget , bankBalance].some((fields) => {
         if (fields == null || fields === "") return true;
@@ -83,3 +82,8 @@ const updateCredentials = asyncHandler(async(req,res) => {
         new ApiResponse(200 , "User credential updated")
     )
 })
+
+export {
+    questions,
+    updateCredentials
+}
