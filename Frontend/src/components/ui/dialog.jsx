@@ -1,4 +1,3 @@
-import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
@@ -69,8 +68,8 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-2 right-2"
-                size="icon-sm"
+                className="absolute top-3 right-3 size-9 rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                size="icon"
               />
             }
           >

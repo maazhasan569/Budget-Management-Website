@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   AlertCircle,
   AlertTriangle,
@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  CloudUpload,
   FileText,
   Image as ImageIcon,
   ListTodo,
@@ -49,6 +50,7 @@ import { Textarea } from "@/components/ui/textarea"
 const PAGE_SIZE = 10
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif", "application/pdf"]
+const COMMON_CATEGORIES = ["Bills", "Banking", "Insurance", "Tax"]
 const TASK_STATUSES = {
   in_progress: { label: "In progress", variant: "outline" },
   Completed: { label: "Completed", variant: "secondary" },
@@ -63,6 +65,32 @@ function formatDate(value) {
     : new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date)
 }
 
+function localDateValue(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function dateOffsetInDays(dateValue) {
+  const [year, month, day] = dateValue.split("-").map(Number)
+  const selectedDay = Date.UTC(year, month - 1, day)
+  const today = new Date()
+  const currentDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+  return Math.round((selectedDay - currentDay) / 86400000)
+}
+
+function deadlinePayload(dateValue) {
+  if (!dateValue) return {}
+  const dayOffset = dateOffsetInDays(dateValue)
+  if (dayOffset > 0) return { dateValue: String(dayOffset), dueDateUnit: "days" }
+
+  const now = new Date()
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+  const hoursUntilDeadline = Math.max(1, Math.ceil((endOfToday.getTime() - now.getTime()) / 3600000))
+  return { dateValue: String(hoursUntilDeadline), dueDateUnit: "hours" }
+}
+
 function fileIsImage(url = "") {
   try {
     return /\.(jpe?g|png|gif)$/i.test(new URL(url).pathname)
@@ -71,31 +99,40 @@ function fileIsImage(url = "") {
   }
 }
 
-function TaskFormDialog({ open, onOpenChange, onCreate }) {
+function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
   const [taskName, setTaskName] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
   const [category, setCategory] = useState("")
-  const [dateValue, setDateValue] = useState("")
-  const [dueDateUnit, setDueDateUnit] = useState("days")
-  const [selectedFile, setSelectedFile] = useState(null)
-  const [error, setError] = useState("")
+  const [dueDate, setDueDate] = useState("")
+  const [attachment, setAttachment] = useState(null)
+  const [isDraggingFile, setIsDraggingFile] = useState(false)
+  const [formError, setFormError] = useState("")
+  const [attachmentError, setAttachmentError] = useState("")
   const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    const previewUrl = attachment?.previewUrl
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [attachment])
 
   function chooseFile(file) {
-    if (!file) {
-      setSelectedFile(null)
-      return
-    }
+    if (!file) return
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      setError("Choose a JPG, PNG, GIF, or PDF file.")
+      setAttachmentError("Choose a JPG, PNG, GIF, or PDF file.")
       return
     }
     if (file.size > MAX_FILE_SIZE) {
-      setError("The attachment must be 5 MB or smaller.")
+      setAttachmentError("The attachment must be 5 MB or smaller.")
       return
     }
-    setError("")
-    setSelectedFile(file)
+    setAttachmentError("")
+    setAttachment({
+      file,
+      previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
+    })
   }
 
   async function handleSubmit(event) {
@@ -104,28 +141,24 @@ function TaskFormDialog({ open, onOpenChange, onCreate }) {
     const cleanDescription = taskDescription.trim()
     const cleanCategory = category.trim()
 
-    if (!cleanName || !cleanDescription) {
-      setError("Enter both a task name and a description.")
-      return
-    }
-    if (dateValue && (!Number.isInteger(Number(dateValue)) || Number(dateValue) < 1)) {
-      setError("Enter a whole number of at least 1 for the due date.")
+    if (!cleanName) {
+      setFormError("Enter a task name.")
       return
     }
 
     setSaving(true)
-    setError("")
+    setFormError("")
     try {
       await onCreate({
         taskName: cleanName,
         taskDescription: cleanDescription,
         ...(cleanCategory ? { category: cleanCategory } : {}),
-        ...(dateValue ? { dateValue, dueDateUnit } : {}),
-        ...(selectedFile ? { document: selectedFile } : {}),
+        ...deadlinePayload(dueDate),
+        ...(attachment ? { document: attachment.file } : {}),
       })
       onOpenChange(false)
     } catch (submitError) {
-      setError(submitError.message || "We couldn’t create this task. Please try again.")
+      setFormError(submitError.message || "We couldn’t create this task. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -133,138 +166,182 @@ function TaskFormDialog({ open, onOpenChange, onCreate }) {
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !saving && onOpenChange(nextOpen)}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-5 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Add a financial task</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-foreground/75">
             Keep a money-related action organized. A due date and attachment are both optional.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="task-name">Task name <span className="text-destructive">*</span></Label>
-            <Input
-              id="task-name"
-              autoFocus
-              required
-              maxLength={120}
-              value={taskName}
-              onChange={(event) => setTaskName(event.target.value)}
-              placeholder="e.g. Review my monthly bank statement"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="task-description">Description <span className="text-destructive">*</span></Label>
-            <Textarea
-              id="task-description"
-              required
-              maxLength={1000}
-              value={taskDescription}
-              onChange={(event) => setTaskDescription(event.target.value)}
-              placeholder="Add details that will help you complete this task."
-              className="min-h-24"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="task-category">Category <span className="font-normal text-muted-foreground">(optional)</span></Label>
-            <Input
-              id="task-category"
-              maxLength={60}
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              placeholder="e.g. Bills, banking, insurance"
-            />
-          </div>
-
-          <section className="space-y-3 rounded-xl border border-border/80 bg-muted/25 p-4" aria-labelledby="task-deadline-heading">
-            <div className="flex items-start gap-3">
-              <CalendarClock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="task-dialog-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pt-1">
+            <div className="space-y-2">
+              <Label htmlFor="task-name" className="font-sans">Task name</Label>
+              <Input
+                id="task-name"
+                autoFocus
+                required
+                maxLength={120}
+                value={taskName}
+                onChange={(event) => setTaskName(event.target.value)}
+                placeholder="e.g. Review my monthly bank statement"
+                className="border-foreground/20 placeholder:text-foreground/50"
+              />
+            </div>
+            <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-description-heading">
               <div>
-                <h3 id="task-deadline-heading" className="text-sm font-medium">Due date <span className="font-normal text-muted-foreground">(optional)</span></h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Set a reminder relative to now, or leave it blank if this task has no deadline.
-                </p>
+                <h3 id="task-description-heading" className="font-sans text-sm font-medium">Description <span className="font-normal text-foreground/75">(optional)</span></h3>
+                <p className="mt-1 text-xs leading-relaxed text-foreground/75">Add a note if more context would be useful.</p>
               </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_140px]">
-              <div className="space-y-1.5">
-                <Label htmlFor="task-date-value" className="text-xs text-muted-foreground">Due in</Label>
-                <Input
-                  id="task-date-value"
-                  type="number"
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={dateValue}
-                  onChange={(event) => setDateValue(event.target.value)}
-                  placeholder="No deadline"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="task-date-unit" className="text-xs text-muted-foreground">Time unit</Label>
-                <select
-                  id="task-date-unit"
-                  value={dueDateUnit}
-                  onChange={(event) => setDueDateUnit(event.target.value)}
-                  disabled={!dateValue}
-                  className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-60"
-                >
-                  <option value="hours">Hours</option>
-                  <option value="days">Days</option>
-                  <option value="months">Months</option>
-                </select>
-              </div>
-            </div>
-          </section>
+              <Textarea
+                id="task-description"
+                maxLength={1000}
+                value={taskDescription}
+                onChange={(event) => setTaskDescription(event.target.value)}
+                placeholder="Add details if they’d be helpful."
+                className="min-h-20 border-foreground/20 placeholder:text-foreground/50"
+              />
+            </section>
 
-          <section className="space-y-3 rounded-xl border border-border/80 bg-muted/25 p-4" aria-labelledby="task-attachment-heading">
-            <div className="flex items-start gap-3">
-              <Paperclip className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-category-heading">
               <div>
-                <h3 id="task-attachment-heading" className="text-sm font-medium">Attachment <span className="font-normal text-muted-foreground">(optional)</span></h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Attach a picture or PDF if it helps. JPG, PNG, GIF, or PDF · up to 5 MB.
-                </p>
+                <h3 id="task-category-heading" className="font-sans text-sm font-medium">Category <span className="font-normal text-foreground/75">(optional)</span></h3>
+                <p className="mt-1 text-xs leading-relaxed text-foreground/75">Choose a suggestion or type a category of your own.</p>
               </div>
-            </div>
-            <Input
-              id="task-document"
-              type="file"
-              accept="image/jpeg,image/png,image/gif,application/pdf"
-              disabled={saving}
-              onChange={(event) => chooseFile(event.target.files?.[0])}
-              className="h-auto cursor-pointer file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary"
-              aria-label="Choose an optional task picture or PDF"
-            />
-            {selectedFile && (
-              <Attachment className="w-full">
-                <AttachmentMedia className="size-11">
-                  {selectedFile.type.startsWith("image/")
-                    ? <ImageIcon aria-hidden="true" />
-                    : <FileText aria-hidden="true" />}
-                </AttachmentMedia>
-                <AttachmentContent>
-                  <AttachmentTitle>{selectedFile.name}</AttachmentTitle>
-                  <span className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</span>
-                </AttachmentContent>
-                <AttachmentAction
-                  type="button"
-                  aria-label="Remove selected attachment"
-                  title="Remove attachment"
-                  disabled={saving}
-                  onClick={() => {
-                    setSelectedFile(null)
-                    const input = document.getElementById("task-document")
-                    if (input) input.value = ""
-                  }}
-                >
-                  <X aria-hidden="true" />
-                </AttachmentAction>
-              </Attachment>
-            )}
-          </section>
-          {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
-          <DialogFooter>
+              <Input
+                id="task-category"
+                list="task-category-options"
+                maxLength={60}
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+                placeholder="Choose or enter a category"
+                className="border-foreground/20 placeholder:text-foreground/50"
+                aria-label="Optional task category"
+              />
+              <datalist id="task-category-options">
+                {categories.map((item) => <option key={item} value={item} />)}
+              </datalist>
+            </section>
+
+            <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-deadline-heading">
+              <div className="flex items-start gap-3">
+                <CalendarClock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <div>
+                  <h3 id="task-deadline-heading" className="font-sans text-sm font-medium">Due date <span className="font-normal text-foreground/75">(optional)</span></h3>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">Pick a date or leave it empty for no deadline.</p>
+                </div>
+              </div>
+              <Input
+                id="task-due-date"
+                type="date"
+                min={localDateValue(new Date())}
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                className="border-foreground/20 dark:[color-scheme:dark]"
+                aria-label="Optional task due date"
+              />
+              <div className="flex flex-wrap gap-2" aria-label="Quick due date choices">
+                {[
+                  { label: "Today", days: 0 },
+                  { label: "Tomorrow", days: 1 },
+                  { label: "Next week", days: 7 },
+                ].map(({ label, days }) => {
+                  const quickDate = new Date()
+                  quickDate.setDate(quickDate.getDate() + days)
+                  const value = localDateValue(quickDate)
+                  return (
+                    <Button
+                      key={label}
+                      type="button"
+                      size="sm"
+                      variant={dueDate === value ? "secondary" : "outline"}
+                      aria-pressed={dueDate === value}
+                      onClick={() => setDueDate(dueDate === value ? "" : value)}
+                    >
+                      {label}
+                    </Button>
+                  )
+                })}
+                {dueDate && (
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setDueDate("")}>Clear date</Button>
+                )}
+              </div>
+              {dueDate && (
+                <p className="flex items-center gap-2 text-sm text-foreground/80">
+                  <Clock3 className="size-4 text-primary" aria-hidden="true" />
+                  Due {formatDate(new Date(`${dueDate}T12:00:00`))}
+                </p>
+              )}
+            </section>
+
+            <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-attachment-heading">
+              <div className="flex items-start gap-3">
+                <Paperclip className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <div>
+                  <h3 id="task-attachment-heading" className="font-sans text-sm font-medium">Attachment <span className="font-normal text-foreground/75">(optional)</span></h3>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">Attach a picture or PDF if it helps. JPG, PNG, GIF, or PDF · up to 5 MB.</p>
+                </div>
+              </div>
+              <input
+                ref={fileInputRef}
+                id="task-document"
+                type="file"
+                accept="image/jpeg,image/png,image/gif,application/pdf"
+                disabled={saving}
+                className="peer sr-only"
+                onChange={(event) => {
+                  chooseFile(event.target.files?.[0])
+                  event.target.value = ""
+                }}
+                aria-label="Choose an optional task picture or PDF"
+              />
+              <label
+                htmlFor="task-document"
+                onDragOver={(event) => {
+                  event.preventDefault()
+                  setIsDraggingFile(true)
+                }}
+                onDragLeave={() => setIsDraggingFile(false)}
+                onDrop={(event) => {
+                  event.preventDefault()
+                  setIsDraggingFile(false)
+                  chooseFile(event.dataTransfer.files?.[0])
+                }}
+                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-5 text-center transition-colors hover:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${isDraggingFile ? "border-primary bg-primary/10" : "border-foreground/30"}`}
+              >
+                <CloudUpload className="size-6 text-primary" aria-hidden="true" />
+                <span className="text-sm font-medium text-foreground">
+                  {isDraggingFile ? "Drop your file here" : attachment ? "Drop a file or click to replace" : "Drop a file or click to upload"}
+                </span>
+                <span className="text-xs text-foreground/75">Pictures or PDF · maximum 5 MB</span>
+              </label>
+              {attachmentError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{attachmentError}</p>}
+              {attachment && (
+                <Attachment className="w-full">
+                  <AttachmentMedia variant={attachment.previewUrl ? "image" : "icon"} className="size-12 opacity-100">
+                    {attachment.previewUrl
+                      ? <img src={attachment.previewUrl} alt="" />
+                      : <FileText aria-hidden="true" />}
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{attachment.file.name}</AttachmentTitle>
+                    <span className="text-xs text-foreground/75">{(attachment.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </AttachmentContent>
+                  <AttachmentAction
+                    type="button"
+                    aria-label="Remove selected attachment"
+                    title="Remove attachment"
+                    disabled={saving}
+                    onClick={() => setAttachment(null)}
+                  >
+                    <X aria-hidden="true" />
+                  </AttachmentAction>
+                </Attachment>
+              )}
+            </section>
+            {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
+          </div>
+          <DialogFooter className="sticky bottom-0 z-10 mx-0 mb-0 flex-none rounded-b-xl border-t border-border bg-popover px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               <Plus className="mr-1 size-4" aria-hidden="true" />{saving ? "Creating…" : "Create task"}
@@ -357,7 +434,7 @@ function TaskCard({ task, onComplete, onDelete, busy }) {
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:justify-end">
         {task.status === "in_progress" && (
-          <Button variant="outline" size="sm" disabled={busy} onClick={() => onComplete(task)}>
+          <Button variant="outline" size="sm" disabled={busy} title="Mark complete and move to history" onClick={() => onComplete(task)}>
             <Check className="mr-1 size-4" aria-hidden="true" />Complete
           </Button>
         )}
@@ -406,6 +483,16 @@ export function FinancialTasksPage() {
   const [deletingTask, setDeletingTask] = useState(null)
   const [busyTaskId, setBusyTaskId] = useState(null)
   const [actionError, setActionError] = useState("")
+  const categoryOptions = useMemo(() => {
+    const categoriesByKey = new Map()
+    for (const item of [...COMMON_CATEGORIES, ...tasks.map((task) => task.category)]) {
+      const trimmed = item?.trim()
+      if (trimmed && !categoriesByKey.has(trimmed.toLocaleLowerCase())) {
+        categoriesByKey.set(trimmed.toLocaleLowerCase(), trimmed)
+      }
+    }
+    return [...categoriesByKey.values()].sort((left, right) => left.localeCompare(right))
+  }, [tasks])
   const requestKey = `${page}:${reloadKey}`
   const loading = loadedRequestKey !== requestKey
   const loadError = loadErrorKey === requestKey
@@ -528,7 +615,7 @@ export function FinancialTasksPage() {
           <CardContent className="space-y-3 pt-4">
             <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               <CalendarClock className="size-4 shrink-0 text-primary" aria-hidden="true" />
-              Deadlines and attachments are optional.               Removed tasks are sent to your history.
+              Deadlines and attachments are optional.                             Completing or removing a task sends it to your history.
             </div>
             <div className="space-y-3" aria-busy={loading}>
               {tasks.map((task) => (
@@ -552,7 +639,7 @@ export function FinancialTasksPage() {
         </Card>
       )}
 
-      {createOpen && <TaskFormDialog open onOpenChange={setCreateOpen} onCreate={handleCreate} />}
+      {createOpen && <TaskFormDialog open onOpenChange={setCreateOpen} onCreate={handleCreate} categories={categoryOptions} />}
       {deletingTask && (
         <TaskDeleteDialog
           task={deletingTask}

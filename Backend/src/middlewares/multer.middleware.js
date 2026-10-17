@@ -1,6 +1,6 @@
 import multer from "multer"
 import ApiError from "../utils/ApiError.js";
-import sharp from "sharp"
+
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -14,6 +14,7 @@ const storage = multer.diskStorage({
 })
 const fileFilter = (req, file, cb) => {
     try {
+        
         const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
 
         if (allowedMimeTypes.includes(file.mimetype)) {

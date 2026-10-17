@@ -18,7 +18,7 @@ export class TaskService extends FileService {
     }
 
     validateTask() {
-        const fieldCheck = [this.taskName, this.taskDescription]
+        const fieldCheck = [this.taskName]
             .some((field) => {
                 if (typeof field === 'string') {
                     return !field || field.trim() === ""
@@ -26,7 +26,7 @@ export class TaskService extends FileService {
                 if (!field) return !field
             })
 
-        
+
         if (fieldCheck) {
             throw new ApiError(400, "All fields required")
         }
@@ -66,7 +66,7 @@ export class TaskService extends FileService {
         try {
 
             this.validateTask()
-            if (this.dateValue && this.dueDateUnit ) {
+            if (this.dateValue && this.dueDateUnit) {
                 this.dueDate = this.calculateDueDate(this.dateValue, this.dueDateUnit)
             }
 
@@ -116,7 +116,7 @@ export class TaskService extends FileService {
                 fileData = await this.updateFile(taskId, "Task")
             }
             const updatedTask = await Task.findOneAndUpdate(
-                { _id: taskId , userId : this.userId},
+                { _id: taskId, userId: this.userId },
                 {
                     name: this.taskName,
                     description: this.taskDescription,
@@ -144,11 +144,11 @@ export class TaskService extends FileService {
 
         try {
 
-            const task = await Task.findOne({_id : taskId , userId : this.userId})
+            const task = await Task.findOne({ _id: taskId, userId: this.userId })
             await this.deleteFile(taskId, Task)
             task.status = "Deleted"
             await task.save()
-            const deletedTask = await pushToHistory(Task , this.userId , taskId , "tasks")
+            const deletedTask = await pushToHistory(Task, this.userId, taskId, "tasks")
             return deletedTask
 
         } catch (err) {
@@ -178,7 +178,7 @@ export class TaskService extends FileService {
 
             task.status = "Completed"
             const updatedTask = await task.save()
-            await pushToHistory(this.userId, taskId, "tasks")
+            await pushToHistory(Task, this.userId, taskId, "tasks")
 
             return updatedTask
 
@@ -199,10 +199,10 @@ export class TaskService extends FileService {
             for (const task of tasks) {
                 const currentDate = new Date()
                 const dueDate = new Date(task.dueDate)
-                if (currentDate <= dueDate) return;
-
-                if (currentDate >= dueDate) task.status = "Overdue"
-                await task.save()
+                if (dueDate && currentDate > dueDate) {
+                    task.status = "Overdue"
+                    await task.save()
+                }
                 return task
             }
 
