@@ -3,6 +3,7 @@ import { ExpensesPage as ExpensesContent } from "@/components/expenses/expenses-
 import { GoalsPage as GoalsContent } from "@/components/goals/goals-page"
 import { LoansPage as LoansContent } from "@/components/loans/loans-page"
 import { FinancialTasksPage as FinancialTasksContent } from "@/components/tasks/tasks-page"
+import { SettingsContent } from "@/components/settings/settings-page"
 import { SectionPlaceholder } from "@/components/layout/section-placeholder"
 
 export function DashboardPage() {
@@ -26,13 +27,7 @@ export function FinancialTasksPage() {
 }
 
 export function SettingsPage() {
-  return (
-    <SectionPlaceholder
-      title="Settings"
-      description="Personalize your Finch experience. This page is still taking shape."
-      comingSoon
-    />
-  )
+  return <SettingsContent />
 }
 
 export function HistoryPage() {

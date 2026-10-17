@@ -177,14 +177,13 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
             Keep a money-related action organized. A due date and attachment are both optional.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <form noValidate onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="task-dialog-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pt-1">
             <div className="space-y-2">
               <Label htmlFor="task-name" className="font-sans">Task name</Label>
               <Input
                 id="task-name"
                 autoFocus
-                required
                 maxLength={120}
                 value={taskName}
                 onChange={(event) => setTaskName(event.target.value)}
