@@ -14,20 +14,22 @@ function taskError(error, fallback) {
   return new Error(typeof message === "string" ? message : fallback, { cause: error })
 }
 
-export async function getTasks({ page = 1, limit = 10, sortBy = "createdAt", sortType = "desc" } = {}) {
-  try {
-    const response = await apiClient.get(BASE_PATH, {
-      params: { page, limit, sortBy, sortType },
-    })
-    const data = responseData(response)
+function normalizeTaskPage(data, page, limit) {
+  return {
+    tasks: Array.isArray(data?.fetchedDoc) ? data.fetchedDoc : [],
+    totalDoc: Number(data?.totalDoc) || 0,
+    totalPages: Number(data?.totalPages) || 0,
+    page: Number(data?.page) || page,
+    limit: Number(data?.limit) || limit,
+  }
+}
 
-    return {
-      tasks: Array.isArray(data?.fetchedDoc) ? data.fetchedDoc : [],
-      totalDoc: Number(data?.totalDoc) || 0,
-      totalPages: Number(data?.totalPages) || 0,
-      page: Number(data?.page) || page,
-      limit: Number(data?.limit) || limit,
-    }
+async function getTaskPage(path, { page, limit, sortBy, sortType, category }) {
+  try {
+    const response = await apiClient.get(path, {
+      params: { page, limit, sortBy, sortType, ...(category ? { category } : {}) },
+    })
+    return normalizeTaskPage(responseData(response), page, limit)
   } catch (error) {
     if (
       error?.response?.status === 404 &&
@@ -36,6 +38,31 @@ export async function getTasks({ page = 1, limit = 10, sortBy = "createdAt", sor
       return { tasks: [], totalDoc: 0, totalPages: 0, page, limit }
     }
     throw taskError(error, "We couldn’t load your tasks. Please try again.")
+  }
+}
+
+export async function getTasks({ page = 1, limit = 10, sortBy = "createdAt", sortType = "desc", category } = {}) {
+  return getTaskPage(category ? `${BASE_PATH}/category` : BASE_PATH, {
+    page,
+    limit,
+    sortBy,
+    sortType,
+    category,
+  })
+}
+
+export async function getTaskCategories() {
+  try {
+    const { tasks } = await getTaskPage(`${BASE_PATH}/category`, {
+      page: 1,
+      limit: 1000,
+      sortBy: "category",
+      sortType: "asc",
+    })
+    return [...new Set(tasks.map((task) => task.category?.trim()).filter(Boolean))]
+      .sort((left, right) => left.localeCompare(right))
+  } catch (error) {
+    throw taskError(error, "We couldn’t load task categories. Please try again.")
   }
 }
 

@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react"
 
-import { completeTask, createTask, deleteTask, getTasks } from "@/api/tasks/tasks"
+import { completeTask, createTask, deleteTask, getTaskCategories, getTasks } from "@/api/tasks/tasks"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
 import {
   Attachment,
@@ -45,9 +45,19 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 const PAGE_SIZE = 10
+const ALL_CATEGORIES = "__all_task_categories__"
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif", "application/pdf"]
 const COMMON_CATEGORIES = ["Bills", "Banking", "Insurance", "Tax"]
@@ -501,6 +511,9 @@ function TasksError({ onRetry }) {
 
 export function FinancialTasksPage() {
   const [tasks, setTasks] = useState([])
+  const [categories, setCategories] = useState([])
+  const [category, setCategory] = useState("")
+  const [categoriesError, setCategoriesError] = useState("")
   const [page, setPage] = useState(1)
   const [totalTasks, setTotalTasks] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -513,26 +526,43 @@ export function FinancialTasksPage() {
   const [actionError, setActionError] = useState("")
   const categoryOptions = useMemo(() => {
     const categoriesByKey = new Map()
-    for (const item of [...COMMON_CATEGORIES, ...tasks.map((task) => task.category)]) {
+    for (const item of [...COMMON_CATEGORIES, ...categories, ...tasks.map((task) => task.category)]) {
       const trimmed = item?.trim()
       if (trimmed && !categoriesByKey.has(trimmed.toLocaleLowerCase())) {
         categoriesByKey.set(trimmed.toLocaleLowerCase(), trimmed)
       }
     }
     return [...categoriesByKey.values()].sort((left, right) => left.localeCompare(right))
-  }, [tasks])
-  const requestKey = `${page}:${reloadKey}`
+  }, [categories, tasks])
+  const requestKey = `${category}:${page}:${reloadKey}`
   const loading = loadedRequestKey !== requestKey
   const loadError = loadErrorKey === requestKey
 
   useEffect(() => {
     let active = true
 
-    getTasks({ page, limit: PAGE_SIZE })
+    getTaskCategories()
+      .then((result) => {
+        if (active) {
+          setCategories(result)
+          setCategoriesError("")
+        }
+      })
+      .catch((error) => {
+        if (active) setCategoriesError(error.message)
+      })
+
+    return () => { active = false }
+  }, [reloadKey])
+
+  useEffect(() => {
+    let active = true
+
+    getTasks({ page, limit: PAGE_SIZE, category: category || undefined })
       .then((result) => {
         if (!active) return
-        if (!result.tasks.length && page > 1 && result.totalPages > 0 && page > result.totalPages) {
-          setPage(result.totalPages)
+        if (!result.tasks.length && page > 1 && page > result.totalPages) {
+          setPage(Math.max(1, result.totalPages))
           return
         }
         setTasks(result.tasks)
@@ -547,12 +577,18 @@ export function FinancialTasksPage() {
       })
 
     return () => { active = false }
-  }, [page, reloadKey, requestKey])
+  }, [category, page, reloadKey, requestKey])
 
   async function handleCreate(values) {
     await createTask(values)
+    setCategory("")
     setPage(1)
     setReloadKey((key) => key + 1)
+  }
+
+  function changeCategory(value) {
+    setCategory(value === ALL_CATEGORIES ? "" : value)
+    setPage(1)
   }
 
   async function handleComplete(task) {
@@ -615,7 +651,7 @@ export function FinancialTasksPage() {
 
       {loadError ? (
         <TasksError onRetry={() => setReloadKey((key) => key + 1)} />
-      ) : tasks.length === 0 ? (
+      ) : totalTasks === 0 && !category ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><ListTodo className="size-4 text-primary" aria-hidden="true" />Your task list</CardTitle>
@@ -636,17 +672,53 @@ export function FinancialTasksPage() {
           <CardHeader className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2"><ListTodo className="size-4 text-primary" aria-hidden="true" />Your task list</CardTitle>
-              <CardDescription className="mt-1">{totalTasks} {totalTasks === 1 ? "task" : "tasks"} to keep on top of</CardDescription>
+              <CardDescription className="mt-1">
+                {totalTasks} {totalTasks === 1 ? "task" : "tasks"}{category ? ` in ${category}` : " to keep on top of"}
+              </CardDescription>
             </div>
-            {totalPages > 1 && <p className="text-xs text-muted-foreground">Page {page} of {totalPages}</p>}
+            <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-[minmax(190px,240px)_auto] sm:items-center">
+              <Select
+                value={category || ALL_CATEGORIES}
+                onValueChange={changeCategory}
+              >
+                <SelectTrigger className="h-9 w-full" aria-label="Filter financial tasks by category">
+                  <SelectValue>{category || "All categories"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent className="p-1.5">
+                  <SelectGroup>
+                    <SelectLabel>Task categories</SelectLabel>
+                    <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+                    {categoryOptions.map((item) => (
+                      <SelectItem key={item} value={item}>{item}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {totalPages > 1 && <p className="text-xs text-muted-foreground sm:text-right">Page {page} of {totalPages}</p>}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 pt-4">
+            {categoriesError && (
+              <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">{categoriesError}</span>
+                <Button size="sm" variant="outline" onClick={() => setReloadKey((key) => key + 1)}>Retry</Button>
+              </div>
+            )}
             <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               <CalendarClock className="size-4 shrink-0 text-primary" aria-hidden="true" />
               Deadlines and attachments are optional.                             Completing or removing a task sends it to your history.
             </div>
             <div className="space-y-3" aria-busy={loading}>
-              {tasks.map((task) => (
+              {tasks.length === 0 ? (
+                <EmptyDataState
+                  icon={CheckCircle2}
+                  title={category ? `No ${category} tasks` : "No tasks found"}
+                  description={category ? "There are no tasks in this category yet. Choose another category or show all tasks." : "No tasks are available on this page."}
+                  actionLabel={category ? "Show all categories" : undefined}
+                  actionOnClick={category ? () => changeCategory(ALL_CATEGORIES) : undefined}
+                  className="min-h-[170px]"
+                />
+              ) : tasks.map((task) => (
                 <TaskCard
                   key={task._id}
                   task={task}
