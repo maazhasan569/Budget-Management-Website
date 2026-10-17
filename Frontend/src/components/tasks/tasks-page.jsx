@@ -65,30 +65,15 @@ function formatDate(value) {
     : new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date)
 }
 
-function localDateValue(date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, "0")
-  const day = String(date.getDate()).padStart(2, "0")
-  return `${year}-${month}-${day}`
-}
+function getRelativeDueDate(value, unit) {
+  const amount = Number(value)
+  if (!Number.isInteger(amount) || amount < 1 || !unit) return null
 
-function dateOffsetInDays(dateValue) {
-  const [year, month, day] = dateValue.split("-").map(Number)
-  const selectedDay = Date.UTC(year, month - 1, day)
-  const today = new Date()
-  const currentDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
-  return Math.round((selectedDay - currentDay) / 86400000)
-}
-
-function deadlinePayload(dateValue) {
-  if (!dateValue) return {}
-  const dayOffset = dateOffsetInDays(dateValue)
-  if (dayOffset > 0) return { dateValue: String(dayOffset), dueDateUnit: "days" }
-
-  const now = new Date()
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-  const hoursUntilDeadline = Math.max(1, Math.ceil((endOfToday.getTime() - now.getTime()) / 3600000))
-  return { dateValue: String(hoursUntilDeadline), dueDateUnit: "hours" }
+  const dueDate = new Date()
+  if (unit === "hours") dueDate.setHours(dueDate.getHours() + amount)
+  if (unit === "days") dueDate.setDate(dueDate.getDate() + amount)
+  if (unit === "months") dueDate.setMonth(dueDate.getMonth() + amount)
+  return dueDate
 }
 
 function fileIsImage(url = "") {
@@ -103,7 +88,8 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
   const [taskName, setTaskName] = useState("")
   const [taskDescription, setTaskDescription] = useState("")
   const [category, setCategory] = useState("")
-  const [dueDate, setDueDate] = useState("")
+  const [dateValue, setDateValue] = useState("")
+  const [dueDateUnit, setDueDateUnit] = useState("")
   const [attachment, setAttachment] = useState(null)
   const [isDraggingFile, setIsDraggingFile] = useState(false)
   const [formError, setFormError] = useState("")
@@ -145,6 +131,14 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
       setFormError("Enter a task name.")
       return
     }
+    if ((dateValue && !dueDateUnit) || (!dateValue && dueDateUnit)) {
+      setFormError("Enter both the amount of time and its unit, or leave both blank.")
+      return
+    }
+    if (dateValue && (!Number.isInteger(Number(dateValue)) || Number(dateValue) < 1)) {
+      setFormError("Enter a whole number of at least 1 for the due date.")
+      return
+    }
 
     setSaving(true)
     setFormError("")
@@ -153,7 +147,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
         taskName: cleanName,
         taskDescription: cleanDescription,
         ...(cleanCategory ? { category: cleanCategory } : {}),
-        ...deadlinePayload(dueDate),
+        ...(dateValue && dueDateUnit ? { dateValue, dueDateUnit } : {}),
         ...(attachment ? { document: attachment.file } : {}),
       })
       onOpenChange(false)
@@ -228,48 +222,82 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                 <CalendarClock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                 <div>
                   <h3 id="task-deadline-heading" className="font-sans text-sm font-medium">Due date <span className="font-normal text-foreground/75">(optional)</span></h3>
-                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">Pick a date or leave it empty for no deadline.</p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">Set a time from now, or leave both fields empty for no deadline.</p>
                 </div>
               </div>
-              <Input
-                id="task-due-date"
-                type="date"
-                min={localDateValue(new Date())}
-                value={dueDate}
-                onChange={(event) => setDueDate(event.target.value)}
-                className="border-foreground/20 dark:[color-scheme:dark]"
-                aria-label="Optional task due date"
-              />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-date-value" className="font-sans text-xs text-foreground/80">Due in</Label>
+                  <Input
+                    id="task-date-value"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={dateValue}
+                    onChange={(event) => setDateValue(event.target.value)}
+                    placeholder="Enter a number"
+                    className="border-foreground/20 placeholder:text-foreground/70"
+                    aria-label="Amount of time until task is due"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="task-date-unit" className="font-sans text-xs text-foreground/80">Time unit</Label>
+                  <select
+                    id="task-date-unit"
+                    value={dueDateUnit}
+                    onChange={(event) => setDueDateUnit(event.target.value)}
+                    className="flex h-9 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    aria-label="Unit of time until task is due"
+                  >
+                    <option value="" disabled>Select a unit</option>
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                    <option value="months">Months</option>
+                  </select>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2" aria-label="Quick due date choices">
                 {[
-                  { label: "Today", days: 0 },
-                  { label: "Tomorrow", days: 1 },
-                  { label: "Next week", days: 7 },
-                ].map(({ label, days }) => {
-                  const quickDate = new Date()
-                  quickDate.setDate(quickDate.getDate() + days)
-                  const value = localDateValue(quickDate)
+                  { label: "Today", value: "1", unit: "hours" },
+                  { label: "Tomorrow", value: "1", unit: "days" },
+                  { label: "Next week", value: "7", unit: "days" },
+                ].map(({ label, value, unit }) => {
+                  const isSelected = dateValue === value && dueDateUnit === unit
                   return (
                     <Button
                       key={label}
                       type="button"
                       size="sm"
-                      variant={dueDate === value ? "secondary" : "outline"}
-                      aria-pressed={dueDate === value}
-                      onClick={() => setDueDate(value)}
+                      variant={isSelected ? "secondary" : "outline"}
+                      aria-pressed={isSelected}
+                      onClick={() => {
+                        setDateValue(value)
+                        setDueDateUnit(unit)
+                      }}
                     >
                       {label}
                     </Button>
                   )
                 })}
-                {dueDate && (
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setDueDate("")}>Clear date</Button>
+                {(dateValue || dueDateUnit) && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setDateValue("")
+                      setDueDateUnit("")
+                    }}
+                  >
+                    Clear
+                  </Button>
                 )}
               </div>
-              {dueDate && (
+              {dateValue && dueDateUnit && getRelativeDueDate(dateValue, dueDateUnit) && (
                 <p className="flex items-center gap-2 text-sm text-foreground/80">
                   <Clock3 className="size-4 text-primary" aria-hidden="true" />
-                  Due {formatDate(new Date(`${dueDate}T12:00:00`))}
+                  Due {formatDate(getRelativeDueDate(dateValue, dueDateUnit))}
                 </p>
               )}
             </section>
