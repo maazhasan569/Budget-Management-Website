@@ -1,3 +1,6 @@
+import { Expense } from "../../models/budget/expense.models.js";
+import { Goal } from "../../models/budget/goals.models.js";
+import { Loan } from "../../models/budget/loan.models.js";
 import { Users } from "../../models/users.models.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
@@ -47,4 +50,36 @@ export const questions = asyncHandler(async (req, res) => {
             new ApiResponse(200, `saved usercredentials`, saveCredentials)
         )
 
+})
+
+
+const updateCredentials = asyncHandler(async(req,res) => {
+    const { identity, currency, income, budget , bankBalance } = req.body
+    const userId = req.user._id
+
+     const fieldCheck = [income, budget , bankBalance]
+            .some((field) => {
+                if (typeof field === 'number') {
+                    return !field && field < 0 
+                }
+            })
+
+    if(fieldCheck){
+        throw new ApiError(400 , "Invalid income , budget , bankbalance ")
+    }
+
+    const updatedUser = await Users.findByIdAndUpdate(
+        userId, {
+            identity,
+            currency,
+            income,
+            budget,
+            bankBalance
+        }
+    )
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , "User credential updated")
+    )
 })
