@@ -228,7 +228,7 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
     setDeleting(true)
     setFormError("")
     try {
-      await onDelete(expense._id, { ans: deletionReason })
+      await onDelete(expense._id, deletionReason)
       onOpenChange(false)
     } catch (error) {
       setFormError(error?.message || FRIENDLY_DELETE_ERROR)
