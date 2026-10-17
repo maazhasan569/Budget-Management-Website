@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { setSelectedCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
+import { SettingsSkeleton } from "@/components/settings/settings-skeleton"
 
 const IDENTITY_OPTIONS = [
   { value: "Student", label: "Student" },
@@ -207,10 +208,7 @@ export function SettingsContent() {
       <h1 className="mb-5 text-2xl font-semibold tracking-tight">Settings</h1>
 
       {loading ? (
-        <div className="flex min-h-40 items-center gap-2 text-muted-foreground" role="status">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Loading your settings...
-        </div>
+        <SettingsSkeleton />
       ) : loadError ? (
         <div className="space-y-4">
           <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
