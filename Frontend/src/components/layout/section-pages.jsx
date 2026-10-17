@@ -2,6 +2,7 @@ import { DashboardPage as DashboardContent } from "@/components/dashboard/dashbo
 import { ExpensesPage as ExpensesContent } from "@/components/expenses/expenses-page"
 import { GoalsPage as GoalsContent } from "@/components/goals/goals-page"
 import { LoansPage as LoansContent } from "@/components/loans/loans-page"
+import { FinancialTasksPage as FinancialTasksContent } from "@/components/tasks/tasks-page"
 import { SectionPlaceholder } from "@/components/layout/section-placeholder"
 
 export function DashboardPage() {
@@ -21,7 +22,7 @@ export function GoalsPage() {
 }
 
 export function FinancialTasksPage() {
-  return <SectionPlaceholder title="Financial Tasks" description="Keep important money-related tasks and documents together." />
+  return <FinancialTasksContent />
 }
 
 export function SettingsPage() {
