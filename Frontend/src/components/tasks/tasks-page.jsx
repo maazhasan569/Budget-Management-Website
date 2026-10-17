@@ -185,7 +185,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                 value={taskName}
                 onChange={(event) => setTaskName(event.target.value)}
                 placeholder="e.g. Review my monthly bank statement"
-                className="border-foreground/20 placeholder:text-foreground/50"
+                className="border-foreground/20 placeholder:text-foreground/70"
               />
             </div>
             <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-description-heading">
@@ -199,7 +199,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                 value={taskDescription}
                 onChange={(event) => setTaskDescription(event.target.value)}
                 placeholder="Add details if they’d be helpful."
-                className="min-h-20 border-foreground/20 placeholder:text-foreground/50"
+                className="min-h-20 border-foreground/20 placeholder:text-foreground/70"
               />
             </section>
 
@@ -215,7 +215,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
                 placeholder="Choose or enter a category"
-                className="border-foreground/20 placeholder:text-foreground/50"
+                className="border-foreground/20 placeholder:text-foreground/70"
                 aria-label="Optional task category"
               />
               <datalist id="task-category-options">
@@ -256,7 +256,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                       size="sm"
                       variant={dueDate === value ? "secondary" : "outline"}
                       aria-pressed={dueDate === value}
-                      onClick={() => setDueDate(dueDate === value ? "" : value)}
+                      onClick={() => setDueDate(value)}
                     >
                       {label}
                     </Button>
