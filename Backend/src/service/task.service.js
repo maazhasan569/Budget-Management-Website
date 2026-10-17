@@ -198,14 +198,12 @@ export class TaskService extends FileService {
             const tasks = await Task.find({ userId: this.userId })
             for (const task of tasks) {
                 const currentDate = new Date()
-                const dueDate = new Date(task.dueDate)
-                if (dueDate && currentDate > dueDate) {
+                if (task.dueDate && currentDate > task.dueDate) {
                     task.status = "Overdue"
                     await task.save()
                 }
-                return task
             }
-
+            
         } catch (err) {
             throw new ApiError(400, err.message)
         }
