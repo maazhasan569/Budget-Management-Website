@@ -117,10 +117,10 @@ export class ExpenseTracker {
                 },
                     { new: true });
 
-                await pushToHistory(this.userId, expense._id, "expenses")
+                await pushToHistory(Expense , this.userId, expense._id, "expenses")
 
             } else {
-                await pushToHistory(this.userId, expense._id, "expenses")
+                await pushToHistory(Expense , this.userId, expense._id, "expenses")
             }
 
 
