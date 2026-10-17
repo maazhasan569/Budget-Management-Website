@@ -102,6 +102,7 @@ const logInUser = asyncHandler(async (req, res) => {
                 new ApiResponse(200, "user found", { loggedInUser, accessToken })
             )
     } catch (error) {
+        console.log(error)
         const statusCode = error?.statusCode || 500
         const message = statusCode === 400
             ? "Please enter your email and password."

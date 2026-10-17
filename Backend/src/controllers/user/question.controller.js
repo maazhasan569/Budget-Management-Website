@@ -39,7 +39,7 @@ const questions = asyncHandler(async (req, res) => {
             budget,
             bankBalance,
         },
-        { new: true }
+        { new: true , runValidators: true }
     )
     if (!saveCredentials) {
         throw new ApiError(500, "failed to save credentials")
@@ -68,13 +68,15 @@ const updateCredentials = asyncHandler(async(req,res) => {
     }
 
     const updatedUser = await Users.findByIdAndUpdate(
-        userId, {
+        userId, 
+        {
             identity,
             currency,
             income,
             budget,
             bankBalance
-        }
+        },
+        { new: true , runValidators: true}
     )
 
     return res.status(200)

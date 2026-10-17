@@ -11,7 +11,7 @@ const usersSchema = new mongoose.Schema({
     identity: {
         type: String,
         enum: {
-           values:  ["Student", "Working Adults", "Retires"],
+           values:  ["Student", "Working Adults", "Retired"],
             message: "Please select a valid identity: Student, Working Adults, or Retirees"
         }
 
