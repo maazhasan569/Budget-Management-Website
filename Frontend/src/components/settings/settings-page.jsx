@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useState } from "react"
-import { Check, ChevronsUpDown, Loader2, Save, Settings2 } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Save } from "lucide-react"
 
 import { fetchCurrencies } from "@/api/external/currency"
 import { loadUserSettings, saveUserSettings } from "@/api/user/settings"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { setSelectedCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +27,13 @@ const EMPTY_SETTINGS = {
 }
 
 const inputClass =
-  "h-11 border-slate-700 bg-[#0B1220] text-white placeholder:text-slate-500 focus-visible:ring-emerald-500"
+  "h-10 w-full border-slate-700 bg-[#0B1220] text-white placeholder:text-slate-500 focus-visible:ring-emerald-500 sm:max-w-xs"
+
+const rowClass =
+  "grid gap-3 border-b border-border/70 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(220px,320px)] sm:items-center"
+
+const controlClass =
+  "h-10 w-full border-slate-700 bg-[#0B1220] text-white hover:bg-slate-800 hover:text-white sm:ml-auto sm:max-w-xs"
 
 function settingsFromProfile(profile) {
   if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
@@ -198,233 +203,218 @@ export function SettingsContent() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
-      <div>
-        <div className="flex items-center gap-2 text-primary">
-          <Settings2 className="size-5" aria-hidden="true" />
-          <p className="text-sm font-medium">Your profile</p>
+    <div className="mx-auto w-full max-w-5xl px-1">
+      <h1 className="mb-5 text-2xl font-semibold tracking-tight">Settings</h1>
+
+      {loading ? (
+        <div className="flex min-h-40 items-center gap-2 text-muted-foreground" role="status">
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          Loading your settings...
         </div>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-2 text-muted-foreground">
-          Update the financial details you shared when setting up your account.
-        </p>
-      </div>
-
-      <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle>Financial profile</CardTitle>
-          <CardDescription>
-            Changes are applied when you select Save changes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex min-h-40 items-center justify-center gap-2 text-muted-foreground" role="status">
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              Loading your settings...
+      ) : loadError ? (
+        <div className="space-y-4">
+          <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+            {loadError}
+          </p>
+          <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+            Reload settings
+          </Button>
+        </div>
+      ) : (
+        <form noValidate onSubmit={handleSubmit}>
+          <div className={rowClass}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-identity">About you</Label>
+              <p className="text-sm text-muted-foreground">Choose the option that best describes you.</p>
             </div>
-          ) : loadError ? (
-            <div className="space-y-4">
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                {loadError}
+            <Select
+              value={settings.identity}
+              onValueChange={(value) => updateSetting("identity", value)}
+            >
+              <SelectTrigger
+                id="settings-identity"
+                aria-invalid={Boolean(errors.identity)}
+                aria-describedby={errors.identity ? "settings-identity-error" : undefined}
+                className={controlClass}
+              >
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+              <SelectContent>
+                {IDENTITY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.identity && (
+              <p id="settings-identity-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.identity}
               </p>
-              <Button type="button" variant="outline" onClick={() => window.location.reload()}>
-                Reload settings
-              </Button>
+            )}
+          </div>
+
+          <div className={rowClass}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-income">Monthly income</Label>
+              <p className="text-sm text-muted-foreground">Your regular monthly income.</p>
             </div>
-          ) : (
-            <form noValidate onSubmit={handleSubmit} className="space-y-6">
-              <fieldset className="space-y-3">
-                <legend className="text-sm font-medium">Which best describes you?</legend>
-                <RadioGroup
-                  value={settings.identity}
-                  onValueChange={(value) => updateSetting("identity", value)}
-                  className="grid gap-3 sm:grid-cols-3"
-                  aria-describedby={errors.identity ? "settings-identity-error" : undefined}
+            <Input
+              id="settings-income"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={settings.income}
+              onChange={(event) => updateSetting("income", event.target.value)}
+              aria-invalid={Boolean(errors.income)}
+              aria-describedby={errors.income ? "settings-income-error" : undefined}
+              className={inputClass}
+            />
+            {errors.income && (
+              <p id="settings-income-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.income}
+              </p>
+            )}
+          </div>
+
+          <div className={rowClass}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-bank-balance">Bank balance</Label>
+              <p className="text-sm text-muted-foreground">Your current available balance.</p>
+            </div>
+            <Input
+              id="settings-bank-balance"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={settings.bankBalance}
+              onChange={(event) => updateSetting("bankBalance", event.target.value)}
+              aria-invalid={Boolean(errors.bankBalance)}
+              aria-describedby={errors.bankBalance ? "settings-bank-balance-error" : undefined}
+              className={inputClass}
+            />
+            {errors.bankBalance && (
+              <p id="settings-bank-balance-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.bankBalance}
+              </p>
+            )}
+          </div>
+
+          <div className={rowClass}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-budget">Monthly budget</Label>
+              <p className="text-sm text-muted-foreground">The amount you plan to spend each month.</p>
+            </div>
+            <Input
+              id="settings-budget"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              value={settings.budget}
+              onChange={(event) => updateSetting("budget", event.target.value)}
+              aria-invalid={Boolean(errors.budget)}
+              aria-describedby={errors.budget ? "settings-budget-error" : undefined}
+              className={inputClass}
+            />
+            {errors.budget && (
+              <p id="settings-budget-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.budget}
+              </p>
+            )}
+          </div>
+
+          <div className={cn(rowClass, "border-b-0")}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-currency">Currency</Label>
+              <p className="text-sm text-muted-foreground">Currency used to display your finances.</p>
+            </div>
+            <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="settings-currency"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={currencyOpen}
+                  aria-invalid={Boolean(errors.currency)}
+                  aria-describedby={errors.currency ? "settings-currency-error" : undefined}
+                  className={cn(controlClass, "justify-between font-normal")}
                 >
-                  {IDENTITY_OPTIONS.map((option) => (
-                    <Label
-                      key={option.value}
-                      htmlFor={`settings-identity-${option.value}`}
-                      className={cn(
-                        "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors",
-                        settings.identity === option.value
-                          ? "border-emerald-500 bg-emerald-500/10 text-white"
-                          : "border-slate-700 bg-[#0B1220] text-slate-300 hover:border-slate-600",
-                      )}
-                    >
-                      <RadioGroupItem
-                        id={`settings-identity-${option.value}`}
-                        value={option.value}
-                        className="border-slate-500 text-emerald-500"
-                      />
-                      {option.label}
-                    </Label>
-                  ))}
-                </RadioGroup>
-                {errors.identity && (
-                  <p id="settings-identity-error" className="text-sm text-red-400" role="alert">
-                    {errors.identity}
-                  </p>
-                )}
-              </fieldset>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="settings-income">Monthly income</Label>
-                  <Input
-                    id="settings-income"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={settings.income}
-                    onChange={(event) => updateSetting("income", event.target.value)}
-                    aria-invalid={Boolean(errors.income)}
-                    aria-describedby={errors.income ? "settings-income-error" : undefined}
-                    className={inputClass}
-                  />
-                  {errors.income && (
-                    <p id="settings-income-error" className="text-sm text-red-400" role="alert">
-                      {errors.income}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="settings-bank-balance">Current bank balance</Label>
-                  <Input
-                    id="settings-bank-balance"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={settings.bankBalance}
-                    onChange={(event) => updateSetting("bankBalance", event.target.value)}
-                    aria-invalid={Boolean(errors.bankBalance)}
-                    aria-describedby={
-                      errors.bankBalance ? "settings-bank-balance-error" : undefined
-                    }
-                    className={inputClass}
-                  />
-                  {errors.bankBalance && (
-                    <p id="settings-bank-balance-error" className="text-sm text-red-400" role="alert">
-                      {errors.bankBalance}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="settings-budget">Monthly budget</Label>
-                  <Input
-                    id="settings-budget"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={settings.budget}
-                    onChange={(event) => updateSetting("budget", event.target.value)}
-                    aria-invalid={Boolean(errors.budget)}
-                    aria-describedby={errors.budget ? "settings-budget-error" : undefined}
-                    className={inputClass}
-                  />
-                  {errors.budget && (
-                    <p id="settings-budget-error" className="text-sm text-red-400" role="alert">
-                      {errors.budget}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="settings-currency">Preferred currency</Label>
-                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="settings-currency"
-                        type="button"
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={currencyOpen}
-                        aria-invalid={Boolean(errors.currency)}
-                        aria-describedby={errors.currency ? "settings-currency-error" : undefined}
-                        className="h-11 w-full justify-between border-slate-700 bg-[#0B1220] font-normal text-white hover:bg-slate-800 hover:text-white"
-                      >
-                        <span className="truncate">
-                          {selectedCurrency
-                            ? `${selectedCurrency.name} (${selectedCurrency.code})`
-                            : settings.currency || "Search or select currency..."}
-                        </span>
-                        <ChevronsUpDown className="ml-2 size-4 shrink-0 text-slate-400" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
-                    >
-                      <Command className="bg-transparent text-slate-100">
-                        <CommandInput
-                          placeholder="Search currencies..."
-                          className="h-10 border-slate-700 text-slate-100 placeholder:text-slate-400"
-                        />
-                        <CommandList>
-                          <CommandEmpty>No currency found.</CommandEmpty>
-                          <CommandGroup>
-                            {currencies.map((currency) => (
-                              <CommandItem
-                                key={currency.code}
-                                value={`${currency.name} ${currency.code}`}
-                                onSelect={() => {
-                                  updateSetting("currency", currency.code)
-                                  setCurrencyOpen(false)
-                                }}
-                                className="text-slate-100 aria-selected:bg-slate-800 aria-selected:text-white"
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 size-4",
-                                    settings.currency === currency.code
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                  aria-hidden="true"
-                                />
-                                {currency.name} ({currency.code})
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  {errors.currency && (
-                    <p id="settings-currency-error" className="text-sm text-red-400" role="alert">
-                      {errors.currency}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {formError && (
-                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                  {formError}
-                </p>
-              )}
-              {successMessage && (
-                <p className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" role="status">
-                  {successMessage}
-                </p>
-              )}
-              <div className="flex justify-end border-t border-border pt-4">
-                <Button type="submit" disabled={!hasChanges || saving}>
-                  {saving ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                  ) : (
-                    <Save className="mr-2 size-4" aria-hidden="true" />
-                  )}
-                  {saving ? "Saving..." : "Save changes"}
+                  <span className="truncate">
+                    {selectedCurrency
+                      ? `${selectedCurrency.name} (${selectedCurrency.code})`
+                      : settings.currency || "Search or select currency..."}
+                  </span>
+                  <ChevronsUpDown className="ml-2 size-4 shrink-0 text-slate-400" />
                 </Button>
-              </div>
-            </form>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
+              >
+                <Command className="bg-transparent text-slate-100">
+                  <CommandInput
+                    placeholder="Search currencies..."
+                    className="h-10 border-slate-700 text-slate-100 placeholder:text-slate-400"
+                  />
+                  <CommandList>
+                    <CommandEmpty>No currency found.</CommandEmpty>
+                    <CommandGroup>
+                      {currencies.map((currency) => (
+                        <CommandItem
+                          key={currency.code}
+                          value={`${currency.name} ${currency.code}`}
+                          onSelect={() => {
+                            updateSetting("currency", currency.code)
+                            setCurrencyOpen(false)
+                          }}
+                          className="text-slate-100 aria-selected:bg-slate-800 aria-selected:text-white"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 size-4",
+                              settings.currency === currency.code ? "opacity-100" : "opacity-0",
+                            )}
+                            aria-hidden="true"
+                          />
+                          {currency.name} ({currency.code})
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            {errors.currency && (
+              <p id="settings-currency-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.currency}
+              </p>
+            )}
+          </div>
+
+          {formError && (
+            <p className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+              {formError}
+            </p>
           )}
-        </CardContent>
-      </Card>
+          {successMessage && (
+            <p className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" role="status">
+              {successMessage}
+            </p>
+          )}
+          <div className="flex justify-end border-t border-border/70 pt-5">
+            <Button type="submit" disabled={!hasChanges || saving}>
+              {saving ? (
+                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Save className="mr-2 size-4" aria-hidden="true" />
+              )}
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
