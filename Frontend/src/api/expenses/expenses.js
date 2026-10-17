@@ -124,9 +124,9 @@ export async function updateExpense(expenseId, expense) {
   }
 }
 
-export async function deleteExpense(expenseId, answers) {
+export async function deleteExpense(expenseId, ans) {
   try {
-    const response = await apiClient.delete(`${BASE_PATH}/${encodeURIComponent(expenseId)}`, { data: answers })
+    const response = await apiClient.delete(`${BASE_PATH}/${encodeURIComponent(expenseId)}`, { data: { ans } })
     invalidateExpenseCache()
     return getResponseData(response)
   } catch (error) {

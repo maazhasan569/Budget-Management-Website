@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
   SelectContent,
@@ -212,18 +213,22 @@ function ExpenseFormDialog({ open, onOpenChange, expense, categories, currency, 
 }
 
 function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
-  const [ans1, setAns1] = useState("Yes")
-  const [ans2, setAns2] = useState("No")
+  const [deletionReason, setDeletionReason] = useState("")
   const [formError, setFormError] = useState("")
   const [deleting, setDeleting] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
     if (!expense?._id) return
+    if (!deletionReason) {
+      setFormError("Choose the reason that best describes this expense.")
+      return
+    }
+
     setDeleting(true)
     setFormError("")
     try {
-      await onDelete(expense._id, { ans1, ans2 })
+      await onDelete(expense._id, { ans: deletionReason })
       onOpenChange(false)
     } catch (error) {
       setFormError(error?.message || FRIENDLY_DELETE_ERROR)
@@ -238,27 +243,48 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Remove this expense?</DialogTitle>
           <DialogDescription>
-            Tell us what happened so Finch can apply the backend’s budget and history rules for “{expense?.name}”.
+            Choose why you’re removing “{expense?.name}”. This helps keep your history and remaining budget accurate.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Did money leave your account for this?</legend>
-            <div className="flex gap-2">
-              {["Yes", "No"].map((answer) => (
-                <Button key={answer} type="button" size="sm" variant={ans1 === answer ? "secondary" : "outline"} aria-pressed={ans1 === answer} onClick={() => setAns1(answer)}>{answer}</Button>
+            <legend className="mb-2 text-sm font-medium">Why are you removing this expense?</legend>
+            <RadioGroup
+              value={deletionReason}
+              onValueChange={(value) => {
+                setDeletionReason(value)
+                setFormError("")
+              }}
+              aria-label="Expense deletion reason"
+            >
+              {[
+                "I added it by mistake",
+                "I paid, but got a refund",
+                "I paid and didn't get a refund",
+              ].map((reason) => (
+                <Label
+                  key={reason}
+                  htmlFor={`expense-delete-reason-${reason}`}
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 px-3 py-3 font-normal transition-colors hover:bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                >
+                  <RadioGroupItem
+                    id={`expense-delete-reason-${reason}`}
+                    value={reason}
+                    disabled={deleting}
+                    className="mt-0.5"
+                  />
+                  <span className="space-y-1">
+                    <span className="block text-sm font-medium text-foreground">{reason}</span>
+                    <span className="block text-xs leading-relaxed text-muted-foreground">
+                      {reason === "I paid and didn't get a refund"
+                        ? "The amount stays deducted from your remaining budget."
+                        : "The amount is returned to your remaining budget."}
+                    </span>
+                  </span>
+                </Label>
               ))}
-            </div>
+            </RadioGroup>
           </fieldset>
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">Did you receive a refund?</legend>
-            <div className="flex gap-2">
-              {["Yes", "No"].map((answer) => (
-                <Button key={answer} type="button" size="sm" variant={ans2 === answer ? "secondary" : "outline"} aria-pressed={ans2 === answer} onClick={() => setAns2(answer)}>{answer}</Button>
-              ))}
-            </div>
-          </fieldset>
-          <p className="text-xs leading-relaxed text-muted-foreground">Your answers determine whether the expense is archived and whether its amount is returned to your remaining budget.</p>
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Cancel</Button>

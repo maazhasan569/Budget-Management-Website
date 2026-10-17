@@ -35,8 +35,8 @@ export function getFriendlyExpenseError(error, action = "load") {
   if (normalizedMessage.includes("all fields are required")) {
     return "Enter an expense name and a valid amount."
   }
-  if (normalizedMessage.includes("answers must be 'yes' or 'no'")) {
-    return "Choose Yes or No for both deletion questions."
+  if (normalizedMessage.includes("invalid expense deletion ans")) {
+    return "Choose one of the listed reasons for removing this expense."
   }
   if (normalizedMessage.includes("expense not found")) {
     return "This expense is no longer available. Refresh the list and try again."
