@@ -4,7 +4,7 @@ import { Users } from "../models/users.models.js"
 import { paginate } from "../utils/pagination.js"
 import { History } from "../models/history.models.js"
 import pushToHistory from "../utils/pushToHistory.js"
-import pushToHistory from "../utils/pushToHistory.js"
+
 export class ExpenseTracker {
     constructor(budget, userId) {
         if (!budget || budget <= 0) {

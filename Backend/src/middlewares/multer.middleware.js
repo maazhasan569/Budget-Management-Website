@@ -14,11 +14,6 @@ const storage = multer.diskStorage({
 })
 const fileFilter = (req, file, cb) => {
     try {
-        if (file.mimetype === "application/pdf" || file.mimetype.startsWith("image/")) {
-            cb(null, true)
-        } else {
-            cb(new ApiError(400, "A pdf or an imag file is required"), false)
-        }
         const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
 
         if (allowedMimeTypes.includes(file.mimetype)) {

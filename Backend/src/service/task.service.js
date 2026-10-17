@@ -9,7 +9,7 @@ export class TaskService extends FileService {
         super(userId, config.fileFieldName, config.filePath)
         this.userId = userId
         this.taskName = config.taskName,
-        this.taskDescription = config.taskDescription
+            this.taskDescription = config.taskDescription
         this.category = config.category
         this.dueDate = null
         this.dateValue = config.dateValue// e.g 2 month 2 is the val . 5 weeks 5 is the val
@@ -18,32 +18,32 @@ export class TaskService extends FileService {
     }
 
     validateTask() {
-        const fieldCheck = [this.taskName, this.dateValue, this.dueDateUnit]
+        const fieldCheck = [this.taskName, this.taskDescription]
             .some((field) => {
                 if (typeof field === 'string') {
                     return !field || field.trim() === ""
                 }
                 if (!field) return !field
             })
-            
-            console.log(this.dateValue)
+
+        
         if (fieldCheck) {
             throw new ApiError(400, "All fields required")
         }
-        if (this.dateValue < 0) {
-            throw new ApiError(400, "Invalid date value")
-        }
+        // if (this.dateValue < 0) {
+        //     throw new ApiError(400, "Invalid date value")
+        // }
 
     }
 
     calculateDueDate(val, unit) {
         const currentDate = new Date()
-        
-        const numericalVal = parseInt(val , 10)
-        if(isNaN(numericalVal)){
+
+        const numericalVal = parseInt(val, 10)
+        if (isNaN(numericalVal)) {
             throw new ApiError("invalid date value. it must be number")
         }
-        
+
         switch (unit.toLowerCase()) {
             case "hours":
                 currentDate.setHours(currentDate.getHours() + numericalVal)
@@ -66,7 +66,7 @@ export class TaskService extends FileService {
         try {
 
             this.validateTask()
-            if (this.dateValue && this.dueDateUnit) {
+            if (this.dateValue && this.dueDateUnit ) {
                 this.dueDate = this.calculateDueDate(this.dateValue, this.dueDateUnit)
             }
 
@@ -85,10 +85,8 @@ export class TaskService extends FileService {
                 dueDate: this.dueDate,
                 document: fileData.fileUrl,
                 publicId: fileData.publicId
-                //add due date in this do . optional for user
-                //document and due date to be added
             })
-            
+
             return newTask
         } catch (err) {
             throw new ApiError(500, err.message)
@@ -110,15 +108,15 @@ export class TaskService extends FileService {
                 throw new ApiError(400, "task name is required")
             }
 
-            if(this.dueDate && this.dateValue){
-            this.dueDate = this.duethis.calculateDueDate(val, unit)
+            if (this.dueDate && this.dateValue) {
+                this.dueDate = this.duethis.calculateDueDate(val, unit)
             }
             let fileData = { fileUrl: null, filePath: null }
             if (this.filePath) {
                 fileData = await this.updateFile(taskId, "Task")
             }
             const updatedTask = await Task.findOneAndUpdate(
-                { _id: taskId },
+                { _id: taskId , userId : this.userId},
                 {
                     name: this.taskName,
                     description: this.taskDescription,
@@ -146,11 +144,11 @@ export class TaskService extends FileService {
 
         try {
 
-            const task = await Task.findById(taskId)
+            const task = await Task.findOne({_id : taskId , userId : this.userId})
             await this.deleteFile(taskId, Task)
             task.status = "Deleted"
             await task.save()
-            const deletedTask = await Task.findByIdAndDelete(taskId)
+            const deletedTask = await pushToHistory(Task , this.userId , taskId , "tasks")
             return deletedTask
 
         } catch (err) {
@@ -196,19 +194,18 @@ export class TaskService extends FileService {
 
 
         try {
-            
-            cron.schedule("0 * * * * ", async () => {
-                const tasks = await Task.find({ userId: this.userId })
-                for (const task of tasks) {
-                    const currentDate = new Date()
-                    const dueDate = new Date(task.dueDate)
-                    if (currentDate <= dueDate) return;
 
-                    if (currentDate >= dueDate) task.status = "Overdue"
-                    await task.save()
-                    return task
-                }
-            })
+            const tasks = await Task.find({ userId: this.userId })
+            for (const task of tasks) {
+                const currentDate = new Date()
+                const dueDate = new Date(task.dueDate)
+                if (currentDate <= dueDate) return;
+
+                if (currentDate >= dueDate) task.status = "Overdue"
+                await task.save()
+                return task
+            }
+
         } catch (err) {
             throw new ApiError(400, err.message)
         }
