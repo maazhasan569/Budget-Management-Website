@@ -3,8 +3,8 @@ import { ExpensesPage as ExpensesContent } from "@/components/expenses/expenses-
 import { GoalsPage as GoalsContent } from "@/components/goals/goals-page"
 import { LoansPage as LoansContent } from "@/components/loans/loans-page"
 import { FinancialTasksPage as FinancialTasksContent } from "@/components/tasks/tasks-page"
+import { HistoryPageContent } from "@/components/history/history-page"
 import { SettingsContent } from "@/components/settings/settings-page"
-import { SectionPlaceholder } from "@/components/layout/section-placeholder"
 
 export function DashboardPage() {
   return <DashboardContent />
@@ -31,11 +31,5 @@ export function SettingsPage() {
 }
 
 export function HistoryPage() {
-  return (
-    <SectionPlaceholder
-      title="History"
-      description="A timeline of your financial activity will be available here."
-      comingSoon
-    />
-  )
+  return <HistoryPageContent />
 }
