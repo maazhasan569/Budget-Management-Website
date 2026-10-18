@@ -5,6 +5,7 @@ import {
   Banknote,
   CheckSquare,
   CircleDollarSign,
+  Eye,
   RotateCw,
   Target,
 } from "lucide-react"
@@ -20,6 +21,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   Pagination,
   PaginationContent,
@@ -81,6 +89,141 @@ function getRecordAmount(type, record) {
   return ""
 }
 
+const DETAIL_FIELDS = {
+  expenses: [
+    ["name", "Expense name"],
+    ["amount", "Amount"],
+    ["category", "Category"],
+    ["deletionReason", "Removal reason"],
+  ],
+  loans: [
+    ["loanName", "Loan name"],
+    ["loanTargetAmt", "Original loan amount"],
+    ["currentAmt", "Amount paid"],
+    ["category", "Category"],
+    ["loanType", "Payment frequency"],
+    ["duration", "Term (months)"],
+    ["dueDate", "Due date"],
+    ["status", "Status"],
+    ["autoDeduction", "Automatic payments"],
+    ["totalDeductions", "Number of payments"],
+    ["deductionDates", "Payment dates"],
+    ["deletionReason", "Removal reason"],
+  ],
+  goals: [
+    ["goalName", "Goal name"],
+    ["targetAmount", "Target amount"],
+    ["currentAmt", "Amount saved"],
+    ["category", "Category"],
+    ["type", "Contribution frequency"],
+    ["duration", "Term (months)"],
+    ["achievementDate", "Target date"],
+    ["status", "Status"],
+    ["autoDeduction", "Automatic contributions"],
+    ["totalDeductions", "Number of contributions"],
+    ["deductionDates", "Contribution dates"],
+  ],
+  tasks: [
+    ["name", "Task name"],
+    ["description", "Description"],
+    ["category", "Category"],
+    ["status", "Status"],
+    ["dueDate", "Due date"],
+    ["dueDateUnit", "Due date unit"],
+  ],
+}
+
+function formatDetailValue(field, value) {
+  if (value == null || value === "") return null
+  if (field === "amount" || field === "loanTargetAmt" || field === "currentAmt" || field === "targetAmount") {
+    return formatCurrency(value)
+  }
+  if (field === "status" || field === "deletionReason") {
+    return formatStatus(String(value))
+  }
+  if (typeof value === "boolean") return value ? "Yes" : "No"
+  if (Array.isArray(value)) {
+    return value.map((item) => formatDetailValue("date", item)).filter(Boolean).join(", ") || null
+  }
+  if (field === "dueDate" || field === "achievementDate" || field === "date" || field === "deductionDates") {
+    const date = new Date(value)
+    if (!Number.isNaN(date.getTime())) {
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        ...(field === "deductionDates" ? { timeStyle: "short" } : {}),
+      }).format(date)
+    }
+  }
+  if (field === "autoDeduction") return value ? "Yes" : "No"
+  return String(value)
+}
+
+function HistoryRecordDetails({ item }) {
+  if (!item) return null
+
+  const fields = DETAIL_FIELDS[item.type]
+    .map(([field, label]) => ({
+      field,
+      label,
+      value: formatDetailValue(field, item.record[field]),
+    }))
+    .filter(({ value }) => value != null)
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && item.onClose()}>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <item.icon className="size-5 text-primary" aria-hidden="true" />
+            <DialogTitle className="font-display text-xl">
+              {getRecordTitle(item.type, item.record)}
+            </DialogTitle>
+          </div>
+          <DialogDescription>
+            Full details saved for this {item.label.toLowerCase()}.
+          </DialogDescription>
+        </DialogHeader>
+
+        {fields.length > 0 ? (
+          <dl className="divide-y divide-border/70 rounded-xl border border-border/70 px-4">
+            {fields.map(({ field, label, value }) => (
+              <div key={field} className="grid gap-1 py-3 sm:grid-cols-[minmax(130px,0.7fr)_minmax(0,1.3fr)] sm:gap-4">
+                <dt className="text-sm text-muted-foreground">{label}</dt>
+                <dd className="break-words text-sm font-medium">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="rounded-xl border border-border/70 px-4 py-5 text-sm text-muted-foreground">
+            No additional details were saved for this item.
+          </p>
+        )}
+
+        {item.type === "tasks" && item.record.document && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Attachment</p>
+            {/\.(jpe?g|png|gif|webp)(?:$|\?)/i.test(item.record.document) && (
+              <img
+                src={item.record.document}
+                alt={`Attachment for ${getRecordTitle(item.type, item.record)}`}
+                className="max-h-64 w-full rounded-lg border border-border object-contain"
+              />
+            )}
+            <a
+              className="inline-flex text-sm text-primary hover:underline"
+              href={item.record.document}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open attachment
+            </a>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function getVisiblePages(currentPage, totalPages) {
   if (totalPages <= 5) {
     return Array.from({ length: totalPages }, (_, index) => index + 1)
@@ -120,6 +263,7 @@ export function HistoryPageContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
+  const [selectedRecord, setSelectedRecord] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -225,7 +369,7 @@ export function HistoryPageContent() {
                 {visibleRecords.map(({ type, label, icon: Icon, record, key }) => {
                   const amount = getRecordAmount(type, record)
                   return (
-                    <li key={key} className="flex items-center justify-between gap-4 py-4 sm:py-5">
+                    <li key={key} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:py-5">
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                           <Icon className="size-5" aria-hidden="true" />
@@ -250,11 +394,23 @@ export function HistoryPageContent() {
                           )}
                         </div>
                       </div>
-                      {amount && (
-                        <span className="shrink-0 text-right text-sm font-medium tabular-nums">
-                          {amount}
-                        </span>
-                      )}
+                      <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
+                        {amount && (
+                          <span className="text-right text-sm font-medium tabular-nums">
+                            {amount}
+                          </span>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedRecord({ type, label, record, icon: Icon })}
+                          aria-label={`View full details for ${getRecordTitle(type, record)}`}
+                        >
+                          <Eye className="mr-1.5 size-4" aria-hidden="true" />
+                          View
+                        </Button>
+                      </div>
                     </li>
                   )
                 })}
@@ -318,6 +474,11 @@ export function HistoryPageContent() {
           )}
         </CardContent>
       </Card>
+      {selectedRecord && (
+        <HistoryRecordDetails
+          item={{ ...selectedRecord, onClose: () => setSelectedRecord(null) }}
+        />
+      )}
     </div>
   )
 }
