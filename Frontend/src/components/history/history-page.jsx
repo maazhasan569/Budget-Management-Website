@@ -6,6 +6,7 @@ import {
   CheckSquare,
   CircleDollarSign,
   Eye,
+  FileText,
   RotateCw,
   Target,
 } from "lucide-react"
@@ -54,7 +55,24 @@ function getRecordTime(id) {
 
 function formatStatus(status) {
   if (!status) return ""
+  if (status.toLowerCase() === "delete" || status.toLowerCase() === "deleted") return "Deleted"
   return status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+function isImageAttachment(url = "") {
+  try {
+    return /\.(jpe?g|png|gif|webp)$/i.test(new URL(url).pathname)
+  } catch {
+    return /\.(jpe?g|png|gif|webp)(?:$|\?)/i.test(url)
+  }
+}
+
+function getAttachmentName(url = "") {
+  try {
+    return decodeURIComponent(new URL(url).pathname.split("/").at(-1)) || "Task attachment"
+  } catch {
+    return url.split("/").at(-1)?.split("?")[0] || "Task attachment"
+  }
 }
 
 function getRecordTitle(type, record) {
@@ -92,7 +110,7 @@ function getRecordAmount(type, record) {
 const DETAIL_FIELDS = {
   expenses: [
     ["name", "Expense name"],
-    ["amount", "Amount"],
+    ["amount", "Expense amount"],
     ["category", "Category"],
     ["deletionReason", "Removal reason"],
   ],
@@ -202,7 +220,7 @@ function HistoryRecordDetails({ item }) {
         {item.type === "tasks" && item.record.document && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Attachment</p>
-            {/\.(jpe?g|png|gif|webp)(?:$|\?)/i.test(item.record.document) && (
+            {isImageAttachment(item.record.document) && (
               <img
                 src={item.record.document}
                 alt={`Attachment for ${getRecordTitle(item.type, item.record)}`}
@@ -383,14 +401,33 @@ export function HistoryPageContent() {
                             {getRecordDescription(type, record)}
                           </p>
                           {type === "tasks" && record.document && (
-                            <a
-                              className="mt-1 inline-block text-sm text-primary hover:underline"
-                              href={record.document}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              View attachment
-                            </a>
+                            <div className="mt-2 flex items-center gap-2">
+                              {isImageAttachment(record.document) ? (
+                                <a
+                                  href={record.document}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Open attachment for ${getRecordTitle(type, record)}`}
+                                  className="block size-12 shrink-0 overflow-hidden rounded-md border border-border"
+                                >
+                                  <img
+                                    src={record.document}
+                                    alt=""
+                                    className="size-full object-cover"
+                                  />
+                                </a>
+                              ) : (
+                                <FileText className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                              )}
+                              <a
+                                className="min-w-0 truncate text-sm text-primary hover:underline"
+                                href={record.document}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {getAttachmentName(record.document)}
+                              </a>
+                            </div>
                           )}
                         </div>
                       </div>
