@@ -148,6 +148,8 @@ export class GoalService {
             this.category = goal.category
             this.name = goal.name
             const lastIdx = goal.deductionDates.length - 1
+            const deductAmt = (this.targetAmount - this.goalBalance) / this.duration
+
             if (today.getDate() === goal.deductionDay.getDate()) {
                 const lastMonth = goal.deductionDates[lastIdx]?.getMonth()
                 const thisMonth = today.getMonth()
@@ -159,7 +161,7 @@ export class GoalService {
                 dueDate.setHours(0, 0, 0, 0);
                 if (currentDate > dueDate && this.targetAmount !== this.goalBalance) continue;
 
-                if (this.targetAmount === this.goalBalance) {
+                if (this.targetAmount === this.goalBalance + deductAmt) {
                     goal.status = "Achieved";
                     const savedGoal = await goal.save();
 
@@ -182,7 +184,7 @@ export class GoalService {
 
 
 
-                const deductAmt = (this.targetAmount - this.goalBalance) / this.duration
+
                 this.goalBalance += deductAmt
                 goal.currentAmt = this.goalBalance
                 user.netIncome -= deductAmt
@@ -232,23 +234,26 @@ export class GoalService {
 
             if (currentDate > dueDate && this.goalBalance != this.targetAmount) throw new ApiError(400, "Loan overdued")
 
-            if (this.targetAmount === this.goalBalance) {
-                goal.status = "Achieved"
-                const updatedGoal = await goal.save()
-                await pushToHistory(Goal, this.userId, updatedGoal._id, "goals")
-                return { updatedGoal, pushedToHistory: true }
-
-            }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter a valid amount")
             }
             if (amount > this.targetAmount - this.goalBalance) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
-            const user = await Users.findById(this.userId)
+
             if (amount > user.netIncome) {
                 throw new ApiError(400, "Amount to large . netIncome not enough")
             }
+
+            if (this.targetAmount === this.goalBalance + amount) {
+                goal.status = "Achieved"
+                const updatedGoal = await goal.save()
+                await pushToHistory(Goal, this.userId, updatedGoal._id, "goals")
+                return { updatedGoal, pushedToHistory: true }
+
+            }
+
+            const user = await Users.findById(this.userId)
             const income = user.income * 0.25
             if (user.netIncome <= income) {
                 goal.status = "no_funds"
@@ -313,20 +318,20 @@ export class GoalService {
             //delete the goal 
             //add the deleted goal to history
             const updateGoal = await Goal.findOneAndUpdate(
-                { _id: goalId , userId : this.userId },
+                { _id: goalId, userId: this.userId },
                 {
                     $set: { status: "Abandoned" }
                 },
                 { returnDocument: 'after' }
             );
 
-            if(!updateGoal) return null
-            const history = await pushToHistory(Goal , this.userId, updateGoal._id, "goals")
+            if (!updateGoal) return null
+            const history = await pushToHistory(Goal, this.userId, updateGoal._id, "goals")
             const user = await Users.findById(this.userId)
             user.netIncome += updateGoal.currentAmt
             const updatedUser = await user.save()
             const updatedUserNetIncome = updatedUser.netIncome
-            return { updatedUserNetIncome, deletedGoal : updateGoal, history }
+            return { updatedUserNetIncome, deletedGoal: updateGoal, history }
 
 
         } catch (err) {
@@ -372,7 +377,7 @@ export class GoalService {
         try {
             const today = new Date()
             const goals = await Goal.find({ userId: this.userId })
-            if(!goals) return null
+            if (!goals) return null
             for (const goal of goals) {
                 const currentDate = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -382,8 +387,8 @@ export class GoalService {
                     if (goal.currentAmt < goal.targetAmount) goal.status = "unAchieved"
                     await goal.save()
                 }
-                
-                
+
+
             }
         } catch (err) {
             throw new ApiError(500, err.message)

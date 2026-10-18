@@ -159,7 +159,7 @@ export class LoanService {
         try {
             const userLoans = await Loan.find({ userId: this.userId })
             if (!userLoans) return 0
-          
+
             const loansAmtRemaining = userLoans.reduce(
                 (sum, loan) =>
                     sum + Math.max(0, Number(loan.loanTargetAmt) - Number(loan.currentAmt)),
@@ -241,7 +241,7 @@ export class LoanService {
             this.name = loan.name;
 
             const lastdeductionidx = loan.deductionDates.length - 1;
-
+            const deductAmt = (this.loanTargetAmt - this.totalPaid) / deadlineInMonths;
             if (today.getDate() === loan.deductionDay.getDate()) {
                 const lastMonth = loan.deductionDates[lastdeductionidx]?.getMonth();
                 const thisMonth = today.getMonth();
@@ -255,20 +255,20 @@ export class LoanService {
                 if (today > dueDate && this.loanTargetAmt !== this.totalPaid) continue;
 
 
-                    if (this.loanTargetAmt === this.totalPaid) {
-                        loan.status = "Completed";
-                        const savedLoan = await loan.save();
-                        await pushToHistory(
-                            Loan,
-                            this.userId,
-                            savedLoan._id,
-                            "loans"
-                        );
-                        continue;
-                    }
+                if (this.loanTargetAmt === this.totalPaid + deductAmt) {
+                    loan.status = "Completed";
+                    const savedLoan = await loan.save();
+                    await pushToHistory(
+                        Loan,
+                        this.userId,
+                        savedLoan._id,
+                        "loans"
+                    );
+                    continue;
+                }
 
-                    
-                
+
+
 
                 const user = await Users.findByIdAndUpdate(this.userId);
                 const income = user.income * 0.25;
@@ -349,12 +349,6 @@ export class LoanService {
                 throw new ApiError(400, "Loan is overDued")
             }
 
-            if (this.loanTargetAmt === this.totalPaid) {
-                loan.status = "Completed"
-                const updatedLoan = await loan.save()
-                await pushToHistory(Loan, this.userId, updatedLoan._id, "loans")
-                return { updatedLoan, pushToHistory: true }
-            }
             if (!amount || amount < 0) {
                 throw new ApiError(400, "Enter not given or Invalid amount")
             }
@@ -362,12 +356,18 @@ export class LoanService {
             if (amount > this.loanTargetAmt - loan.currentAmt) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
-
-            const user = await Users.findById(this.userId)
             if (amount > user.netIncome) {
                 throw new ApiError(400, "Amount to large . netIncome not enough")
             }
 
+            if (this.loanTargetAmt === this.totalPaid + amount) {
+                loan.status = "Completed"
+                const updatedLoan = await loan.save()
+                await pushToHistory(Loan, this.userId, updatedLoan._id, "loans")
+                return { updatedLoan, pushToHistory: true }
+            }
+
+            const user = await Users.findById(this.userId)
             const income = user.income * 0.25
             if (user.netIncome <= income) {
                 loan.status = "no_funds"
