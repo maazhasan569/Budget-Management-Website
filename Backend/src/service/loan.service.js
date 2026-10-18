@@ -449,7 +449,7 @@ export class LoanService {
             if (!isValidObjectId(loanId)) {
                 throw new ApiError(400, "Invalid mongoose objId")
             }
-            if (!loan) {
+            if (!loanId) {
                 throw new ApiError(400, "Loan not found")
             }
             const userReason = convertToSnakeCase(deletionReason) // loan deletion reason from user

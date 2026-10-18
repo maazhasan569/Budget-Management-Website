@@ -20,7 +20,8 @@ const loanSchema = new mongoose.Schema({
     },
     status : {
         type : String,
-        enum : ["in_progress" , "Overdue" , "Completed" , "Cancelled" , "Paused" , "no_funds"]
+        enum : ["in_progress" , "Overdue" , "Completed" , "Cancelled" , "Paused" , "no_funds"],
+        default : "in_progress"
     },//add status for deleting the loan 
     alert : {
         type : String,
