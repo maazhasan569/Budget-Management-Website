@@ -240,7 +240,7 @@ export class GoalService {
             if (amount > this.targetAmount - this.goalBalance) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
-
+            const user = await Users.findById(this.userId)
             if (amount > user.netIncome) {
                 throw new ApiError(400, "Amount to large . netIncome not enough")
             }
@@ -253,7 +253,6 @@ export class GoalService {
 
             }
 
-            const user = await Users.findById(this.userId)
             const income = user.income * 0.25
             if (user.netIncome <= income) {
                 goal.status = "no_funds"

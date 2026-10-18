@@ -1,4 +1,6 @@
-const loanSchema = new mongoose.Schema({
+import mongoose from "mongoose"
+
+export const loanHistorySchema = new mongoose.Schema({
 
     userId : {
         type : mongoose.Schema.Types.ObjectId,

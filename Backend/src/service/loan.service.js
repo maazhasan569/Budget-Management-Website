@@ -293,8 +293,7 @@ export class LoanService {
                 const currentDay = new Date();
                 let targetMonth = currentDay.getMonth() + 1;
                 let targetYear = currentDay.getFullYear();
-                const daysInNextMonth =
-                    new Date(targetYear, targetMonth + 1, 0).getDate();
+                new Date(targetYear, targetMonth + 1, 0).getDate();
                 const safeDay = Math.min(daysInNextMonth, orgDate);
 
                 loan.deductionDay = new Date(targetYear, targetMonth, safeDay);
@@ -356,6 +355,8 @@ export class LoanService {
             if (amount > this.loanTargetAmt - loan.currentAmt) {
                 throw new ApiError(400, "Amount cant be more than targetAmt")
             }
+
+            const user = await Users.findById(this.userId)
             if (amount > user.netIncome) {
                 throw new ApiError(400, "Amount to large . netIncome not enough")
             }
@@ -367,7 +368,7 @@ export class LoanService {
                 return { updatedLoan, pushToHistory: true }
             }
 
-            const user = await Users.findById(this.userId)
+            
             const income = user.income * 0.25
             if (user.netIncome <= income) {
                 loan.status = "no_funds"
@@ -448,7 +449,6 @@ export class LoanService {
             if (!isValidObjectId(loanId)) {
                 throw new ApiError(400, "Invalid mongoose objId")
             }
-            const loan = await Loan.findOne({ _id: loanId, userId: this.userId })
             if (!loan) {
                 throw new ApiError(400, "Loan not found")
             }
@@ -466,12 +466,7 @@ export class LoanService {
                 throw new ApiError(400, "Invalid loan deletion reason")
             }
 
-            const updatedUserBankBalance = await Users.findByIdAndUpdate(
-                this.userId,
-                {
-                    $inc: { bankBalance: loan.currentAmt }
-                }
-            )
+            
             const updatedLoan = await Loan.findOneAndUpdate(
                 { userId: this.userId, _id: loanId },
                 {
@@ -479,6 +474,12 @@ export class LoanService {
                 }
             )
             const history = await pushToHistory(Loan, this.userId, loanId, "loans")
+            const updatedUserBankBalance = await Users.findByIdAndUpdate(
+                this.userId,
+                {
+                    $inc: { bankBalance: updatedLoan.currentAmt }
+                }
+            )
             return { history, updatedUserBankBalance }
         } catch (err) {
             throw new ApiError(400, err.message)
