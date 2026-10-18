@@ -4,7 +4,7 @@ import { Users } from "../models/users.models.js";
 import ApiError from "../utils/ApiError.js";
 import cron from "node-cron"
 import pushToHistory from "../utils/pushToHistory.js";
-import { History } from "../models/history.models.js";
+import { History } from "../models/history/history.models.js";
 
 
 

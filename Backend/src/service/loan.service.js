@@ -5,7 +5,7 @@ import cron from "node-cron"
 import { isValidObjectId } from "mongoose"
 import pushToHistory from "../utils/pushToHistory.js"
 import { convertToSnakeCase } from "../utils/convertToSnakeCase.js"
-import { History } from "../models/history.models.js"
+import { History } from "../models/history/history.models.js"
 export class LoanService {
     constructor(userId, config = {}) {
         this.userId = userId,

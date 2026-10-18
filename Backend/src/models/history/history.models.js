@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import { loanHistorySchema } from "./loan-schema";
-import { goalsHistorySchema } from "./goal-schema";
-import { expenseHistorySchema } from "./expense-schema";
-import { taskHistorySchema } from "./task-schema";
+import { loanHistorySchema } from "./loan-schema.js";
+import { goalsHistorySchema } from "./goal-schema.js";
+import { expenseHistorySchema } from "./expense-schema.js";
+import { taskHistorySchema } from "./task-schema.js";
 
 const historySchema = new mongoose.Schema({
     userId: {

@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 export const loanHistorySchema = new mongoose.Schema({
     loanId: { type: mongoose.Schema.Types.ObjectId, ref: "Loan" },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "Users", required: true },
