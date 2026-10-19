@@ -18,11 +18,11 @@ import { QuestionsPage } from "@/components/questions/question"
 function App() {
   return (
     <Routes>
-      <Route element={<AuthRouteGuard guestOnly />}>
+      <Route element={<AuthRouteGuard guestOnly anonymousTo="/sign-in" />}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/sign-in" element={<AuthRoutePage initialMode="sign-in" />} />
-        <Route path="/sign-up" element={<AuthRoutePage initialMode="sign-up" />} />
       </Route>
+      <Route path="/sign-in" element={<AuthRoutePage initialMode="sign-in" />} />
+      <Route path="/sign-up" element={<AuthRoutePage initialMode="sign-up" />} />
       <Route element={<AuthRouteGuard />}>
         <Route path="/questions" element={<QuestionsPage />} />
         <Route element={<AppShell />}>

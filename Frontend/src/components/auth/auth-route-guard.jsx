@@ -4,7 +4,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom"
 import { verifyCurrentUser } from "@/api/auth/session"
 import { Spinner } from "@/components/ui/spinner"
 
-export function AuthRouteGuard({ guestOnly = false }) {
+export function AuthRouteGuard({ guestOnly = false, anonymousTo }) {
   const location = useLocation()
   const [status, setStatus] = useState("checking")
 
@@ -36,6 +36,10 @@ export function AuthRouteGuard({ guestOnly = false }) {
 
   if (guestOnly && status === "authenticated") {
     return <Navigate to="/dashboard" replace />
+  }
+
+  if (status === "anonymous" && anonymousTo) {
+    return <Navigate to={anonymousTo} replace />
   }
 
   if (!guestOnly && status === "anonymous") {

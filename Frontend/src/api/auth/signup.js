@@ -1,9 +1,11 @@
 import apiClient from "../axiosClient";
+import { markAuthenticated } from "./session"
 import { setSelectedCurrency } from "@/lib/currency"
 
 export const signUp = async (userData) => {
   try {
     const response = await apiClient.post("/auth/create-account", userData);
+    markAuthenticated(response.data?.data?.user?._id)
     localStorage.setItem("isLoggedIn", "true"); 
     setSelectedCurrency(null)
     return response.data;
@@ -12,4 +14,3 @@ export const signUp = async (userData) => {
     throw error.response?.data || error.message;
   }
 };
-
