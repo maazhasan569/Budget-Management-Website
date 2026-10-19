@@ -1,30 +1,11 @@
-import { useEffect, useState } from "react"
 import { Navigate, Outlet, useLocation } from "react-router-dom"
 
-import { verifyCurrentUser } from "@/api/auth/session"
+import { useAuthSession } from "@/components/auth/auth-session-context"
 import { Spinner } from "@/components/ui/spinner"
 
 export function AuthRouteGuard({ guestOnly = false, anonymousTo }) {
   const location = useLocation()
-  const [status, setStatus] = useState("checking")
-
-  useEffect(() => {
-    let active = true
-
-    verifyCurrentUser()
-      .then(() => {
-        if (!active) return
-        setStatus("authenticated")
-      })
-      .catch(() => {
-        if (!active) return
-        setStatus("anonymous")
-      })
-
-    return () => {
-      active = false
-    }
-  }, [])
+  const status = useAuthSession()
 
   if (status === "checking") {
     return (

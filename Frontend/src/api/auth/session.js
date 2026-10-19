@@ -2,13 +2,26 @@ import apiClient from "../axiosClient"
 
 let currentUserRequest = null
 let authenticatedUserId = null
+const authStateListeners = new Set()
+
+function notifyAuthState(status) {
+  for (const listener of authStateListeners) listener(status)
+}
+
+export function subscribeToAuthState(listener) {
+  authStateListeners.add(listener)
+  return () => authStateListeners.delete(listener)
+}
 
 export function markAuthenticated(userId) {
-  authenticatedUserId = userId || null
+  if (!userId) return
+  authenticatedUserId = userId
+  notifyAuthState("authenticated")
 }
 
 export function clearAuthenticatedUser() {
   authenticatedUserId = null
+  notifyAuthState("anonymous")
 }
 
 export function verifyCurrentUser() {
