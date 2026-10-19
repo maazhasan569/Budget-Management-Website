@@ -6,6 +6,19 @@ const apiClient = axios.create({
     withCredentials: true,
 });
 
+let refreshRequest = null;
+
+function refreshAccessToken() {
+    if (!refreshRequest) {
+        refreshRequest = axios
+            .get("/api/v1/auth/refresh-token", { withCredentials: true })
+            .finally(() => {
+                refreshRequest = null;
+            });
+    }
+
+    return refreshRequest;
+}
 
 apiClient.interceptors.response.use(
     (response) => response,
@@ -23,17 +36,12 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true
 
             try {
-
-
-                await axios.get("/api/v1/auth/refresh-token", { withCredentials: true });
-
+                await refreshAccessToken();
                 return apiClient(originalRequest);
             } catch (refreshError) {
-
-
                 localStorage.removeItem("isLoggedIn");
                 if (window.location.pathname !== "/auth/login") {
-                    window.location.href = "/auth/login";
+                    window.location.replace("/auth/login");
                 }
                 return Promise.reject(refreshError);
             }
