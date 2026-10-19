@@ -51,6 +51,15 @@ export async function getTasks({ page = 1, limit = 10, sortBy = "createdAt", sor
   })
 }
 
+export async function getTaskById(taskId) {
+  try {
+    const response = await apiClient.get(`${BASE_PATH}/${encodeURIComponent(taskId)}`)
+    return responseData(response)
+  } catch (error) {
+    throw taskError(error, "We couldn’t load this task. Please try again.")
+  }
+}
+
 export async function getTaskCategories() {
   try {
     const { tasks } = await getTaskPage(`${BASE_PATH}/category`, {

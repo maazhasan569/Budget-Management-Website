@@ -95,6 +95,11 @@ export function getGoalsPage(query, { forceRefresh = false } = {}) {
   return request
 }
 
+export async function getGoalById(goalId) {
+  const response = await apiClient.get(`${BASE_PATH}/${encodeURIComponent(goalId)}`)
+  return responseData(response)
+}
+
 export async function createGoal(values) {
   try {
     const response = await apiClient.post(`${BASE_PATH}/create-goal`, values)

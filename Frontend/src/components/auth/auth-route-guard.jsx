@@ -43,7 +43,7 @@ export function AuthRouteGuard({ guestOnly = false, anonymousTo }) {
   }
 
   if (!guestOnly && status === "anonymous") {
-    return <Navigate to="/sign-in" replace state={{ from: location }} />
+    return <Navigate to="/auth/login" replace state={{ from: location }} />
   }
 
   return <Outlet />

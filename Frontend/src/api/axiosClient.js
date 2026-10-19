@@ -32,8 +32,8 @@ apiClient.interceptors.response.use(
 
 
                 localStorage.removeItem("isLoggedIn");
-                if (window.location.pathname !== "/sign-in") {
-                    window.location.href = "/sign-in";
+                if (window.location.pathname !== "/auth/login") {
+                    window.location.href = "/auth/login";
                 }
                 return Promise.reject(refreshError);
             }

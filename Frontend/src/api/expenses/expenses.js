@@ -104,6 +104,11 @@ export async function getAllExpenseCategories() {
   return categoriesRequest
 }
 
+export async function getExpenseById(expenseId) {
+  const response = await apiClient.get(`${BASE_PATH}/${encodeURIComponent(expenseId)}`)
+  return getResponseData(response)
+}
+
 export async function createExpense(expense) {
   try {
     const response = await apiClient.post(`${BASE_PATH}/create-expense`, expense)

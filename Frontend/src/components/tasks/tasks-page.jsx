@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   AlertCircle,
   AlertTriangle,
@@ -7,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   CloudUpload,
+  Eye,
   FileText,
   Image as ImageIcon,
   ListTodo,
@@ -428,7 +430,7 @@ function TaskDeleteDialog({ task, onOpenChange, onConfirm }) {
   )
 }
 
-function TaskCard({ task, onComplete, onDelete, busy }) {
+function TaskCard({ task, onView, onComplete, onDelete, busy }) {
   const status = TASK_STATUSES[task.status] ?? { label: task.status || "In progress", variant: "outline" }
   const hasImage = task.document && fileIsImage(task.document)
 
@@ -470,6 +472,15 @@ function TaskCard({ task, onComplete, onDelete, busy }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`View ${task.name}`}
+          title={`View ${task.name}`}
+          onClick={() => onView(task)}
+        >
+          <Eye aria-hidden="true" />
+        </Button>
         {task.status === "in_progress" && (
           <Button variant="outline" size="sm" disabled={busy} title="Mark complete and move to history" onClick={() => onComplete(task)}>
             <Check className="mr-1 size-4" aria-hidden="true" />Complete
@@ -509,6 +520,7 @@ function TasksError({ onRetry }) {
 }
 
 export function FinancialTasksPage() {
+  const navigate = useNavigate()
   const [tasks, setTasks] = useState([])
   const [categories, setCategories] = useState([])
   const [category, setCategory] = useState("")
@@ -722,6 +734,7 @@ export function FinancialTasksPage() {
                   key={task._id}
                   task={task}
                   busy={busyTaskId === task._id}
+                  onView={(selected) => navigate(`/financial-tasks/${encodeURIComponent(selected._id)}`)}
                   onComplete={handleComplete}
                   onDelete={setDeletingTask}
                 />

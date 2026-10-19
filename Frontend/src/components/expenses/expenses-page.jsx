@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   BookOpen,
   Car,
@@ -7,6 +8,7 @@ import {
   CircleDollarSign,
   Fuel,
   HeartPulse,
+  Eye,
   Pencil,
   Plane,
   Plus,
@@ -298,7 +300,7 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
   )
 }
 
-function ExpenseRow({ expense, currency, onEdit, onDelete }) {
+function ExpenseRow({ expense, currency, onView, onEdit, onDelete }) {
   const category = expense.category || "General"
   const normalizedCategory = category.toLowerCase()
   const Icon = CATEGORY_ICON_RULES.find(({ terms }) =>
@@ -334,6 +336,10 @@ function ExpenseRow({ expense, currency, onEdit, onDelete }) {
           {formatCurrency(Math.abs(Number(expense.amount)), currency)}
         </p>
         <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`View ${expense.name}`} title={`View ${expense.name}`} onClick={() => onView(expense)}>
+            <Eye className="size-4" aria-hidden="true" />
+          </Button>
+          <span aria-hidden="true" className="h-6 border-l border-border" />
           <Button variant="ghost" size="icon" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`Edit ${expense.name}`} title={`Edit ${expense.name}`} onClick={() => onEdit(expense)}>
           <Pencil className="size-4" aria-hidden="true" />
           </Button>
@@ -365,6 +371,7 @@ function ExpensesError({ onRetry }) {
 }
 
 export function ExpensesPage() {
+  const navigate = useNavigate()
   const initialQuery = { page: 1, limit: PAGE_SIZE, sortBy: "createdAt", sortType: "desc" }
   const initialExpenses = getCachedExpenses(initialQuery)
   const [expenses, setExpenses] = useState(initialExpenses?.expenses ?? [])
@@ -593,6 +600,7 @@ export function ExpensesPage() {
                       key={expense._id}
                       expense={expense}
                       currency={currency}
+                      onView={(selected) => navigate(`/expenses/${encodeURIComponent(selected._id)}`)}
                       onEdit={(selected) => { setEditingExpense(selected); setFormOpen(true) }}
                       onDelete={setDeletingExpense}
                     />

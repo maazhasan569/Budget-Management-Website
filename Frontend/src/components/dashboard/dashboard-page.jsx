@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -187,7 +188,13 @@ function ProgressList({ items, type }) {
           <div key={item._id} className="space-y-2.5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="truncate font-medium">{name || (isGoal ? "Savings goal" : "Loan")}</p>
+                <Link
+                  className="truncate font-medium hover:text-primary hover:underline"
+                  to={`${actionTo}/${encodeURIComponent(item._id)}`}
+                  aria-label={`View ${name || (isGoal ? "savings goal" : "loan")}`}
+                >
+                  {name || (isGoal ? "Savings goal" : "Loan")}
+                </Link>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatNumber(current)} of {formatNumber(target)}
                 </p>

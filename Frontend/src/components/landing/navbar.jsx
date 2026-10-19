@@ -42,10 +42,10 @@
 
 //         <div className="flex items-center gap-2">
 //           <Button variant="ghost" asChild>
-//             <Link to="/sign-in">Sign in</Link>
+//             <Link to="/auth/login">Sign in</Link>
 //           </Button>
 //           <ShinyButton>
-//             <Link to="/sign-up">Get started</Link>
+//             <Link to="/auth/signup">Get started</Link>
 //           </ShinyButton>
 //         </div>
 //       </div>
@@ -91,10 +91,10 @@ export function Navbar() {
   {/* Right Group: Auth CTAs */}
   <div className="flex items-center gap-2">
     <Button variant="ghost" asChild>
-      <Link to="/sign-in">Sign in</Link>
+      <Link to="/auth/login">Sign in</Link>
     </Button>
     <ShinyButton>
-      <Link to="/sign-up">Get started</Link>
+      <Link to="/auth/signup">Get started</Link>
     </ShinyButton>
   </div>
 </div>

@@ -242,7 +242,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
           {isSignIn ? "Don't have an account? " : "Already have an account? "}
 
           <Link
-            to={isSignIn ? "/sign-up" : "/sign-in"}
+            to={isSignIn ? "/auth/signup" : "/auth/login"}
             onClick={() => {
               setServerError("")
             }}

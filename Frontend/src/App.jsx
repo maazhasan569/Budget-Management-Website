@@ -18,21 +18,23 @@ import { QuestionsPage } from "@/components/questions/question"
 function App() {
   return (
     <Routes>
-      <Route element={<AuthRouteGuard guestOnly anonymousTo="/sign-in" />}>
+      <Route element={<AuthRouteGuard guestOnly anonymousTo="/auth/login" />}>
         <Route path="/" element={<LandingPage />} />
       </Route>
-      <Route path="/sign-in" element={<AuthRoutePage initialMode="sign-in" />} />
-      <Route path="/sign-up" element={<AuthRoutePage initialMode="sign-up" />} />
+      <Route path="/auth/login" element={<AuthRoutePage initialMode="sign-in" />} />
+      <Route path="/auth/signup" element={<AuthRoutePage initialMode="sign-up" />} />
+      <Route path="/sign-in" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/sign-up" element={<Navigate to="/auth/signup" replace />} />
       <Route element={<AuthRouteGuard />}>
         <Route path="/questions" element={<QuestionsPage />} />
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/expenses" element={<ExpensesPage />} />
-          <Route path="/loans" element={<LoansPage />} />
-          <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/financial-tasks" element={<FinancialTasksPage />} />
+          <Route path="/expenses/:expenseId?" element={<ExpensesPage />} />
+          <Route path="/loans/:loanId?" element={<LoansPage />} />
+          <Route path="/goals/:goalId?" element={<GoalsPage />} />
+          <Route path="/financial-tasks/:taskId?" element={<FinancialTasksPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/history/:recordType?/:recordId?" element={<HistoryPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   AlertCircle,
   ArrowDownWideNarrow,
@@ -6,6 +7,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  Eye,
   Flag,
   HandCoins,
   Pencil,
@@ -168,7 +170,7 @@ function GoalsError({ onRetry }) {
   )
 }
 
-function GoalCard({ goal, currency, onEdit, onContribute, onDelete }) {
+function GoalCard({ goal, currency, onView, onEdit, onContribute, onDelete }) {
   const target = Math.max(0, Number(goal.targetAmount) || 0)
   const saved = Math.max(0, Number(goal.currentAmt) || 0)
   const remaining = Math.max(0, target - saved)
@@ -233,6 +235,9 @@ function GoalCard({ goal, currency, onEdit, onContribute, onDelete }) {
           {goal.autoDeduction ? "Automatic contribution" : `${Number(goal.totalDeductions) || 0} manual ${Number(goal.totalDeductions) === 1 ? "contribution" : "contributions"}`}
         </span>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <Button variant="ghost" size="icon-lg" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`View ${goal.goalName}`} title={`View ${goal.goalName}`} onClick={() => onView(goal)}>
+            <Eye className="size-4" aria-hidden="true" />
+          </Button>
           {canContribute && (
             <Button size="sm" variant="secondary" onClick={() => onContribute(goal)}>
               <HandCoins className="mr-1.5 size-4" aria-hidden="true" />Contribute
@@ -255,6 +260,7 @@ function GoalCard({ goal, currency, onEdit, onContribute, onDelete }) {
 }
 
 export function GoalsPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [category, setCategory] = useState("")
   const [sort, setSort] = useState(DEFAULT_SORT)
@@ -457,6 +463,7 @@ export function GoalsPage() {
                       key={goal._id}
                       goal={goal}
                       currency={currency}
+                      onView={(selected) => navigate(`/goals/${encodeURIComponent(selected._id)}`)}
                       onEdit={(selected) => { setEditingGoal(selected); setFormOpen(true) }}
                       onContribute={setContributingGoal}
                       onDelete={setDeletingGoal}

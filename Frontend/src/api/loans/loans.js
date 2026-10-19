@@ -98,6 +98,11 @@ export function getLoansPage(query, { forceRefresh = false } = {}) {
   return request
 }
 
+export async function getLoanById(loanId) {
+  const response = await apiClient.get(`${BASE_PATH}/${encodeURIComponent(loanId)}`)
+  return responseData(response)
+}
+
 export async function createLoan(values) {
   try {
     const response = await apiClient.post(`${BASE_PATH}/create-loan`, values)

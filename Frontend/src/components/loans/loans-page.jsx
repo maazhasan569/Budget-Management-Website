@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   AlertCircle,
   ArrowDownWideNarrow,
@@ -7,6 +8,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  Eye,
   HandCoins,
   Landmark,
   Pencil,
@@ -157,7 +159,7 @@ function LoansError({ onRetry }) {
   )
 }
 
-function LoanCard({ loan, currency, onEdit, onPay, onDelete }) {
+function LoanCard({ loan, currency, onView, onEdit, onPay, onDelete }) {
   const target = Math.max(0, Number(loan.loanTargetAmt) || 0)
   const paid = Math.max(0, Number(loan.currentAmt) || 0)
   const remaining = Math.max(0, target - paid)
@@ -227,6 +229,9 @@ function LoanCard({ loan, currency, onEdit, onPay, onDelete }) {
           {loan.autoDeduction ? "Automatic repayment" : `${Number(loan.totalDeductions) || 0} manual ${Number(loan.totalDeductions) === 1 ? "payment" : "payments"}`}
         </span>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
+          <Button variant="ghost" size="icon-lg" className="size-10 text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label={`View ${loan.loanName}`} title={`View ${loan.loanName}`} onClick={() => onView(loan)}>
+            <Eye className="size-4" aria-hidden="true" />
+          </Button>
           {canPay && (
             <Button size="sm" variant="secondary" title={paymentDisabledReason || "Record a manual repayment"} onClick={() => onPay(loan)}>
               <HandCoins className="mr-1.5 size-4" aria-hidden="true" />Pay
@@ -249,6 +254,7 @@ function LoanCard({ loan, currency, onEdit, onPay, onDelete }) {
 }
 
 export function LoansPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [category, setCategory] = useState("")
   const [sort, setSort] = useState(DEFAULT_SORT)
@@ -439,6 +445,7 @@ export function LoansPage() {
                       key={loan._id}
                       loan={loan}
                       currency={currency}
+                      onView={(selected) => navigate(`/loans/${encodeURIComponent(selected._id)}`)}
                       onEdit={(selected) => { setEditingLoan(selected); setFormOpen(true) }}
                       onPay={setPayingLoan}
                       onDelete={setDeletingLoan}

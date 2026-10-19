@@ -125,7 +125,7 @@ export function AppShell() {
 
     try {
       await logOut()
-      navigate("/sign-in", { replace: true })
+      navigate("/auth/login", { replace: true })
     } catch {
       setLogoutError("We couldn’t sign you out. Please try again.")
     } finally {

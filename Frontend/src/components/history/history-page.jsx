@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 import {
   AlertCircle,
   ArrowDownLeft,
@@ -276,12 +277,13 @@ function HistoryError({ message, onRetry }) {
 }
 
 export function HistoryPageContent() {
+  const navigate = useNavigate()
+  const { recordType, recordId } = useParams()
   const [history, setHistory] = useState(null)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [reloadKey, setReloadKey] = useState(0)
-  const [selectedRecord, setSelectedRecord] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -328,6 +330,9 @@ export function HistoryPageContent() {
 
   const totalPages = Math.ceil(records.length / PAGE_SIZE)
   const visibleRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const selectedRecord = records.find(
+    (item) => item.type === recordType && String(item.record._id) === recordId,
+  )
   const firstItem = records.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
   const lastItem = Math.min(page * PAGE_SIZE, records.length)
 
@@ -441,7 +446,7 @@ export function HistoryPageContent() {
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => setSelectedRecord({ type, label, record, icon: Icon })}
+                          onClick={() => navigate(`/history/${type}/${encodeURIComponent(record._id)}`)}
                           aria-label={`View full details for ${getRecordTitle(type, record)}`}
                         >
                           <Eye className="mr-1.5 size-4" aria-hidden="true" />
@@ -513,7 +518,7 @@ export function HistoryPageContent() {
       </Card>
       {selectedRecord && (
         <HistoryRecordDetails
-          item={{ ...selectedRecord, onClose: () => setSelectedRecord(null) }}
+          item={{ ...selectedRecord, onClose: () => navigate("/history") }}
         />
       )}
     </div>
