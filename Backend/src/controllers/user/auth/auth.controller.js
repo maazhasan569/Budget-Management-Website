@@ -189,9 +189,19 @@ const logOut = asyncHandler(async (req, res) => {
             new ApiResponse(200, "user logged out", {})
         )
 })
+
+const redirectUser = asyncHandler(async(req,res) => {
+    const userId = req.user._id 
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , "athenticated user found" , userId)
+    )
+})
 export {
     createUserAccount,
     logInUser,
     getNewAccessToken,
-    logOut
+    logOut,
+    redirectUser
 }

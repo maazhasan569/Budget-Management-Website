@@ -25,14 +25,16 @@ apiClient.interceptors.response.use(
             try {
 
 
-                await axios.post("/api/v1/auth/refresh-token", {}, { withCredentials: true });
+                await axios.get("/api/v1/auth/refresh-token", { withCredentials: true });
 
                 return apiClient(originalRequest);
             } catch (refreshError) {
 
 
                 localStorage.removeItem("isLoggedIn");
-                window.location.href = "/sign-in";
+                if (window.location.pathname !== "/sign-in") {
+                    window.location.href = "/sign-in";
+                }
                 return Promise.reject(refreshError);
             }
         }
