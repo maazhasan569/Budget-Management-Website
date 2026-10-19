@@ -106,7 +106,8 @@ export async function getAllExpenseCategories() {
 
 export async function getExpenseById(expenseId) {
   const response = await apiClient.get(`${BASE_PATH}/${encodeURIComponent(expenseId)}`)
-  return getResponseData(response)
+  const expense = getResponseData(response)
+  return expense && Object.keys(expense).length > 0 ? expense : null
 }
 
 export async function createExpense(expense) {

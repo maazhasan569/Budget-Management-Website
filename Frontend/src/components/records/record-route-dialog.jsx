@@ -86,6 +86,14 @@ function formatValue(field, value) {
   return String(value)
 }
 
+function isImageAttachment(url = "") {
+  try {
+    return /\.(jpe?g|png|gif|webp)$/i.test(new URL(url).pathname)
+  } catch {
+    return /\.(jpe?g|png|gif|webp)(?:$|\?)/i.test(url)
+  }
+}
+
 export function RecordRouteDialog({ id, type, getRecord, onClose }) {
   const [result, setResult] = useState({ requestKey: "", record: null, error: "" })
   const [retryKey, setRetryKey] = useState(0)
@@ -169,6 +177,13 @@ export function RecordRouteDialog({ id, type, getRecord, onClose }) {
             {type === "tasks" && record.document && (
               <div className="space-y-2">
                 <p className="text-sm font-medium">Attachment</p>
+                {isImageAttachment(record.document) && (
+                  <img
+                    src={record.document}
+                    alt={`Attachment for ${record.name || "task"}`}
+                    className="max-h-64 w-full rounded-lg border border-border object-contain"
+                  />
+                )}
                 <a className="text-sm text-primary hover:underline" href={record.document} target="_blank" rel="noreferrer">
                   Open task attachment
                 </a>

@@ -190,7 +190,7 @@ function ProgressList({ items, type }) {
               <div className="min-w-0">
                 <Link
                   className="truncate font-medium hover:text-primary hover:underline"
-                  to={`${actionTo}/${encodeURIComponent(item._id)}`}
+                  to={item._id ? `${actionTo}/${encodeURIComponent(item._id)}` : actionTo}
                   aria-label={`View ${name || (isGoal ? "savings goal" : "loan")}`}
                 >
                   {name || (isGoal ? "Savings goal" : "Loan")}
