@@ -5,6 +5,7 @@ import { verifyDiskFile } from "../../middlewares/verifyDiskFile.js";
 import { uploadFile, updateFile, deleteFile } from "../../controllers/user/fileUpload.controller.js";
 import { questions, updateCredentials } from "../../controllers/user/question.controller.js";
 import { fetchHistory } from "../../controllers/user/history.controller.js";
+import { getIncomeAndBackBalance } from "../../controllers/user/getIncomeAndBankBalance.js";
 
 const router = Router()
 
@@ -13,6 +14,10 @@ router.route("/upload-file").post(
     upload.single("File"),
     verifyDiskFile,
     uploadFile
+)
+router.route("/income-and-balance").get(
+    verfiyJWTAccessToken,
+    getIncomeAndBackBalance
 )
 router.route("/history").get(
     verfiyJWTAccessToken,
