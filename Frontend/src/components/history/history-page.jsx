@@ -400,9 +400,9 @@ export function HistoryPageContent() {
               <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ArrowDownLeft className="size-6" aria-hidden="true" />
               </div>
-              <h2 className="mt-4 font-semibold">Your history is empty</h2>
+              <h2 className="mt-4 font-semibold">No history found</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Completed and removed items will appear here.
+                Completed or removed items will appear here when available.
               </p>
             </div>
           ) : (

@@ -115,6 +115,12 @@ function normalizePagination(data, requestedPage, requestedLimit) {
   throw new Error("The history response was not in the expected format.")
 }
 
+function isNoHistoryError(error) {
+  if (error?.response?.status !== 400) return false
+  const message = String(error.response.data?.message ?? "").toLowerCase()
+  return message.includes("no hist") && message.includes("doc") && message.includes("found")
+}
+
 export async function getHistory({ page = 1, limit = 10 } = {}) {
   if (groupedHistoryCache) {
     return normalizePagination(
@@ -124,7 +130,20 @@ export async function getHistory({ page = 1, limit = 10 } = {}) {
     )
   }
 
-  const response = await apiClient.get("/user/history", { params: { page, limit } })
+  let response
+  try {
+    response = await apiClient.get("/user/history", { params: { page, limit } })
+  } catch (error) {
+    if (!isNoHistoryError(error)) throw error
+    return {
+      records: [],
+      totalDoc: 0,
+      totalPages: 0,
+      page,
+      limit,
+      paginated: true,
+    }
+  }
   let data = response.data?.data
   if (
     page > 1 &&
