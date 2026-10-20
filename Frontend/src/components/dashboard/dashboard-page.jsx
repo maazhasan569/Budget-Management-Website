@@ -10,7 +10,6 @@ import {
   CircleDollarSign,
   Flag,
   Goal,
-  RefreshCw,
   ShieldCheck,
   Wallet,
 } from "lucide-react"
@@ -148,6 +147,33 @@ function BudgetCard({ budget, currency, hasError, onRetry }) {
             <p className="font-display text-3xl font-semibold tabular-nums">{formatCurrency(budget, currency)}</p>
             <p className="mt-1 text-sm text-muted-foreground">remaining this month</p>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function FinancialMetricCard({ title, description, value, icon: Icon, currency, hasError, onRetry }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Icon className="size-4 text-primary" aria-hidden="true" />
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {hasError ? (
+          <SectionError message={`Couldn’t load your ${title.toLowerCase()}. Please try again.`} onRetry={onRetry} />
+        ) : value == null ? (
+          <p className="rounded-xl bg-muted/50 p-5 text-sm text-muted-foreground">
+            No {title.toLowerCase()} details available.
+          </p>
+        ) : (
+          <p className="rounded-xl bg-muted/50 p-5 font-display text-3xl font-semibold tabular-nums">
+            {formatCurrency(value, currency)}
+          </p>
         )}
       </CardContent>
     </Card>
@@ -382,9 +408,6 @@ export function DashboardPage() {
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Your financial overview</h1>
           <p className="mt-2 text-muted-foreground">A calm, clear look at your money and what’s next.</p>
         </div>
-        <Button variant="outline" onClick={retry}>
-          <RefreshCw className="mr-2 size-4" aria-hidden="true" /> Refresh
-        </Button>
       </header>
 
       {refreshFailed && (
@@ -394,13 +417,39 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
+      <div>
         <HealthScoreCard
           score={dashboard.score}
           hasInputs={dashboard.hasScoreInputs}
           hasError={dashboard.errors.score}
         />
-        <BudgetCard budget={dashboard.budget} currency={currency} hasError={dashboard.errors.budget} onRetry={retry} />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <FinancialMetricCard
+          title="Net income"
+          description="Monthly income after your budget allocation"
+          value={dashboard.netIncome}
+          icon={ArrowUpRight}
+          currency={currency}
+          hasError={dashboard.errors.incomeAndBalance}
+          onRetry={retry}
+        />
+        <FinancialMetricCard
+          title="Bank balance"
+          description="Your current available balance"
+          value={dashboard.bankBalance}
+          icon={Wallet}
+          currency={currency}
+          hasError={dashboard.errors.incomeAndBalance}
+          onRetry={retry}
+        />
+        <BudgetCard
+          budget={dashboard.budget}
+          currency={currency}
+          hasError={dashboard.errors.budget}
+          onRetry={retry}
+        />
       </div>
 
       <div>

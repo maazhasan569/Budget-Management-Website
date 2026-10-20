@@ -33,13 +33,16 @@ export function SpendingTrendChart({ data, trendPercent, periodLabel = "month", 
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <LineChart data={data} margin={{ left: 12, right: 12 }}>
+          <LineChart data={data} margin={{ left: 24, right: 24 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="date"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              minTickGap={20}
+              interval="preserveStartEnd"
+              padding={{ left: 12, right: 12 }}
             />
             <ChartTooltip
               cursor={false}

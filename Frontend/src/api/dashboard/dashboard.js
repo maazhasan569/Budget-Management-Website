@@ -6,6 +6,7 @@ let dashboardCacheVersion = 0
 
 const endpointPaths = {
   budget: "/expenses/budget",
+  incomeAndBalance: "/user/income-and-balance",
   goals: "/dashboard/goal-progress",
   loans: "/dashboard/loan-progress",
   alerts: "/dashboard/goal-loan-alerts",
@@ -28,19 +29,27 @@ function hasRequestError(result) {
   return result.status === "rejected"
 }
 
+function toFiniteNumber(value) {
+  if (value == null || value === "") return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
 async function fetchDashboardData() {
   const initialResults = await Promise.allSettled([
     requestData(endpointPaths.budget),
+    requestData(endpointPaths.incomeAndBalance),
     requestData(endpointPaths.goals),
     requestData(endpointPaths.loans),
     requestData(endpointPaths.trends),
   ])
 
-  const [budgetResult, goalsResult, loansResult, trendsResult] = initialResults
+  const [budgetResult, incomeAndBalanceResult, goalsResult, loansResult, trendsResult] = initialResults
 
   const budgetUnavailable =
     budgetResult.status === "rejected" && budgetResult.reason?.response?.status === 404
   const budget = budgetUnavailable ? null : resultValue(budgetResult, null)
+  const incomeAndBalance = resultValue(incomeAndBalanceResult, {})
   const goals = resultValue(goalsResult, [])
   const loans = resultValue(loansResult, [])
   const spending = resultValue(trendsResult, { granularity: "day", data: [] })
@@ -72,6 +81,7 @@ async function fetchDashboardData() {
   let score = 100
   const errors = {
     budget: hasRequestError(budgetResult) && !budgetUnavailable,
+    incomeAndBalance: hasRequestError(incomeAndBalanceResult),
     goals: hasRequestError(goalsResult),
     loans: hasRequestError(loansResult),
     alerts: alertsError,
@@ -103,6 +113,8 @@ async function fetchDashboardData() {
 
   return {
     budget: Number.isFinite(budget) ? budget : null,
+    netIncome: toFiniteNumber(incomeAndBalance?.netIncome),
+    bankBalance: toFiniteNumber(incomeAndBalance?.bankBalance),
     goals: Array.isArray(goals) ? goals : [],
     loans: Array.isArray(loans) ? loans : [],
     alerts: Array.isArray(alerts) ? alerts : [],
