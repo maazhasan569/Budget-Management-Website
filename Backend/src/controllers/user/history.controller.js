@@ -7,11 +7,11 @@ import ApiError from "../../utils/ApiError.js"
 
 
 export const fetchHistory = asyncHandler(async(req,res) => {
-    const history = await History.findOne({userId : req.user._id})
+    
     const userId = req.user._id
-    const histortPaginateDoc = await paginate({userId})
-    if(!histortPaginateDoc.length){
-        throw new ApiError(400 , "No history doc found")
+    const histortPaginateDoc = await paginate(History , {userId})
+    if(histortPaginateDoc.fetchedDoc.length === 0){
+        throw new ApiError(400 , "No histroy doc found")
     }
     return res.status(200)
     .json(

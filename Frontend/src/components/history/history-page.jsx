@@ -114,6 +114,7 @@ const DETAIL_FIELDS = {
     ["amount", "Expense amount"],
     ["category", "Category"],
     ["deletionReason", "Removal reason"],
+    ["createdAt", "Date recorded"],
   ],
   loans: [
     ["loanName", "Loan name"],
@@ -482,7 +483,7 @@ export function HistoryPageContent() {
               {totalPages > 1 && (
                 <div className="flex flex-col gap-4 border-t border-border/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground" aria-live="polite">
-                    Showing {firstItem}–{lastItem} of {records.length}
+                    Showing {firstItem}–{lastItem} of {totalRecords}
                   </p>
                   <Pagination className="mx-0 w-auto">
                     <PaginationContent>
