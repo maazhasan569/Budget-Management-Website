@@ -12,7 +12,6 @@ const pushToHistory = async (Model, userId, docId, field) => {
       { userId },
       { $push: { [field]: modelDoc } },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true },
-      //changed the logic to ensure validator of mongoose only runs for incoming doc not all 
     )
   } else {
     historyDoc = await History.create({ userId, [field]: [modelDoc] })
