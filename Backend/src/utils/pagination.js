@@ -22,9 +22,9 @@ export async function paginate(Model, options = {}) {
     
     let filterObj = {}
     
-    // ← DON'T convert - keep as is
+    
     if (id) filterObj.id = id;
-    if (userId) filterObj.userId = userId;  // Keep as STRING
+    if (userId) filterObj.userId = userId;  
     if (category) filterObj.category = category;
     
     const skip = (page - 1) * limit

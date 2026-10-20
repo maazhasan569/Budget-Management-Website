@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import {
   AlertCircle,
   ArrowDownLeft,
@@ -190,7 +190,7 @@ function HistoryRecordDetails({ item }) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && item.onClose()}>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="history-dialog-scroll max-h-[85dvh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <item.icon className="size-5 text-primary" aria-hidden="true" />
@@ -279,66 +279,84 @@ function HistoryError({ message, onRetry }) {
 export function HistoryPageContent() {
   const navigate = useNavigate()
   const { recordType, recordId } = useParams()
-  const [history, setHistory] = useState(null)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = Math.max(1, Number.parseInt(searchParams.get("page") ?? "1", 10) || 1)
+  const [historyResult, setHistoryResult] = useState({ requestKey: "", data: null, error: "" })
   const [reloadKey, setReloadKey] = useState(0)
+  const requestKey = `${page}:${reloadKey}`
 
   useEffect(() => {
     let active = true
 
-    getHistory()
+    getHistory({ page, limit: PAGE_SIZE })
       .then((result) => {
         if (active) {
-          setHistory(result)
-          setPage(1)
+          setHistoryResult({ requestKey, data: result, error: "" })
         }
       })
       .catch((requestError) => {
         if (active) {
-          setError(
-            requestError?.response?.data?.message ||
+          setHistoryResult({
+            requestKey,
+            data: null,
+            error: requestError?.response?.data?.message ||
               requestError?.message ||
               "Check your connection and try again.",
-          )
+          })
         }
-      })
-      .finally(() => {
-        if (active) setLoading(false)
       })
 
     return () => {
       active = false
     }
-  }, [reloadKey])
+  }, [page, reloadKey, requestKey])
+
+  const loading = historyResult.requestKey !== requestKey
+  const error = loading ? "" : historyResult.error
+  const historyPage = loading ? null : historyResult.data
 
   const records = useMemo(() => {
-    if (!history) return []
+    if (!historyPage) return []
+    return historyPage.records
+      .map(({ type, record }, index) => {
+        const metadata = HISTORY_TYPES.find(([historyType]) => historyType === type)
+        if (!metadata) return null
+        const [recordType, label, icon] = metadata
+        return {
+          type: recordType,
+          label,
+          icon,
+          record,
+          key: `${recordType}-${record._id ?? index}`,
+          timestamp: getRecordTime(record._id),
+        }
+      })
+      .filter(Boolean)
+      .sort((left, right) => right.timestamp - left.timestamp)
+  }, [historyPage])
 
-    return HISTORY_TYPES.flatMap(([type, label, icon]) =>
-      history[type].map((record, index) => ({
-        type,
-        label,
-        icon,
-        record,
-        key: `${type}-${record._id ?? index}`,
-        timestamp: getRecordTime(record._id),
-      })),
-    ).sort((left, right) => right.timestamp - left.timestamp)
-  }, [history])
-
-  const totalPages = Math.ceil(records.length / PAGE_SIZE)
-  const visibleRecords = records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = historyPage?.paginated
+    ? historyPage.totalPages
+    : Math.ceil((historyPage?.totalDoc ?? 0) / PAGE_SIZE)
+  const totalRecords = historyPage?.totalDoc ?? records.length
+  const visibleRecords = historyPage?.paginated
+    ? records
+    : records.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
   const selectedRecord = records.find(
     (item) => item.type === recordType && String(item.record._id) === recordId,
   )
-  const firstItem = records.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
-  const lastItem = Math.min(page * PAGE_SIZE, records.length)
+  const firstItem = totalRecords === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const lastItem = Math.min((page - 1) * PAGE_SIZE + visibleRecords.length, totalRecords)
+
+  function goToPage(nextPage) {
+    const normalizedPage = Math.max(1, Math.min(totalPages || 1, nextPage))
+    const nextParams = new URLSearchParams(searchParams)
+    if (normalizedPage === 1) nextParams.delete("page")
+    else nextParams.set("page", String(normalizedPage))
+    setSearchParams(nextParams)
+  }
 
   function retry() {
-    setError("")
-    setLoading(true)
     setReloadKey((key) => key + 1)
   }
 
@@ -372,11 +390,11 @@ export function HistoryPageContent() {
             Activity history
           </CardTitle>
           <CardDescription>
-            {records.length} {records.length === 1 ? "record" : "records"} saved
+            {totalRecords} {totalRecords === 1 ? "record" : "records"} saved
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {records.length === 0 ? (
+          {totalRecords === 0 ? (
             <div className="px-5 py-14 text-center">
               <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <ArrowDownLeft className="size-6" aria-hidden="true" />
@@ -438,15 +456,18 @@ export function HistoryPageContent() {
                       </div>
                       <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
                         {amount && (
-                          <span className="text-right text-sm font-medium tabular-nums">
-                            {amount}
+                          <span className="text-right text-sm font-semibold tabular-nums">
+                            {type === "expenses" ? `Amount ${amount}` : amount}
                           </span>
                         )}
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => navigate(`/history/${type}/${encodeURIComponent(record._id)}`)}
+                          onClick={() => {
+                            const query = searchParams.toString()
+                            navigate(`/history/${type}/${encodeURIComponent(record._id)}${query ? `?${query}` : ""}`)
+                          }}
                           aria-label={`View full details for ${getRecordTitle(type, record)}`}
                         >
                           <Eye className="mr-1.5 size-4" aria-hidden="true" />
@@ -473,7 +494,7 @@ export function HistoryPageContent() {
                           className={page === 1 ? "pointer-events-none opacity-50" : ""}
                           onClick={(event) => {
                             event.preventDefault()
-                            setPage((current) => Math.max(1, current - 1))
+                            goToPage(page - 1)
                           }}
                         />
                       </PaginationItem>
@@ -486,7 +507,7 @@ export function HistoryPageContent() {
                               aria-label={`Go to page ${pageNumber}`}
                               onClick={(event) => {
                                 event.preventDefault()
-                                setPage(pageNumber)
+                                goToPage(pageNumber)
                               }}
                             >
                               {pageNumber}
@@ -504,7 +525,7 @@ export function HistoryPageContent() {
                           className={page === totalPages ? "pointer-events-none opacity-50" : ""}
                           onClick={(event) => {
                             event.preventDefault()
-                            setPage((current) => Math.min(totalPages, current + 1))
+                            goToPage(page + 1)
                           }}
                         />
                       </PaginationItem>
@@ -518,7 +539,13 @@ export function HistoryPageContent() {
       </Card>
       {selectedRecord && (
         <HistoryRecordDetails
-          item={{ ...selectedRecord, onClose: () => navigate("/history") }}
+          item={{
+            ...selectedRecord,
+            onClose: () => {
+              const query = searchParams.toString()
+              navigate(`/history${query ? `?${query}` : ""}`)
+            },
+          }}
         />
       )}
     </div>
