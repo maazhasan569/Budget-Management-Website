@@ -34,8 +34,10 @@ export function AuthSessionProvider({ children }) {
       .then(() => {
         if (active) setStatus("authenticated")
       })
-      .catch(() => {
-        if (active) setStatus("anonymous")
+      .catch((error) => {
+        if (!active) return
+        const statusCode = error?.response?.status
+        setStatus(statusCode === 401 || statusCode === 403 ? "anonymous" : "unavailable")
       })
 
     return () => {

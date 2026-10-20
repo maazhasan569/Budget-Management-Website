@@ -2,7 +2,7 @@ import { Users } from "../../../models/users.models.js";
 import ApiError from "../../../utils/ApiError.js";
 import ApiResponse from "../../../utils/ApiResponse.js";
 import asyncHandler from "../../../utils/asyncHandler.js";
-import bcrpt from "bcrypt"
+import { accessTokenCookieOptions, refreshTokenCookieOptions } from "../../../utils/cookie-config.js";
 import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.js";
 import jwt from "jsonwebtoken"
 import { OAuth2Client } from "google-auth-library"
@@ -47,9 +47,9 @@ const createUserAccount = asyncHandler(async (req, res) => {
         return res.status(
             201
         ).cookie(
-            "accessToken", accessToken, options
+            "accessToken", accessToken, accessTokenCookieOptions
         ).cookie(
-            "refreshToken", refreshToken, options
+            "refreshToken", refreshToken, refreshTokenCookieOptions
         ).json(
             new ApiResponse(201, "User created", { user, accessToken })
         )
@@ -95,9 +95,9 @@ const logInUser = asyncHandler(async (req, res) => {
         const loggedInUser = await Users.findById(getUserByEmail._id).select("-password -refreshToken")
         return res.status(200)
             .cookie(
-                "accessToken", accessToken, options
+                "accessToken", accessToken, accessTokenCookieOptions
             ).cookie(
-                "refreshToken", refreshToken, options
+                "refreshToken", refreshToken, refreshTokenCookieOptions
             ).json(
                 new ApiResponse(200, "user found", { loggedInUser, accessToken })
             )
@@ -141,8 +141,10 @@ const getNewAccessToken = asyncHandler(async (req, res) => {
     console.log(refreshToken)
 
     return res.status(201)
-        .cookie("refreshToken", refreshToken, options)
-        .cookie("accessToken", accessToken, options)
+        .cookie(
+            "accessToken", accessToken, accessTokenCookieOptions
+        ).cookie(
+            "refreshToken", refreshToken, refreshTokenCookieOptions)
         .json(
             new ApiResponse(201, "created new access and refreshToken", { accessToken })
         )
@@ -183,20 +185,20 @@ const logOut = asyncHandler(async (req, res) => {
     )
 
     res.status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
+        .clearCookie("accessToken", accessTokenCookieOptions)
+        .clearCookie("refreshToken", refreshTokenCookieOptions)
         .json(
             new ApiResponse(200, "user logged out", {})
         )
 })
 
-const redirectUser = asyncHandler(async(req,res) => {
-    const userId = req.user._id 
+const redirectUser = asyncHandler(async (req, res) => {
+    const userId = req.user._id
 
     return res.status(200)
-    .json(
-        new ApiResponse(200 , "athenticated user found" , userId)
-    )
+        .json(
+            new ApiResponse(200, "athenticated user found", userId)
+        )
 })
 export {
     createUserAccount,

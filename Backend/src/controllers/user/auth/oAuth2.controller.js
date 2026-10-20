@@ -5,6 +5,7 @@ import ApiError from "../../../utils/ApiError.js"
 import ApiResponse from "../../../utils/ApiResponse.js"
 import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.js"
 import { generateUsername } from "../../../utils/generateUsername.js"
+import { accessTokenCookieOptions , refreshTokenCookieOptions } from "../../../utils/cookie-config.js"
 
 const getGoogleTokenAndPayload = async (code) => {
 
@@ -105,10 +106,9 @@ const loginOrRegistorGoogleUser = asyncHandler(async (req, res) => {
         ).toString()
         return res.status(200)
             .cookie(
-                "accessToken", accessToken, options
-            )
-            .cookie(
-                "refreshToken", refreshToken, options
+            "accessToken", accessToken, accessTokenCookieOptions
+        ).cookie(
+            "refreshToken", refreshToken, refreshTokenCookieOptions
             )
             .redirect(frontendUrl)
             .json(

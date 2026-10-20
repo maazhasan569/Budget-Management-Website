@@ -39,9 +39,12 @@ apiClient.interceptors.response.use(
                 await refreshAccessToken();
                 return apiClient(originalRequest);
             } catch (refreshError) {
-                localStorage.removeItem("isLoggedIn");
-                if (window.location.pathname !== "/auth/login") {
-                    window.location.replace("/auth/login");
+                const refreshStatus = refreshError?.response?.status
+                if (refreshStatus === 401 || refreshStatus === 403) {
+                    localStorage.removeItem("isLoggedIn");
+                    if (window.location.pathname !== "/auth/login") {
+                        window.location.replace("/auth/login");
+                    }
                 }
                 return Promise.reject(refreshError);
             }
