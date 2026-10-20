@@ -340,18 +340,9 @@ export class GoalService {
     async AmtPaid() {
         try {
             const userGoals = await Goal.find({ userId: this.userId })
-            const userHistoryData = await History.findOne({ userId: this.userId })
-            let histroyGoalAmt = 0
-            if (userHistoryData?.goals) {
-                if (userHistoryData.goals.length > 0) {
-                    for (let i = 0; i < userHistoryData.goals.length; i++) {
-                        const goaldoc = userHistoryData.goals[i]
-                        histroyGoalAmt += goaldoc.currentAmt || 0
-                    }
-                }
-            }
+            
             const totalPaid = userGoals.reduce((sum, goal) => sum + goal.currentAmt || 0, 0)
-            return totalPaid + histroyGoalAmt
+            return totalPaid
         } catch (err) {
             throw new ApiError(500, err.message)
         }

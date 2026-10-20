@@ -138,19 +138,9 @@ export class LoanService {
     async amtPaid() {
         try {
             const userLoans = await Loan.find({ userId: this.userId })
-            const userHistoryData = await History.findOne({ userId: this.userId })
 
-            let histroyLoanAmt = 0
-            if (userHistoryData?.loans) {
-                if (userHistoryData.loans.length > 0) {
-                    for (let i = 0; i < userHistoryData.loans.length; i++) {
-                        const loandoc = userHistoryData.loans[i]
-                        histroyLoanAmt += loandoc.currentAmt || 0
-                    }
-                }
-            }
             const totalPaid = userLoans.reduce((sum, loan) => sum + (loan.currentAmt || 0), 0)
-            return totalPaid + histroyLoanAmt
+            return totalPaid
         } catch (err) {
             throw new ApiError(500, err.message)
         }
@@ -368,7 +358,7 @@ export class LoanService {
                 return { updatedLoan, pushToHistory: true }
             }
 
-            
+
             const income = user.income * 0.25
             if (user.netIncome <= income) {
                 loan.status = "no_funds"
@@ -466,7 +456,7 @@ export class LoanService {
                 throw new ApiError(400, "Invalid loan deletion reason")
             }
 
-            
+
             const updatedLoan = await Loan.findOneAndUpdate(
                 { userId: this.userId, _id: loanId },
                 {
@@ -474,13 +464,24 @@ export class LoanService {
                 }
             )
             const history = await pushToHistory(Loan, this.userId, loanId, "loans")
-            const updatedUserBankBalance = await Users.findByIdAndUpdate(
-                this.userId,
-                {
-                    $inc: { bankBalance: updatedLoan.currentAmt }
-                }
-            )
-            return { history, updatedUserBankBalance }
+
+
+            // const updatedUserBankBalance = await Users.findByIdAndUpdate(
+            //     this.userId,
+            //     {
+            //         $inc: { bankBalance: -updatedLoan.currentAmt }
+            //     }
+            // )
+            let updatedUserBankbalance = 0
+            const user = await Users.findById(this.userId)
+            if (user.bankBalance < updatedLoan.loanTargetAmt) {
+                throw new ApiError(400, "u cant delete this loan")
+            } else {
+                user.bankBalance -= updatedLoan.loanTargetAmt
+                await user.save()
+                updatedUserBankbalance = user.bankBalance
+            }
+            return { history, updatedUserBankbalance }
         } catch (err) {
             throw new ApiError(400, err.message)
         }
