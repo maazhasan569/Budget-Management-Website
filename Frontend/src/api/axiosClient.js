@@ -1,7 +1,10 @@
 // src/api/apiClient.js
 import axios from "axios";
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/+$/, "")
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+export const API_BASE_URL = (
+    import.meta.env.PROD ? configuredApiBaseUrl || "/api/v1" : "/api/v1"
+).replace(/\/+$/, "")
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
     withCredentials: true,
