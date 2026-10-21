@@ -1,8 +1,9 @@
 // src/api/apiClient.js
 import axios from "axios";
 
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api/v1").replace(/\/+$/, "")
 const apiClient = axios.create({
-    baseURL: "/api/v1",
+    baseURL: API_BASE_URL,
     withCredentials: true,
 });
 
@@ -11,7 +12,7 @@ let refreshRequest = null;
 function refreshAccessToken() {
     if (!refreshRequest) {
         refreshRequest = axios
-            .get("/api/v1/auth/refresh-token", { withCredentials: true })
+            .get(`${API_BASE_URL}/auth/refresh-token`, { withCredentials: true })
             .finally(() => {
                 refreshRequest = null;
             });
