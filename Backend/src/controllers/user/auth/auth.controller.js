@@ -5,7 +5,7 @@ import asyncHandler from "../../../utils/asyncHandler.js";
 import { accessTokenCookieOptions, refreshTokenCookieOptions } from "../../../utils/cookie-config.js";
 import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.js";
 import jwt from "jsonwebtoken"
-import { OAuth2Client } from "google-auth-library"
+import { OAuth2Client } from "google-auth-library";
 import { generateUsername } from "../../../utils/generateUsername.js";
 const options = {
     httpOnly: true,
