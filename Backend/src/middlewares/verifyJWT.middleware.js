@@ -5,8 +5,14 @@ import jwt from "jsonwebtoken"
 
 export const verfiyJWTAccessToken = asyncHandler(async(req,res,next) => {
     try{
-        const accessToken = req.cookies.accessToken || req.header("Authorization")
-    .replace("Bearer " , "")
+    //     const accessToken = req.cookies.accessToken || req.header("Authorization")
+    // .replace("Bearer " , "")
+
+    const accessToken =
+    req.cookies?.accessToken ??
+    (authorizationHeader?.startsWith("Bearer ")
+        ? authorizationHeader.slice(7)
+        : null)
     if(!accessToken){
         throw new ApiError(401 , "Unauthorized req - token not found")
     }
@@ -18,6 +24,6 @@ export const verfiyJWTAccessToken = asyncHandler(async(req,res,next) => {
     req.user = isUser
     next()
     }catch(err){
-        throw new ApiError(401 , err.message)
+        throw new ApiError(500 , err.message)
     }
 })
