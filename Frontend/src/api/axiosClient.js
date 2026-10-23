@@ -46,11 +46,8 @@ apiClient.interceptors.response.use(
                 const refreshStatus = refreshError?.response?.status
                 if (refreshStatus === 401 || refreshStatus === 403) {
                     localStorage.removeItem("isLoggedIn");
-                    if (
-                        window.location.pathname !== "/" &&
-                        window.location.pathname !== "/auth/login"
-                    ) {
-                        window.location.replace("/");
+                    if (window.location.pathname !== "/auth/login") {
+                        window.location.replace("/auth/login");
                     }
                 }
                 return Promise.reject(refreshError);
