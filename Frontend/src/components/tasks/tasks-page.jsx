@@ -10,7 +10,6 @@ import {
   CloudUpload,
   Eye,
   FileText,
-  Image as ImageIcon,
   ListTodo,
   Paperclip,
   Plus,
@@ -26,7 +25,6 @@ import {
   AttachmentAction,
   AttachmentContent,
   AttachmentMedia,
-  AttachmentTitle,
 } from "@/components/ui/attachment"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -108,6 +106,8 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
   const [attachmentError, setAttachmentError] = useState("")
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef(null)
+  const taskNameInputRef = useRef(null)
+  const formContentRef = useRef(null)
 
   useEffect(() => {
     const previewUrl = attachment?.previewUrl
@@ -131,6 +131,8 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
       file,
       previewUrl: file.type.startsWith("image/") ? URL.createObjectURL(file) : null,
     })
+    taskNameInputRef.current?.focus({ preventScroll: true })
+    formContentRef.current?.scrollTo({ top: 0 })
   }
 
   async function handleSubmit(event) {
@@ -172,7 +174,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !saving && onOpenChange(nextOpen)}>
-      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-5 sm:max-w-xl">
+      <DialogContent className="task-dialog-scroll flex max-h-[90dvh] flex-col overflow-hidden p-5 sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Add a financial task</DialogTitle>
           <DialogDescription className="text-foreground/75">
@@ -180,11 +182,12 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
           </DialogDescription>
         </DialogHeader>
         <form noValidate onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div className="task-dialog-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pt-1">
+          <div ref={formContentRef} className="task-dialog-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pt-1">
             <div className="space-y-2">
               <Label htmlFor="task-name" className="font-sans">Task name</Label>
               <Input
                 id="task-name"
+                ref={taskNameInputRef}
                 autoFocus
                 maxLength={120}
                 value={taskName}
@@ -334,26 +337,28 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                 }}
                 aria-label="Choose an optional task picture or PDF"
               />
-              <label
-                htmlFor="task-document"
-                onDragOver={(event) => {
-                  event.preventDefault()
-                  setIsDraggingFile(true)
-                }}
-                onDragLeave={() => setIsDraggingFile(false)}
-                onDrop={(event) => {
-                  event.preventDefault()
-                  setIsDraggingFile(false)
-                  chooseFile(event.dataTransfer.files?.[0])
-                }}
-                className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-5 text-center transition-colors hover:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${isDraggingFile ? "border-primary bg-primary/10" : "border-foreground/30"}`}
-              >
-                <CloudUpload className="size-6 text-primary" aria-hidden="true" />
-                <span className="text-sm font-medium text-foreground">
-                  {isDraggingFile ? "Drop your file here" : attachment ? "Drop a file or click to replace" : "Drop a file or click to upload"}
-                </span>
-                <span className="text-xs text-foreground/75">Pictures or PDF · maximum 5 MB</span>
-              </label>
+              {!attachment && (
+                <label
+                  htmlFor="task-document"
+                  onDragOver={(event) => {
+                    event.preventDefault()
+                    setIsDraggingFile(true)
+                  }}
+                  onDragLeave={() => setIsDraggingFile(false)}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    setIsDraggingFile(false)
+                    chooseFile(event.dataTransfer.files?.[0])
+                  }}
+                  className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-5 text-center transition-colors hover:bg-primary/5 peer-focus-visible:ring-2 peer-focus-visible:ring-ring ${isDraggingFile ? "border-primary bg-primary/10" : "border-foreground/30"}`}
+                >
+                  <CloudUpload className="size-6 text-primary" aria-hidden="true" />
+                  <span className="text-sm font-medium text-foreground">
+                    {isDraggingFile ? "Drop your file here" : "Drop a file or click to upload"}
+                  </span>
+                  <span className="text-xs text-foreground/75">Pictures or PDF · maximum 5 MB</span>
+                </label>
+              )}
               {attachmentError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{attachmentError}</p>}
               {attachment && (
                 <Attachment className="w-full">
@@ -363,15 +368,18 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                       : <FileText aria-hidden="true" />}
                   </AttachmentMedia>
                   <AttachmentContent>
-                    <AttachmentTitle>{attachment.file.name}</AttachmentTitle>
-                    <span className="text-xs text-foreground/75">{(attachment.file.size / 1024 / 1024).toFixed(2)} MB</span>
+                    <span className="text-sm font-medium">{attachment.previewUrl ? "Image attached" : "PDF attached"}</span>
                   </AttachmentContent>
                   <AttachmentAction
                     type="button"
                     aria-label="Remove selected attachment"
                     title="Remove attachment"
                     disabled={saving}
-                    onClick={() => setAttachment(null)}
+                    onClick={() => {
+                      setAttachment(null)
+                      setAttachmentError("")
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
                   >
                     <X aria-hidden="true" />
                   </AttachmentAction>
@@ -380,7 +388,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
             </section>
             {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           </div>
-          <DialogFooter className="sticky bottom-0 z-10 mx-0 mb-0 flex-none rounded-b-xl border-t border-border bg-popover px-5 py-4">
+          <DialogFooter className="mx-0 mb-0 flex-none rounded-b-xl border-t border-border bg-popover px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               <Plus className="mr-1 size-4" aria-hidden="true" />{saving ? "Creating…" : "Create task"}
@@ -436,38 +444,48 @@ function TaskCard({ task, onView, onComplete, onDelete, busy }) {
 
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-border/80 bg-card p-4 transition-colors hover:bg-muted/20 sm:flex-row sm:items-start sm:p-5">
-      {task.document && (
-        <Attachment className="w-full max-w-sm sm:w-56">
-          <AttachmentMedia variant={hasImage ? "image" : "icon"} className="size-14 opacity-100">
-            {hasImage
-              ? <img src={task.document} alt={`Attachment for ${task.name}`} />
-              : <FileText aria-hidden="true" />}
-          </AttachmentMedia>
-          <AttachmentContent>
-            <AttachmentTitle>{task.document.split("/").at(-1)?.split("?")[0] || "Task attachment"}</AttachmentTitle>
-            <span className="text-xs text-muted-foreground">{hasImage ? "Image attachment" : "PDF attachment"}</span>
-          </AttachmentContent>
-        </Attachment>
-      )}
+      {task.document && (hasImage ? (
+        <a
+          href={task.document}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Open image attachment for ${task.name}`}
+          className="block w-full overflow-hidden rounded-lg border border-border sm:w-40"
+        >
+          <img
+            src={task.document}
+            alt={`Attachment for ${task.name}`}
+            className="h-28 w-full object-cover"
+          />
+        </a>
+      ) : (
+        <a
+          href={task.document}
+          target="_blank"
+          rel="noreferrer"
+          className="flex w-fit items-center gap-2 self-start rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-primary hover:bg-muted"
+        >
+          <FileText className="size-4" aria-hidden="true" />
+          Open attached PDF
+        </a>
+      ))}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="break-words text-base font-semibold">{task.name || "Untitled task"}</h2>
           <Badge variant={status.variant}>{status.label}</Badge>
         </div>
-        <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{task.description}</p>
+        {task.description && (
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground">{task.description}</p>
+        )}
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
-            <Clock3 className="size-3.5" aria-hidden="true" />
-            {task.dueDate ? `Due ${formatDate(task.dueDate)}` : "No due date"}
-          </span>
+          {task.dueDate && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1">
+              <Clock3 className="size-3.5" aria-hidden="true" />
+              Due {formatDate(task.dueDate)}
+            </span>
+          )}
           {task.category && (
             <span className="rounded-full border border-border px-2.5 py-1">{task.category}</span>
-          )}
-          {task.document && (
-            <a href={task.document} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
-              {hasImage ? <ImageIcon className="size-3.5" aria-hidden="true" /> : <FileText className="size-3.5" aria-hidden="true" />}
-              View attachment
-            </a>
           )}
         </div>
       </div>
