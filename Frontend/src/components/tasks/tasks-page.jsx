@@ -174,15 +174,18 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !saving && onOpenChange(nextOpen)}>
-      <DialogContent className="task-dialog-scroll flex max-h-[90dvh] flex-col overflow-hidden p-5 sm:max-w-xl">
+      <DialogContent
+        ref={formContentRef}
+        className="task-dialog-scroll max-h-[90dvh] overflow-y-auto overscroll-contain p-5 sm:max-w-xl"
+      >
         <DialogHeader>
           <DialogTitle className="font-display text-xl">Add a financial task</DialogTitle>
           <DialogDescription className="text-foreground/75">
             Keep a money-related action organized. A due date and attachment are both optional.
           </DialogDescription>
         </DialogHeader>
-        <form noValidate onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <div ref={formContentRef} className="task-dialog-scroll min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-1 pb-4 pt-1">
+        <form noValidate onSubmit={handleSubmit}>
+          <div className="space-y-4 px-1 pb-4 pt-1">
             <div className="space-y-2">
               <Label htmlFor="task-name" className="font-sans">Task name</Label>
               <Input
@@ -388,7 +391,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
             </section>
             {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           </div>
-          <DialogFooter className="mx-0 mb-0 flex-none rounded-b-xl border-t border-border bg-popover px-5 py-4">
+          <DialogFooter className="mx-0 mb-0 rounded-b-xl border-t border-border bg-popover px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
               <Plus className="mr-1 size-4" aria-hidden="true" />{saving ? "Creating…" : "Create task"}

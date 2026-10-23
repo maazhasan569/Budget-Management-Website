@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
+import { AnimatePresence, motion } from "framer-motion"
 import {
   Activity,
   ArrowLeftRight,
@@ -141,28 +142,46 @@ export function AppShell() {
         <SidebarContent onLogout={handleLogout} isLoggingOut={isLoggingOut} />
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
-            onClick={() => setMobileOpen(false)}
-          />
-          <aside className="relative flex h-full w-[min(84vw,300px)] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl">
-            <div className="absolute right-3 top-5">
-              <Button variant="ghost" size="icon" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
-                <X className="size-5" />
-              </Button>
-            </div>
-            <SidebarContent
-              onNavigate={() => setMobileOpen(false)}
-              onLogout={handleLogout}
-              isLoggingOut={isLoggingOut}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 lg:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.button
+              type="button"
+              aria-label="Close navigation"
+              className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
+              onClick={() => setMobileOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
             />
-          </aside>
-        </div>
-      )}
+            <motion.aside
+              className="relative flex h-full w-[min(84vw,300px)] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.24, ease: "easeInOut" }}
+            >
+              <div className="absolute right-3 top-5">
+                <Button variant="ghost" size="icon" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
+                  <X className="size-5" />
+                </Button>
+              </div>
+              <SidebarContent
+                onNavigate={() => setMobileOpen(false)}
+                onLogout={handleLogout}
+                isLoggingOut={isLoggingOut}
+              />
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="min-w-0 flex-1 lg:pl-[264px]">
         <header className="sticky top-0 z-20 flex h-[68px] items-center justify-between border-b border-border/80 bg-background/90 px-4 backdrop-blur-md sm:px-7 lg:hidden">
