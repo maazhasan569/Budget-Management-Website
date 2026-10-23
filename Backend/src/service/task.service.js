@@ -108,10 +108,12 @@ export class TaskService extends FileService {
                 throw new ApiError(400, "task name is required")
             }
 
-            if (this.dueDate && this.dateValue) {
-                this.dueDate = this.duethis.calculateDueDate(val, unit)
+            const task = await Task.findOne({ _id: taskId, userId: this.userId })
+
+            if (this.dateValue && this.dueDateUnit) {
+                this.dueDate = this.calculateDueDate(val, unit)
             }
-            let fileData = { fileUrl: null, filePath: null }
+            let fileData = { fileUrl: task.document, publicId: task.publicId }
             if (this.filePath) {
                 fileData = await this.updateFile(taskId, "Task")
             }
@@ -121,7 +123,7 @@ export class TaskService extends FileService {
                     name: this.taskName,
                     description: this.taskDescription,
                     category: this.category,
-                    dueDate: this.dueDate,
+                    dueDate: this.dueDate || task.dueDate,
                     document: fileData.fileUrl,
                     publicId: fileData.publicId
                 },
@@ -203,7 +205,7 @@ export class TaskService extends FileService {
                     await task.save()
                 }
             }
-            
+
         } catch (err) {
             throw new ApiError(400, err.message)
         }

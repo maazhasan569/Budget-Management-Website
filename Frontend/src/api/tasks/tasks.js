@@ -79,7 +79,7 @@ export async function createTask({ taskName, taskDescription, category, dateValu
   const formData = new FormData()
   formData.append("taskName", taskName)
   formData.append("taskDescription", taskDescription)
-  if (category) formData.append("category", category)
+  formData.append("category", category ?? "")
   if (dateValue && dueDateUnit) {
     formData.append("dateValue", dateValue)
     formData.append("dueDateUnit", dueDateUnit)
@@ -91,6 +91,24 @@ export async function createTask({ taskName, taskDescription, category, dateValu
     return responseData(response)
   } catch (error) {
     throw taskError(error, "We couldn’t create this task. Please try again.")
+  }
+}
+
+export async function updateTask(taskId, { taskName, taskDescription, category, document }) {
+  const formData = new FormData()
+  formData.append("taskName", taskName)
+  formData.append("taskDescription", taskDescription)
+  if (category) formData.append("category", category)
+  if (document) formData.append("document", document)
+
+  try {
+    const response = await apiClient.put(
+      `${BASE_PATH}/${encodeURIComponent(taskId)}`,
+      formData,
+    )
+    return responseData(response)
+  } catch (error) {
+    throw taskError(error, "We couldn’t update this task. Please try again.")
   }
 }
 

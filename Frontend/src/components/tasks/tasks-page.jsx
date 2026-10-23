@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock3,
   CloudUpload,
+  Edit2,
   Eye,
   FileText,
   ListTodo,
@@ -18,7 +19,7 @@ import {
   X,
 } from "lucide-react"
 
-import { completeTask, createTask, deleteTask, getTaskCategories, getTasks } from "@/api/tasks/tasks"
+import { completeTask, createTask, deleteTask, getTaskCategories, getTasks, updateTask } from "@/api/tasks/tasks"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
 import {
   Attachment,
@@ -94,10 +95,11 @@ function fileIsImage(url = "") {
   }
 }
 
-function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
-  const [taskName, setTaskName] = useState("")
-  const [taskDescription, setTaskDescription] = useState("")
-  const [category, setCategory] = useState("")
+function TaskFormDialog({ open, onOpenChange, onSave, categories, task }) {
+  const isEditing = Boolean(task)
+  const [taskName, setTaskName] = useState(task?.name ?? "")
+  const [taskDescription, setTaskDescription] = useState(task?.description ?? "")
+  const [category, setCategory] = useState(task?.category ?? "")
   const [dateValue, setDateValue] = useState("")
   const [dueDateUnit, setDueDateUnit] = useState("")
   const [attachment, setAttachment] = useState(null)
@@ -157,7 +159,8 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
     setSaving(true)
     setFormError("")
     try {
-      await onCreate({
+      await onSave({
+        taskId: task?._id,
         taskName: cleanName,
         taskDescription: cleanDescription,
         ...(cleanCategory ? { category: cleanCategory } : {}),
@@ -176,12 +179,14 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
     <Dialog open={open} onOpenChange={(nextOpen) => !saving && onOpenChange(nextOpen)}>
       <DialogContent
         ref={formContentRef}
-        className="task-dialog-scroll max-h-[90dvh] overflow-y-auto overscroll-contain p-5 sm:max-w-xl"
+        className="task-dialog-scroll h-fit max-h-[90dvh] overflow-y-auto overscroll-contain p-5 sm:max-w-xl"
       >
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">Add a financial task</DialogTitle>
+          <DialogTitle className="font-display text-xl">{isEditing ? "Edit financial task" : "Add a financial task"}</DialogTitle>
           <DialogDescription className="text-foreground/75">
-            Keep a money-related action organized. A due date and attachment are both optional.
+            {isEditing
+              ? "Update this task’s details. Its current due date and attachment are kept unless you replace the attachment."
+              : "Keep a money-related action organized. A due date and attachment are both optional."}
           </DialogDescription>
         </DialogHeader>
         <form noValidate onSubmit={handleSubmit}>
@@ -234,7 +239,7 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
               </datalist>
             </section>
 
-            <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-deadline-heading">
+            {!isEditing && <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-deadline-heading">
               <div className="flex items-start gap-3">
                 <CalendarClock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                 <div>
@@ -317,16 +322,30 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
                   Due {formatDate(getRelativeDueDate(dateValue, dueDateUnit))}
                 </p>
               )}
-            </section>
+            </section>}
 
             <section className="space-y-3 rounded-xl border border-foreground/20 bg-muted/25 p-4" aria-labelledby="task-attachment-heading">
               <div className="flex items-start gap-3">
                 <Paperclip className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                 <div>
                   <h3 id="task-attachment-heading" className="font-sans text-sm font-medium">Attachment <span className="font-normal text-foreground/75">(optional)</span></h3>
-                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">Attach a picture or PDF if it helps. JPG, PNG, GIF, or PDF · up to 5 MB.</p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/75">
+                    {isEditing && task.document
+                      ? "The current attachment is kept unless you choose a replacement."
+                      : "Attach a picture or PDF if it helps. JPG, PNG, GIF, or PDF · up to 5 MB."}
+                  </p>
                 </div>
               </div>
+              {isEditing && task.document && !attachment && (
+                <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+                  {fileIsImage(task.document) ? (
+                    <img src={task.document} alt="" className="size-12 rounded-md object-cover" />
+                  ) : (
+                    <FileText className="size-5 text-primary" aria-hidden="true" />
+                  )}
+                  <span className="text-sm">{fileIsImage(task.document) ? "Current image attachment" : "Current PDF attachment"}</span>
+                </div>
+              )}
               <input
                 ref={fileInputRef}
                 id="task-document"
@@ -394,7 +413,8 @@ function TaskFormDialog({ open, onOpenChange, onCreate, categories }) {
           <DialogFooter className="mx-0 mb-0 rounded-b-xl border-t border-border bg-popover px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
             <Button type="submit" disabled={saving}>
-              <Plus className="mr-1 size-4" aria-hidden="true" />{saving ? "Creating…" : "Create task"}
+            {isEditing ? <Edit2 className="mr-1 size-4" aria-hidden="true" /> : <Plus className="mr-1 size-4" aria-hidden="true" />}
+            {saving ? (isEditing ? "Saving…" : "Creating…") : (isEditing ? "Save changes" : "Create task")}
             </Button>
           </DialogFooter>
         </form>
@@ -441,7 +461,7 @@ function TaskDeleteDialog({ task, onOpenChange, onConfirm }) {
   )
 }
 
-function TaskCard({ task, onView, onComplete, onDelete, busy }) {
+function TaskCard({ task, onView, onEdit, onComplete, onDelete, busy }) {
   const status = TASK_STATUSES[task.status] ?? { label: task.status || "In progress", variant: "outline" }
   const hasImage = task.document && fileIsImage(task.document)
 
@@ -493,6 +513,16 @@ function TaskCard({ task, onView, onComplete, onDelete, busy }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Edit ${task.name}`}
+          title={`Edit ${task.name}`}
+          disabled={busy}
+          onClick={() => onEdit(task)}
+        >
+          <Edit2 aria-hidden="true" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -553,6 +583,7 @@ export function FinancialTasksPage() {
   const [loadErrorKey, setLoadErrorKey] = useState(null)
   const [reloadKey, setReloadKey] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
   const [busyTaskId, setBusyTaskId] = useState(null)
   const [actionError, setActionError] = useState("")
@@ -611,8 +642,9 @@ export function FinancialTasksPage() {
     return () => { active = false }
   }, [category, page, reloadKey, requestKey])
 
-  async function handleCreate(values) {
-    await createTask(values)
+  async function handleSaveTask({ taskId, ...values }) {
+    if (taskId) await updateTask(taskId, values)
+    else await createTask(values)
     setCategory("")
     setPage(1)
     setReloadKey((key) => key + 1)
@@ -756,6 +788,7 @@ export function FinancialTasksPage() {
                   task={task}
                   busy={busyTaskId === task._id}
                   onView={(selected) => navigate(`/financial-tasks/${encodeURIComponent(selected._id)}`)}
+                  onEdit={setEditingTask}
                   onComplete={handleComplete}
                   onDelete={setDeletingTask}
                 />
@@ -772,7 +805,25 @@ export function FinancialTasksPage() {
         </Card>
       )}
 
-      {createOpen && <TaskFormDialog open onOpenChange={setCreateOpen} onCreate={handleCreate} categories={categoryOptions} />}
+      {createOpen && (
+        <TaskFormDialog
+          key="create-task"
+          open
+          onOpenChange={setCreateOpen}
+          onSave={handleSaveTask}
+          categories={categoryOptions}
+        />
+      )}
+      {editingTask && (
+        <TaskFormDialog
+          key={editingTask._id}
+          open
+          task={editingTask}
+          onOpenChange={(open) => { if (!open) setEditingTask(null) }}
+          onSave={handleSaveTask}
+          categories={categoryOptions}
+        />
+      )}
       {deletingTask && (
         <TaskDeleteDialog
           task={deletingTask}
