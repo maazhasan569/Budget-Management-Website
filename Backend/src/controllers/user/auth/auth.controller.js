@@ -7,10 +7,7 @@ import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.j
 import jwt from "jsonwebtoken"
 import { OAuth2Client } from "google-auth-library";
 import { generateUsername } from "../../../utils/generateUsername.js";
-const options = {
-    httpOnly: true,
-    secure: true
-}
+
 const createUserAccount = asyncHandler(async (req, res) => {
     try {
         const { email, password } = req.body;

@@ -1,12 +1,11 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom"
+import { Navigate, Outlet } from "react-router-dom"
 import { AlertCircle, RotateCw } from "lucide-react"
 
 import { useAuthSession } from "@/components/auth/auth-session-context"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 
-export function AuthRouteGuard({ guestOnly = false, anonymousTo }) {
-  const location = useLocation()
+export function AuthRouteGuard({ guestOnly = false }) {
   const status = useAuthSession()
 
   if (status === "checking") {
@@ -40,12 +39,8 @@ export function AuthRouteGuard({ guestOnly = false, anonymousTo }) {
     return <Navigate to="/dashboard" replace />
   }
 
-  if (status === "anonymous" && anonymousTo) {
-    return <Navigate to={anonymousTo} replace />
-  }
-
   if (!guestOnly && status === "anonymous") {
-    return <Navigate to="/auth/login" replace state={{ from: location }} />
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />

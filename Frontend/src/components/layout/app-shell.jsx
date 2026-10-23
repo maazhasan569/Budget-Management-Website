@@ -115,20 +115,22 @@ function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [logoutError, setLogoutError] = useState("")
   const navigate = useNavigate()
 
   async function handleLogout() {
     if (isLoggingOut) return
     setIsLoggingOut(true)
-    setLogoutError("")
+    let logoutFailed = false
 
     try {
       await logOut()
-      navigate("/auth/login", { replace: true })
     } catch {
-      setLogoutError("We couldn’t sign you out. Please try again.")
+      logoutFailed = true
     } finally {
+      navigate("/", {
+        replace: true,
+        state: logoutFailed ? { logoutError: "We couldn’t reach the server to finish signing you out." } : null,
+      })
       setIsLoggingOut(false)
     }
   }
@@ -176,14 +178,6 @@ export function AppShell() {
         </header>
 
         <main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-9 lg:px-10 lg:py-10">
-          {logoutError && (
-            <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              <span>{logoutError}</span>
-              <Button variant="ghost" size="sm" className="shrink-0" onClick={() => setLogoutError("")}>
-                Dismiss <X className="ml-1 size-4" />
-              </Button>
-            </div>
-          )}
           <Outlet />
         </main>
       </div>

@@ -18,7 +18,7 @@ import { QuestionsPage } from "@/components/questions/question"
 function App() {
   return (
     <Routes>
-      <Route element={<AuthRouteGuard guestOnly anonymousTo="/auth/login" />}>
+      <Route element={<AuthRouteGuard guestOnly />}>
         <Route path="/" element={<LandingPage />} />
       </Route>
       <Route path="/auth/login" element={<AuthRoutePage initialMode="sign-in" />} />
