@@ -7,6 +7,14 @@ import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.j
 import { generateUsername } from "../../../utils/generateUsername.js"
 import { accessTokenCookieOptions , refreshTokenCookieOptions } from "../../../utils/cookie-config.js"
 
+
+const REDIRECTION_URL = process.env.REDIRECTION_URL || "http://localhost:8000/api/v1/auth/google/callback 
+const oauthClient = new OAuth2Client(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    REDIRECTION_URL
+)
+
 const getGoogleTokenAndPayload = async (code) => {
 
     if (!code) {
@@ -29,16 +37,9 @@ const getGoogleTokenAndPayload = async (code) => {
     }
 
 }
-const oauthClient = new OAuth2Client(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
-    process.env.REDIRECTION_URL
-)
 
-const options = {
-    httpOnly: true,
-    secure: true
-}
+
+
 const loginUrl = asyncHandler((req, res) => {
 
     const authUrl = oauthClient.generateAuthUrl({
