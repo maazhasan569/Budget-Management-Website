@@ -12,18 +12,10 @@ const apiClient = axios.create({
 
 let refreshRequest = null;
 
-function requestRefreshToken() {
-    return axios.get(`${API_BASE_URL}/auth/refresh-token`, { withCredentials: true });
-}
-
 function refreshAccessToken() {
     if (!refreshRequest) {
-        const lockManager = globalThis.navigator?.locks;
-        const request = lockManager
-            ? lockManager.request("finch-auth-refresh", requestRefreshToken)
-            : requestRefreshToken();
-
-        refreshRequest = request
+        refreshRequest = axios
+            .get(`${API_BASE_URL}/auth/refresh-token`, { withCredentials: true })
             .finally(() => {
                 refreshRequest = null;
             });
