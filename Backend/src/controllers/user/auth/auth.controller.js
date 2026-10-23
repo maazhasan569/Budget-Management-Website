@@ -121,31 +121,54 @@ const getNewAccessToken = asyncHandler(async (req, res) => {
     //if not matched
     //expired or used up
     //handover a new refreshtoken and a accesstoken
-    const incomingRefreshToken = req.cookies?.refreshToken
-    if (!incomingRefreshToken) {
-        throw new ApiError(401, "refresh Token not found in cookie")
-    }
-    const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
-    const isUser = await Users.findById(decodedToken.userId)
-    if (!isUser) {
-        throw new ApiError(401, "invalid refresh token")
-    }
-    if (!(incomingRefreshToken === isUser.refreshToken)) {
-        throw new ApiError(401, "refresh token expired or already used")
-    }
+    try {
+        const incomingRefreshToken = req.cookies?.refreshToken
+        if (!incomingRefreshToken) {
+            throw new ApiError(401, "refresh Token not found in cookie")
+        }
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+        const isUser = await Users.findById(decodedToken?.userId)
+        if (!isUser) {
+            throw new ApiError(401, "invalid refresh token")
+        }
+        if (!(incomingRefreshToken === isUser.refreshToken)) {
+            throw new ApiError(401, "refresh token expired or already used")
+        }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(isUser._id)
-    console.log(refreshToken)
+        const { accessToken, refreshToken } = await generateAccessAndRefreshToken(isUser._id)
+        console.log(refreshToken)
 
-    return res.status(201)
-        .cookie(
-            "accessToken", accessToken, accessTokenCookieOptions
-        ).cookie(
-            "refreshToken", refreshToken, refreshTokenCookieOptions)
-        .json(
-            new ApiResponse(201, "created new access and refreshToken", { accessToken })
-        )
-})
+        return res.status(201)
+            .cookie(
+                "accessToken", accessToken, accessTokenCookieOptions
+            ).cookie(
+                "refreshToken", refreshToken, refreshTokenCookieOptions)
+            .json(
+                new ApiResponse(201, "created new access and refreshToken", { accessToken })
+            )
+    } catch (error) {
+        const jwtErrorNames = [
+            "TokenExpiredError",
+            "JsonWebTokenError",
+            "NotBeforeError",
+        ]
+
+        if (jwtErrorNames.includes(error?.name)) {
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: true,
+                sameSite: "none",
+                path: "/",
+            })
+            throw new ApiError(401, "Invalid or expired Jwt refresh token")
+        }
+
+
+
+
+    }
+}
+)
 
 //logout user, del jwt and googletokens
 const logOut = asyncHandler(async (req, res) => {
