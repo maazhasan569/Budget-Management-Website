@@ -359,7 +359,7 @@ function TaskFormDialog({ open, onOpenChange, onSave, categories, task }) {
                 }}
                 aria-label="Choose an optional task picture or PDF"
               />
-              {!attachment && (
+              {!attachment && !(isEditing && task.document) && (
                 <label
                   htmlFor="task-document"
                   onDragOver={(event) => {
