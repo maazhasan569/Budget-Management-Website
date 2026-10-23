@@ -4,10 +4,10 @@ import { GoalLoanAlerts } from "@/components/dashboard/goal-loan-alerts"
 
 export function DashboardShowcase() {
     return (
-        <section id="showcase" className="mx-auto max-w-6xl px-6 py-16">
-            <div className="mb-10 max-w-xl">
+        <section id="showcase" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+            <div className="mb-7 max-w-xl sm:mb-10">
                 <p className="mb-2 text-sm font-semibold text-primary">The dashboard</p>
-                <h2 className="font-serif text-3xl font-semibold tracking-tight">
+                <h2 className="font-serif text-2xl font-semibold tracking-tight sm:text-3xl">
                     Everything your money is doing, on one screen
                 </h2>
             </div>

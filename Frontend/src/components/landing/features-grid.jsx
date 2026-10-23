@@ -4,10 +4,10 @@ import { Progress } from "@/components/ui/progress"
 
 export function FeaturesGrid() {
   return (
-    <section id="features" className="mx-auto max-w-6xl px-6 py-16">
-      <div className="mb-10 max-w-xl">
+    <section id="features" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-7 max-w-xl sm:mb-10">
         <p className="mb-2 text-sm font-semibold text-primary">Everywhere else in the app</p>
-        <h2 className="font-serif text-3xl font-semibold tracking-tight">Six parts that work together</h2>
+        <h2 className="font-serif text-2xl font-semibold tracking-tight sm:text-3xl">Six parts that work together</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <FeatureCard icon={<LayoutDashboard className="h-5 w-5 text-primary" />} title="Dashboard" description="Your health score and what needs attention today.">

@@ -149,24 +149,24 @@ export function AppShell() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
           >
             <motion.button
               type="button"
               aria-label="Close navigation"
-              className="absolute inset-0 bg-foreground/30 backdrop-blur-[2px]"
+              className="absolute inset-0 bg-foreground/30"
               onClick={() => setMobileOpen(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
             />
             <motion.aside
-              className="relative flex h-full w-[min(84vw,300px)] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl"
+              className="relative flex h-full w-[min(84vw,300px)] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-xl will-change-transform"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              transition={{ duration: 0.24, ease: "easeInOut" }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
             >
               <div className="absolute right-3 top-5">
                 <Button variant="ghost" size="icon" aria-label="Close menu" onClick={() => setMobileOpen(false)}>
