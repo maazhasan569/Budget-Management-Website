@@ -165,7 +165,7 @@ const getNewAccessToken = asyncHandler(async (req, res) => {
 
 
 
-
+        throw error
     }
 }
 )
