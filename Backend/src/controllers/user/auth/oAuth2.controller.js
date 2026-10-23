@@ -8,7 +8,7 @@ import { generateUsername } from "../../../utils/generateUsername.js"
 import { accessTokenCookieOptions , refreshTokenCookieOptions } from "../../../utils/cookie-config.js"
 
 
-const REDIRECTION_URL = process.env.REDIRECTION_URL || "http://localhost:8000/api/v1/auth/google/callback 
+const REDIRECTION_URL = process.env.REDIRECTION_URL || "http://localhost:8000/api/v1/auth/google/callback"
 const oauthClient = new OAuth2Client(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
