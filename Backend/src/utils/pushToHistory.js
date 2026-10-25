@@ -19,7 +19,7 @@ const pushToHistory = async (Model, userId, docId, field) => {
 
   await Model.findOneAndDelete({ _id: docId, userId })
 
-  return historyDoc
+  return historyDoc;
 }
 
 export default pushToHistory
