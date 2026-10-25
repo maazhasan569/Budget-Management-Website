@@ -89,7 +89,8 @@ export class TaskService extends FileService {
 
             return newTask
         } catch (err) {
-            throw new ApiError(500, err.message)
+            console.log(err)
+            throw new ApiError(500, err.stack)
         }
     }
 

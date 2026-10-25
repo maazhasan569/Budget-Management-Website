@@ -27,6 +27,7 @@ export class FileService {
 
             return {fileUrl, publicId}
         } catch (err) {
+            
             throw new ApiError(500, err.message)
         }
     }

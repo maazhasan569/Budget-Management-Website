@@ -10,6 +10,7 @@ cloudinary.config({
 const fileUpload = async (filePath) => {
     try {
         // Configuration
+        console.log(filePath)
         if (!filePath) return null
 
 
@@ -20,6 +21,7 @@ const fileUpload = async (filePath) => {
     
         return {fileUrl : upload.secure_url , publicId : upload.public_id}
     } catch (err) {
+        console.log(err)
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath)
         }
