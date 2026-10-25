@@ -9,7 +9,7 @@ export function FeaturesGrid() {
         <p className="mb-2 text-sm font-semibold text-primary">Everywhere else in the app</p>
         <h2 className="font-serif text-2xl font-semibold tracking-tight sm:text-3xl">Six parts that work together</h2>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
         <FeatureCard icon={<LayoutDashboard className="h-5 w-5 text-primary" />} title="Dashboard" description="Your health score and what needs attention today.">
           <Progress value={78} className="h-1.5" />
         </FeatureCard>

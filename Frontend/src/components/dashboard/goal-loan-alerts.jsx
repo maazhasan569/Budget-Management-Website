@@ -36,22 +36,25 @@ export function GoalLoanAlerts() {
             <div
               key={item.id}
               className={cn(
-                "flex items-center justify-between rounded-lg border p-3",
+                "flex min-w-0 items-start justify-between gap-3 rounded-lg border p-3 sm:items-center",
                 item.daysUntilDue < 0 && "border-destructive/40 bg-destructive/10"
               )}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 {item.daysUntilDue < 0 && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                <div>
-                  <p className="text-sm font-medium">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                <div className="min-w-0">
+                  <p className="break-words text-sm font-medium">{item.name}</p>
+                  <p className="break-words text-xs text-muted-foreground">
                     {item.type === "loan" ? "Loan" : "Goal"} · ${item.amount}
                   </p>
                 </div>
               </div>
               <Badge
                 variant={u.variant === "warning" ? "outline" : u.variant}
-                className={u.variant === "warning" ? "border-warning text-warning" : ""}
+                className={cn(
+                  "shrink-0",
+                  u.variant === "warning" && "border-warning text-warning"
+                )}
               >
                 {u.label}
               </Badge>

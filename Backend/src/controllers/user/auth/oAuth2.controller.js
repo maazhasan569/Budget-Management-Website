@@ -125,18 +125,21 @@ const loginOrRegistorGoogleUser = asyncHandler(async (req, res) => {
         const isRegistration = req.query.state === "action=register";
 
         let message = "Google sign-in couldn't be completed. Please try again.";
+        let authPath = isRegistration ? "/auth/signup" : "/auth/login";
 
         if (error.code === 11000) {
             message = "We couldn't create your account right now. Please try again.";
         } else if (isRegistration && error.statusCode === 409) {
             message = "An account with this Google email already exists. Choose Sign in with Google.";
+            authPath = "/auth/login";
         } else if (!isRegistration && error.statusCode === 404) {
             message = "No account is linked to this Google email. Choose Create an account first.";
+            authPath = "/auth/signup";
         }
 
-        return res.redirect(
-            `${process.env.CORS_ORIGIN}${isRegistration ? "sign-up" : "sign-in"}?error=${encodeURIComponent(message)}`
-        );
+        const frontendUrl = new URL(authPath, process.env.CORS_ORIGIN);
+        frontendUrl.searchParams.set("error", message);
+        return res.redirect(frontendUrl.toString());
     }
 })
 export {

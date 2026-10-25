@@ -26,6 +26,7 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const isSignIn = initialMode === "sign-in"
+  const oauthError = searchParams.get("error")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -35,17 +36,15 @@ export function AuthCard({ initialMode = "sign-in" }) {
     email: "",
     password: "",
   })
-  const [serverError, setServerError] = useState("")
+  const [serverError, setServerError] = useState(() => oauthError || "")
 
   // Catch errors returned from OAuth redirect callbacks
   useEffect(() => {
-    const errorParam = searchParams.get("error")
-    if (errorParam) {
-      setServerError(decodeURIComponent(errorParam))
+    if (oauthError) {
       searchParams.delete("error")
       setSearchParams(searchParams, { replace: true })
     }
-  }, [searchParams, setSearchParams])
+  }, [oauthError, searchParams, setSearchParams])
 
   const isEmailValid = email.trim() !== "" && /\S+@\S+\.\S+/.test(email)
   const isPasswordValid = password.length >= 8

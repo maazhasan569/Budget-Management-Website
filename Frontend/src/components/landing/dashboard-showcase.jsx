@@ -11,8 +11,8 @@ export function DashboardShowcase() {
                     Everything your money is doing, on one screen
                 </h2>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-                <div className="md:col-span-2"><SpendingTrendChart data={[
+            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="min-w-0 md:col-span-2"><SpendingTrendChart data={[
                     { date: "Oct 1", spent: 120 },
                     { date: "Oct 5", spent: 340 },
                     { date: "Oct 10", spent: 410 },
@@ -26,7 +26,7 @@ export function DashboardShowcase() {
                     { category: "transport", amount: 220, fill: "var(--chart-3)" },
                     { category: "other", amount: 180, fill: "var(--chart-4)" },
                 ]} />
-                <div className="md:col-span-3"><GoalLoanAlerts /></div>
+                <div className="min-w-0 md:col-span-3"><GoalLoanAlerts /></div>
             </div>
         </section>
     )
