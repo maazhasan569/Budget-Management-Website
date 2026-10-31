@@ -27,7 +27,7 @@ router.route("/history").get(
     verfiyJWTAccessToken,
     fetchHistory
 )
-router.route("update-payment-seting").patch(updateUserPaymentSettings)
+router.route("/update-payment-setting").patch(verfiyJWTAccessToken,updateUserPaymentSettings)
 router.route("/update-file/:id").put(
     verfiyJWTAccessToken,
     upload.single("File"),

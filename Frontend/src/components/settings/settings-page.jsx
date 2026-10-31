@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from "react"
-import { Check, ChevronsUpDown, Loader2, Save } from "lucide-react"
+import { format, parseISO } from "date-fns"
+import { CalendarDays, Check, ChevronsUpDown, Loader2, Save } from "lucide-react"
 
 import { fetchCurrencies } from "@/api/external/currency"
-import { loadUserSettings, saveUserSettings } from "@/api/user/settings"
+import {
+  loadUserSettings,
+  scheduleMonthlyCredentialsUpdate,
+  saveUserPaymentSettings,
+  saveUserSettings,
+} from "@/api/user/settings"
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { setSelectedCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { SettingsSkeleton } from "@/components/settings/settings-skeleton"
@@ -22,9 +30,10 @@ const IDENTITY_OPTIONS = [
 const EMPTY_SETTINGS = {
   identity: "",
   income: "",
-  bankBalance: "",
   budget: "",
   currency: "",
+  payDate: "",
+  autoApplyMonthly: false,
 }
 
 const inputClass =
@@ -36,6 +45,12 @@ const rowClass =
 const controlClass =
   "h-10 w-full border-slate-700 bg-[#0B1220] text-white hover:bg-slate-800 hover:text-white sm:ml-auto sm:max-w-xs"
 
+function formatDateInput(value) {
+  if (!value) return ""
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10)
+}
+
 function settingsFromProfile(profile) {
   if (!profile || typeof profile !== "object" || Array.isArray(profile)) {
     throw new Error("Your profile details weren’t returned. Please reload and try again.")
@@ -44,16 +59,16 @@ function settingsFromProfile(profile) {
   return {
     identity: profile.identity ?? "",
     income: profile.income == null ? "" : String(profile.income),
-    bankBalance: profile.bankBalance == null ? "" : String(profile.bankBalance),
     budget: profile.budget == null ? "" : String(profile.budget),
     currency: profile.currency ?? "",
+    payDate: formatDateInput(profile.payDate),
+    autoApplyMonthly: profile.autoApplyMonthly ?? false,
   }
 }
 
 function validateSettings(settings) {
   const errors = {}
   const income = Number(settings.income)
-  const bankBalance = Number(settings.bankBalance)
   const budget = Number(settings.budget)
 
   if (!IDENTITY_OPTIONS.some((option) => option.value === settings.identity)) {
@@ -63,11 +78,6 @@ function validateSettings(settings) {
     errors.income = "Income is required."
   } else if (!Number.isFinite(income) || income <= 0) {
     errors.income = "Income must be greater than 0."
-  }
-  if (!settings.bankBalance.trim()) {
-    errors.bankBalance = "Bank balance is required."
-  } else if (!Number.isFinite(bankBalance) || bankBalance < 0) {
-    errors.bankBalance = "Bank balance cannot be negative."
   }
   if (!settings.budget.trim()) {
     errors.budget = "Budget is required."
@@ -79,6 +89,9 @@ function validateSettings(settings) {
   if (!settings.currency.trim()) {
     errors.currency = "Please select a currency."
   }
+  if (settings.autoApplyMonthly && !settings.payDate) {
+    errors.payDate = "Set your payday before enabling automatic monthly updates."
+  }
 
   return errors
 }
@@ -88,6 +101,7 @@ export function SettingsContent() {
   const [initialSettings, setInitialSettings] = useState(null)
   const [currencies, setCurrencies] = useState([])
   const [currencyOpen, setCurrencyOpen] = useState(false)
+  const [payDateOpen, setPayDateOpen] = useState(false)
   const [errors, setErrors] = useState({})
   const [loadError, setLoadError] = useState("")
   const [formError, setFormError] = useState("")
@@ -150,9 +164,29 @@ export function SettingsContent() {
     () => currencies.find((currency) => currency.code === settings.currency),
     [currencies, settings.currency],
   )
+  const incomeChanged =
+    initialSettings != null && Number(settings.income) !== Number(initialSettings.income)
+  const budgetChanged =
+    initialSettings != null && Number(settings.budget) !== Number(initialSettings.budget)
   const hasChanges =
     initialSettings != null &&
-    Object.keys(initialSettings).some((key) => settings[key] !== initialSettings[key])
+    (settings.identity !== initialSettings.identity ||
+      incomeChanged ||
+      budgetChanged ||
+      settings.currency !== initialSettings.currency ||
+      settings.payDate !== initialSettings.payDate ||
+      settings.autoApplyMonthly !== initialSettings.autoApplyMonthly)
+  const profileSettingsChanged =
+    initialSettings != null &&
+    (settings.identity !== initialSettings.identity ||
+      incomeChanged ||
+      budgetChanged ||
+      settings.currency !== initialSettings.currency)
+  const paymentSettingsChanged =
+    initialSettings != null &&
+    ["payDate", "autoApplyMonthly"].some(
+      (key) => settings[key] !== initialSettings[key],
+    )
 
   function updateSetting(key, value) {
     setSettings((current) => ({ ...current, [key]: value }))
@@ -171,26 +205,38 @@ export function SettingsContent() {
     setSuccessMessage("")
     if (Object.keys(validationErrors).length > 0) return
 
-    const payload = {
-      identity: settings.identity,
-      income: Number(settings.income),
-      bankBalance: Number(settings.bankBalance),
-      budget: Number(settings.budget),
-      currency: settings.currency,
-    }
-
     setSaving(true)
     try {
-      await saveUserSettings(payload)
-      const savedSettings = {
-        ...settings,
-        income: String(payload.income),
-        bankBalance: String(payload.bankBalance),
-        budget: String(payload.budget),
+      if (profileSettingsChanged) {
+        const profileUpdates = {}
+        if (settings.identity !== initialSettings.identity) {
+          profileUpdates.identity = settings.identity
+        }
+        if (incomeChanged) profileUpdates.income = Number(settings.income)
+        if (budgetChanged) profileUpdates.budget = Number(settings.budget)
+        if (settings.currency !== initialSettings.currency) {
+          profileUpdates.currency = settings.currency
+        }
+        await saveUserSettings(profileUpdates)
       }
+
+      if (paymentSettingsChanged) {
+        await saveUserPaymentSettings({
+          payDate: settings.payDate
+            ? `${settings.payDate}T00:00:00.000Z`
+            : null,
+          autoApplyMonthly: settings.autoApplyMonthly,
+        })
+      }
+
+      if (settings.autoApplyMonthly && (incomeChanged || budgetChanged)) {
+        await scheduleMonthlyCredentialsUpdate()
+      }
+
+      const savedSettings = { ...settings }
       setSettings(savedSettings)
       setInitialSettings(savedSettings)
-      setSelectedCurrency(payload.currency)
+      setSelectedCurrency(settings.currency)
       setSuccessMessage("Your settings have been saved.")
     } catch (error) {
       setFormError(
@@ -276,30 +322,6 @@ export function SettingsContent() {
 
           <div className={rowClass}>
             <div className="space-y-1">
-              <Label htmlFor="settings-bank-balance">Bank balance</Label>
-              <p className="text-sm text-muted-foreground">Your current available balance.</p>
-            </div>
-            <Input
-              id="settings-bank-balance"
-              type="number"
-              min="0"
-              step="0.01"
-              inputMode="decimal"
-              value={settings.bankBalance}
-              onChange={(event) => updateSetting("bankBalance", event.target.value)}
-              aria-invalid={Boolean(errors.bankBalance)}
-              aria-describedby={errors.bankBalance ? "settings-bank-balance-error" : undefined}
-              className={inputClass}
-            />
-            {errors.bankBalance && (
-              <p id="settings-bank-balance-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
-                {errors.bankBalance}
-              </p>
-            )}
-          </div>
-
-          <div className={rowClass}>
-            <div className="space-y-1">
               <Label htmlFor="settings-budget">Monthly budget</Label>
               <p className="text-sm text-muted-foreground">The amount you plan to spend each month.</p>
             </div>
@@ -320,6 +342,71 @@ export function SettingsContent() {
                 {errors.budget}
               </p>
             )}
+          </div>
+
+          <div className={rowClass}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-pay-date">Payday</Label>
+              <p className="text-sm text-muted-foreground">
+                Choose the date you usually receive your income.
+              </p>
+            </div>
+            <Popover open={payDateOpen} onOpenChange={setPayDateOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="settings-pay-date"
+                  type="button"
+                  variant="outline"
+                  aria-haspopup="dialog"
+                  aria-invalid={Boolean(errors.payDate)}
+                  aria-describedby={errors.payDate ? "settings-pay-date-error" : undefined}
+                  className={cn(inputClass, "justify-start text-left font-normal sm:ml-auto")}
+                >
+                  <CalendarDays className="mr-2 size-4" />
+                  {settings.payDate
+                    ? format(parseISO(settings.payDate), "PPP")
+                    : "Choose your payday"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={settings.payDate ? parseISO(settings.payDate) : undefined}
+                  onSelect={(date) => {
+                    if (!date) return
+                    updateSetting("payDate", format(date, "yyyy-MM-dd"))
+                    setPayDateOpen(false)
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.payDate && (
+              <p id="settings-pay-date-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+                {errors.payDate}
+              </p>
+            )}
+          </div>
+
+          <div className={cn(rowClass, "border-b-0")}>
+            <div className="space-y-1">
+              <Label htmlFor="settings-auto-apply">Monthly income and budget</Label>
+              <p className="text-sm text-muted-foreground">
+                Automatically add your income and budget each month, or leave this off to update them manually.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 sm:ml-auto">
+              <Label htmlFor="settings-auto-apply" className="cursor-pointer text-sm font-medium">
+                {settings.autoApplyMonthly ? "Automatic" : "Manual"}
+              </Label>
+              <Switch
+                id="settings-auto-apply"
+                checked={settings.autoApplyMonthly}
+                onCheckedChange={(checked) => updateSetting("autoApplyMonthly", checked)}
+                aria-label="Automatically add income and budget each month"
+                disabled={saving}
+              />
+            </div>
           </div>
 
           <div className={cn(rowClass, "border-b-0")}>

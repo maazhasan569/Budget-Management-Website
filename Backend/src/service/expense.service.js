@@ -151,7 +151,7 @@ export class ExpenseTracker {
             const user = await Users.findOne({ _id: this.userId })
 
             user.remainingBudget += user.budget
-            user.netIncome += user.income
+            user.netIncome += user.income - user.budget
             user.lastAppliedAt = new Date()
             const updatedUser = await user.save()
             return {
