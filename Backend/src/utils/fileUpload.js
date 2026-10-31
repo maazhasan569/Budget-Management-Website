@@ -25,7 +25,7 @@ const fileUpload = async (filePath) => {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath)
         }
-        console.log(err)
+        console.log("erros: " , err)
         return null
     }
 }
