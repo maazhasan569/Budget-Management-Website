@@ -13,7 +13,7 @@ const fileUpload = async (filePath) => {
         
         if (!filePath) return null
 
-
+        console.log(filePath)
         const upload = await cloudinary.uploader.upload(filePath, {
             resource_type: "auto",
         })
@@ -25,7 +25,7 @@ const fileUpload = async (filePath) => {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath)
         }
-        console.log(`cloudinary file upload failed , ${err}`)
+        console.log(err)
         return null
     }
 }
