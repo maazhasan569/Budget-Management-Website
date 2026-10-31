@@ -135,23 +135,30 @@ export class ExpenseTracker {
 
     async updateBudgetAndIncome() {
         const taskKey = String(this.userId);
-
-        if (user.payDate === user.lastAppliedAt) return null;
+        const user = await Users.findOne({ _id: this.userId });
         const old = existingTask.get(taskKey);
         if (old) {
             old.stop();
             existingTask.delete(taskKey);
         }
 
-        const user = await Users.findOne({ _id: this.userId });
+        
         if (!user || !user.autoApplyMonthly) return null;
         const day = Math.min(new Date(user.payDate || user.createdAt).getDate(), 28);
 
         const task = cron.schedule(`0 0 ${day} * *  `, async () => {
-            const user = await Users.findOne({ _id: this.userId })
+        
+            const user = await Users.findOne({ _id: this.userId });
+            if(!user.autoApplyMonthly){
+                task.stop()
+                task.destroy()
+                existingTask.delete(taskKey)
+                return;
+            }
 
+            if(user.payDate.getMonth === user.lastAppliedAt.getMonth()) return null
             user.remainingBudget += user.budget
-            user.netIncome += user.income - user.budget
+            user.netIncome += (user.income - user.budget)
             user.lastAppliedAt = new Date()
             const updatedUser = await user.save()
             return {
