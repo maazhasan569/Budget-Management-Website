@@ -18,7 +18,7 @@ const router = Router()
 router.route("/").get(verfiyJWTAccessToken, getAllGoals)
 router.route("/create-goal").post(verfiyJWTAccessToken, createGoal)
 router.route("/category").get(verfiyJWTAccessToken, getGoalsByCategory)
-router.route("/auto-deduct").post(verfiyJWTAccessToken, autoDeductAmt)
+router.route("/auto-deduct").post(autoDeductAmt)
 router.route("/amt-paid").get(verfiyJWTAccessToken, totalGoalsAmtPaid)
 router.route("/amt-remaining").get(verfiyJWTAccessToken, totalGoalsAmtRemaining)
 

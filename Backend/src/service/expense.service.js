@@ -130,13 +130,20 @@ export class ExpenseTracker {
             throw new ApiError(500, err.message)
         }
     }
-
     async updateBudgetAndIncome() {
+  const taskKey = String(this.userId);
 
-        const user = await Users.findOne({_id : this.userId})
-        if(!user.autoApplyMonthly) return null;
-        const updationDay = new Date(user.payDate || user.createdAt).getDate()
-        cron.schedule(`0 0 ${updationDay} * ` , async() => {
+
+  const old = existingTask.get(taskKey);
+  if (old) {
+    old.stop();
+    existingTask.delete(taskKey);
+  }
+
+  const user = await Users.findOne({ _id: this.userId });
+  if (!user || !user.autoApplyMonthly) return null;
+  const day = Math.min(new Date(user.payDate || user.createdAt).getDate(), 28);
+        const task = cron.schedule(`0 0 ${day} * *  ` , async() => {
             const user = await Users.findOne({_id : this.userId})
             user.remainingBudget += user.budget
             user.netIncome += user.income
@@ -146,6 +153,8 @@ export class ExpenseTracker {
                 netBudget : updatedUser.remainingBudget
             }
         })
+
+        existingTask.set(taskKey , task)
     }
 
 
