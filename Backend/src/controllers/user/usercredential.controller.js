@@ -34,7 +34,29 @@ const getIncomeAndBackBalance = asyncHandler(async (req, res) => {
         )
 })
 
+const updateUserPaymentSettings = asyncHandler(async (req, res) => {
+  const { payDate, autoApplyMonthly } = req.body;
+
+  const updates = {};
+  if (payDate !== undefined) updates.payDate = payDate;
+  if (autoApplyMonthly !== undefined) updates.autoApplyMonthly = autoApplyMonthly;
+
+  
+
+  const user = await Users.findByIdAndUpdate(
+    req.user._id,
+    { $set: updates },
+    { new: true, runValidators: true }
+  );
+
+  res.status(200)
+  .json(
+    new ApiResponse(200 , "user payment setting updated" , user)
+  )
+});
+
 export {
     getIncomeAndBackBalance,
-    updateIncome
+    updateIncome,
+    updateUserPaymentSettings
 }

@@ -118,10 +118,10 @@ export class ExpenseTracker {
                 },
                     { new: true });
 
-                await pushToHistory(Expense , this.userId, expense._id, "expenses")
+                await pushToHistory(Expense, this.userId, expense._id, "expenses")
 
             } else {
-                await pushToHistory(Expense , this.userId, expense._id, "expenses")
+                await pushToHistory(Expense, this.userId, expense._id, "expenses")
             }
 
 
@@ -132,34 +132,35 @@ export class ExpenseTracker {
         }
     }
 
-    
+
     async updateBudgetAndIncome() {
-  const taskKey = String(this.userId);
+        const taskKey = String(this.userId);
 
-if(user.payDate === user.lastAppliedAt) return null;
-  const old = existingTask.get(taskKey);
-  if (old) {
-    old.stop();
-    existingTask.delete(taskKey);
-  }
+        if (user.payDate === user.lastAppliedAt) return null;
+        const old = existingTask.get(taskKey);
+        if (old) {
+            old.stop();
+            existingTask.delete(taskKey);
+        }
 
-  const user = await Users.findOne({ _id: this.userId });
-  if (!user || !user.autoApplyMonthly) return null;
-  const day = Math.min(new Date(user.payDate || user.createdAt).getDate(), 28);
+        const user = await Users.findOne({ _id: this.userId });
+        if (!user || !user.autoApplyMonthly) return null;
+        const day = Math.min(new Date(user.payDate || user.createdAt).getDate(), 28);
 
-        const task = cron.schedule(`0 0 ${day} * *  ` , async() => {
-            const user = await Users.findOne({_id : this.userId})
+        const task = cron.schedule(`0 0 ${day} * *  `, async () => {
+            const user = await Users.findOne({ _id: this.userId })
 
             user.remainingBudget += user.budget
             user.netIncome += user.income
+            user.lastAppliedAt = new Date()
             const updatedUser = await user.save()
             return {
-                income : updatedUser.netIncome,
-                netBudget : updatedUser.remainingBudget
+                income: updatedUser.netIncome,
+                netBudget: updatedUser.remainingBudget
             }
         })
 
-        existingTask.set(taskKey , task)
+        existingTask.set(taskKey, task)
     }
 
 

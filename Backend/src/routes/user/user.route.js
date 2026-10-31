@@ -5,7 +5,7 @@ import { verifyDiskFile } from "../../middlewares/verifyDiskFile.js";
 import { uploadFile, updateFile, deleteFile } from "../../controllers/user/fileUpload.controller.js";
 import { questions, updateCredentials } from "../../controllers/user/question.controller.js";
 import { fetchHistory } from "../../controllers/user/history.controller.js";
-import { getIncomeAndBackBalance , updateIncome } from "../../controllers/user/usercredential.controller.js";
+import { getIncomeAndBackBalance , updateIncome, updateUserPaymentSettings} from "../../controllers/user/usercredential.controller.js";
 
 const router = Router()
 
@@ -27,6 +27,7 @@ router.route("/history").get(
     verfiyJWTAccessToken,
     fetchHistory
 )
+router.route("update-payment-seting").patch(updateUserPaymentSettings)
 router.route("/update-file/:id").put(
     verfiyJWTAccessToken,
     upload.single("File"),
