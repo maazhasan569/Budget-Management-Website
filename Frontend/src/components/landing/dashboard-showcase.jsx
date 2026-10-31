@@ -3,6 +3,14 @@ import { CategoryPieChart } from "@/components/charts/category-pie-chart"
 import { GoalLoanAlerts } from "@/components/dashboard/goal-loan-alerts"
 
 export function DashboardShowcase() {
+    const categoryData = [
+        { category: "food", amount: 340, fill: "var(--chart-1)" },
+        { category: "bills", amount: 260, fill: "var(--chart-2)" },
+        { category: "transport", amount: 220, fill: "var(--chart-3)" },
+        { category: "other", amount: 180, fill: "var(--chart-4)" },
+    ]
+    const totalSpent = categoryData.reduce((total, item) => total + item.amount, 0)
+
     return (
         <section id="showcase" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
             <div className="mb-7 max-w-xl sm:mb-10">
@@ -20,12 +28,11 @@ export function DashboardShowcase() {
                     { date: "Oct 20", spent: 640 },
                     { date: "Oct 25", spent: 780 },
                 ]} trendPercent={50} /></div>
-                <CategoryPieChart data={[
-                    { category: "food", amount: 340, fill: "var(--chart-1)" },
-                    { category: "bills", amount: 260, fill: "var(--chart-2)" },
-                    { category: "transport", amount: 220, fill: "var(--chart-3)" },
-                    { category: "other", amount: 180, fill: "var(--chart-4)" },
-                ]} />
+                <CategoryPieChart
+                    data={categoryData}
+                    centerValue={`$${totalSpent.toLocaleString()}`}
+                    centerCaption="Total spent"
+                />
                 <div className="min-w-0 md:col-span-3"><GoalLoanAlerts /></div>
             </div>
         </section>

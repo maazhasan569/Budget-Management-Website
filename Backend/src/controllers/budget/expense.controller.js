@@ -25,11 +25,13 @@ const getBudget = asyncHandler(async (req, res) => {
         )
 })
 const updatedBudget = asyncHandler(async (req, res) => {
-    const { budget } = req.body
+    const { netbudget = 0 , budget = 0 } = req.body
     const user = await Users.findById(req.user._id)
-    const isPrevBudget = user.budget > 0 ? true : false
-    user.budget = user.budget + budget
-    user.remainingBudget += budget
+    
+    if(netbudget && netbudget < 0 ) throw new ApiError(400 , "Invalid net Budget")
+    if(budget && budget < 0 ) throw new ApiError(400 , "Invalid Budget")   
+
+    budget ? user.budget += budget : user.remainingBudget += netbudget
     const updatedBudget = await user.save({ validateBeforeSave: false })
     if (!updatedBudget) {
         throw new ApiError(500, "Failed to save user budget")
@@ -39,6 +41,7 @@ const updatedBudget = asyncHandler(async (req, res) => {
             new ApiResponse(200, isPrevBudget ? "budget update,previous budget added" : "budget updated", updatedBudget)
         )
 })
+
 const createExpense = asyncHandler(async (req, res) => {
     //if there is any loan,goal,
     //if there a budget

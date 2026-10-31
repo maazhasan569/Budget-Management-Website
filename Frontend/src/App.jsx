@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react"
 import { Navigate, Route, Routes } from "react-router-dom"
 
 import { AuthRouteGuard } from "@/components/auth/auth-route-guard"
+import { BrandLoader } from "@/components/ui/brand-loader"
 
 const AuthRoutePage = lazy(() => import("@/components/auth/auth-route-page").then((module) => ({ default: module.AuthRoutePage })))
 const LandingPage = lazy(() => import("@/components/landing/landing-page").then((module) => ({ default: module.LandingPage })))
@@ -18,7 +19,7 @@ const QuestionsPage = lazy(() => import("@/components/questions/question").then(
 
 function App() {
   return (
-    <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Loading…</div>}>
+    <Suspense fallback={<main className="flex min-h-screen items-center justify-center bg-background"><BrandLoader /></main>}>
       <Routes>
         <Route element={<AuthRouteGuard guestOnly />}>
           <Route path="/" element={<LandingPage />} />

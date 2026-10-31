@@ -3,7 +3,7 @@ import { AlertCircle, RotateCw } from "lucide-react"
 
 import { useAuthSession } from "@/components/auth/auth-session-context"
 import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
+import { BrandLoader } from "@/components/ui/brand-loader"
 
 export function AuthRouteGuard({ guestOnly = false }) {
   const status = useAuthSession()
@@ -11,7 +11,7 @@ export function AuthRouteGuard({ guestOnly = false }) {
   if (status === "checking") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
-        <Spinner className="size-6 text-primary" />
+        <BrandLoader />
       </main>
     )
   }

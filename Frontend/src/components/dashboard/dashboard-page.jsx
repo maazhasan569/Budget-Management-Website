@@ -395,9 +395,8 @@ export function DashboardPage() {
     category,
     amount: Number(amount),
   }))
-  const change = spendingChange(dashboard.spending.data)
   const categoryShare = categoryData.reduce((total, item) => total + item.amount, 0)
-
+  const change = spendingChange(dashboard.spending.data)
   return (
     <div className="mx-auto max-w-7xl space-y-7">
       <header className="flex flex-wrap items-end justify-between gap-4">

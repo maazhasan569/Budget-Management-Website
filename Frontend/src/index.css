@@ -160,6 +160,10 @@
 html {
   scroll-behavior: smooth;
 }
+@keyframes finch-logo-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.035); opacity: 0.9; }
+}
 @keyframes hero-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }

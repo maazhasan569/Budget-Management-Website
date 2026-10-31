@@ -9,14 +9,12 @@ import {
 export function CategoryPieChart({
   data,
   width = "100%",
-  height = 210,
+  height = 250,
   title,
   description,
   centerValue,
   centerCaption,
 }) {
-  const total = data.reduce((sum, item) => sum + item.amount, 0)
-
   const chartConfig = {
     amount: {
       label: "Amount",
@@ -40,11 +38,11 @@ export function CategoryPieChart({
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
       )}
-      <CardContent className="flex flex-col items-center gap-4 pb-5 pt-2">
+      <CardContent className="flex justify-center pb-5 pt-2">
         <ChartContainer
           config={chartConfig}
           style={{ height }}
-          className="mx-auto aspect-square w-full max-w-[210px] shrink-0"
+          className="mx-auto aspect-square w-full max-w-[270px] shrink-0"
         >
           <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
             <ChartTooltip
@@ -56,9 +54,9 @@ export function CategoryPieChart({
               data={data}
               dataKey="amount"
               nameKey="category"
-              innerRadius={52}
-              outerRadius={76}
-              strokeWidth={5}
+              innerRadius="58%"
+              outerRadius="88%"
+              strokeWidth={0}
             >
               {data.map((entry, index) => (
                 <Cell
@@ -66,14 +64,9 @@ export function CategoryPieChart({
                   fill={entry.fill ?? `var(--chart-${(index % 5) + 1})`}
                 />
               ))}
-
               <Label
                 content={({ viewBox }) => {
-                  if (
-                    viewBox &&
-                    "cx" in viewBox &&
-                    "cy" in viewBox
-                  ) {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                     return (
                       <text
                         x={viewBox.cx}
@@ -86,36 +79,24 @@ export function CategoryPieChart({
                           y={viewBox.cy}
                           className="fill-foreground text-2xl font-bold"
                         >
-                          {centerValue ?? `$${total.toLocaleString()}`}
+                          {centerValue}
                         </tspan>
-
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 22}
                           className="fill-muted-foreground text-xs"
                         >
-                          {centerCaption ?? "Total spent"}
+                          {centerCaption}
                         </tspan>
                       </text>
                     )
                   }
+                  return null
                 }}
               />
             </Pie>
           </PieChart>
         </ChartContainer>
-        <ul aria-label="Expense categories" className="grid max-h-48 w-full grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
-          {data.map((entry, index) => (
-            <li key={entry.category} className="flex min-w-0 items-start gap-2 rounded-lg bg-muted/35 px-3 py-2 text-sm">
-              <span
-                aria-hidden="true"
-                className="mt-1.5 size-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: entry.fill ?? `var(--chart-${(index % 5) + 1})` }}
-              />
-              <span className="min-w-0 break-words">{entry.category}</span>
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   )
