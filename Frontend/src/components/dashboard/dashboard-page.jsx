@@ -10,11 +10,14 @@ import {
   CircleDollarSign,
   Flag,
   Goal,
+  Plus,
   ShieldCheck,
   Wallet,
 } from "lucide-react"
 
 import {
+  addToNetBudget,
+  addToNetIncome,
   getCachedDashboardData,
   getDashboardData,
 } from "@/api/dashboard/dashboard"
@@ -32,6 +35,16 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { formatCurrency, getSelectedCurrency } from "@/lib/currency"
 
 function formatNumber(value) {
@@ -121,7 +134,22 @@ function HealthScoreCard({ score, hasInputs, hasError }) {
   )
 }
 
-function BudgetCard({ budget, currency, hasError, onRetry }) {
+function AddAmountButton({ onClick }) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      onClick={onClick}
+      aria-label="Add amount"
+      title="Add amount"
+    >
+      <Plus aria-hidden="true" />
+    </Button>
+  )
+}
+
+function BudgetCard({ budget, currency, hasError, onRetry, onAdd }) {
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between">
@@ -131,7 +159,7 @@ function BudgetCard({ budget, currency, hasError, onRetry }) {
           </CardTitle>
           <CardDescription className="mt-1">Available from your monthly budget</CardDescription>
         </div>
-        <Badge variant="secondary">Remaining</Badge>
+        {!hasError && budget != null && <AddAmountButton onClick={onAdd} />}
       </CardHeader>
       <CardContent>
         {hasError ? (
@@ -153,15 +181,18 @@ function BudgetCard({ budget, currency, hasError, onRetry }) {
   )
 }
 
-function FinancialMetricCard({ title, description, value, icon: Icon, currency, hasError, onRetry }) {
+function FinancialMetricCard({ title, description, value, icon: Icon, currency, hasError, onRetry, onAdd }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Icon className="size-4 text-primary" aria-hidden="true" />
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
+      <CardHeader className="flex-row items-start justify-between gap-3">
+        <div className="min-w-0">
+          <CardTitle className="flex items-center gap-2">
+            <Icon className="size-4 text-primary" aria-hidden="true" />
+            {title}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        {!hasError && value != null && onAdd && <AddAmountButton onClick={onAdd} />}
       </CardHeader>
       <CardContent>
         {hasError ? (
@@ -350,11 +381,56 @@ export function DashboardPage() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [refreshFailed, setRefreshFailed] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [amountTarget, setAmountTarget] = useState(null)
+  const [amount, setAmount] = useState("")
+  const [amountError, setAmountError] = useState("")
+  const [savingAmount, setSavingAmount] = useState(false)
 
   const retry = () => {
     setLoadFailed(false)
     setRefreshFailed(false)
     setReloadKey((key) => key + 1)
+  }
+
+  function openAmountDialog(target) {
+    setAmountTarget(target)
+    setAmount("")
+    setAmountError("")
+  }
+
+  async function submitAmount(event) {
+    event.preventDefault()
+    if (savingAmount) return
+
+    const numericAmount = Number(amount)
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      setAmountError("Enter an amount greater than zero.")
+      return
+    }
+
+    setSavingAmount(true)
+    setAmountError("")
+    try {
+      if (amountTarget === "income") {
+        await addToNetIncome(numericAmount)
+      } else if (amountTarget === "budget") {
+        await addToNetBudget(numericAmount)
+      } else {
+        return
+      }
+
+      setAmountTarget(null)
+      setReloadKey((key) => key + 1)
+    } catch (error) {
+      setAmountError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Couldn’t add the amount. Please try again.",
+      )
+      setReloadKey((key) => key + 1)
+    } finally {
+      setSavingAmount(false)
+    }
   }
 
   useEffect(() => {
@@ -433,6 +509,7 @@ export function DashboardPage() {
           currency={currency}
           hasError={dashboard.errors.incomeAndBalance}
           onRetry={retry}
+          onAdd={() => openAmountDialog("income")}
         />
         <FinancialMetricCard
           title="Bank balance"
@@ -448,6 +525,7 @@ export function DashboardPage() {
           currency={currency}
           hasError={dashboard.errors.budget}
           onRetry={retry}
+          onAdd={() => openAmountDialog("budget")}
         />
       </div>
 
@@ -540,6 +618,63 @@ export function DashboardPage() {
         </div>
 
       </div>
+
+      <Dialog
+        open={amountTarget != null}
+        onOpenChange={(open) => {
+          if (!open && !savingAmount) setAmountTarget(null)
+        }}
+      >
+        <DialogContent>
+          <form onSubmit={submitAmount} className="grid gap-4">
+            <DialogHeader>
+              <DialogTitle>
+                Add to {amountTarget === "income" ? "net income" : "remaining budget"}
+              </DialogTitle>
+              <DialogDescription>
+                This adds the entered amount to your current {amountTarget === "income" ? "net income" : "remaining budget"}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <Label htmlFor="dashboard-add-amount">Amount</Label>
+              <Input
+                id="dashboard-add-amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+                autoFocus
+                value={amount}
+                onChange={(event) => {
+                  setAmount(event.target.value)
+                  setAmountError("")
+                }}
+                aria-invalid={Boolean(amountError)}
+                aria-describedby={amountError ? "dashboard-add-amount-error" : undefined}
+                disabled={savingAmount}
+              />
+              {amountError && (
+                <p id="dashboard-add-amount-error" className="text-sm text-destructive" role="alert">
+                  {amountError}
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAmountTarget(null)}
+                disabled={savingAmount}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingAmount || !amount.trim()}>
+                {savingAmount ? "Adding…" : "Add amount"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -25,20 +25,29 @@ const getBudget = asyncHandler(async (req, res) => {
         )
 })
 const updatedBudget = asyncHandler(async (req, res) => {
-    const { netbudget = 0 , budget = 0 } = req.body
+    const { netbudget = 0, budget = 0 } = req.body
     const user = await Users.findById(req.user._id)
-    
-    if(netbudget && netbudget < 0 ) throw new ApiError(400 , "Invalid net Budget")
-    if(budget && budget < 0 ) throw new ApiError(400 , "Invalid Budget")   
 
-    budget ? user.budget += budget : user.remainingBudget += netbudget
+    if (netbudget && netbudget < 0) throw new ApiError(400, "Invalid net Budget")
+    if (budget && budget < 0) throw new ApiError(400, "Invalid Budget")
+
+    if (budget) { 
+        user.budget += budget 
+        user.netIncome -= budget
+    } else { 
+        user.remainingBudget += netbudget 
+        user.netIncome -= netbudget
+
+    }
+
+
     const updatedBudget = await user.save({ validateBeforeSave: false })
     if (!updatedBudget) {
         throw new ApiError(500, "Failed to save user budget")
     }
     return res.status(200)
         .json(
-            new ApiResponse(200, isPrevBudget ? "budget update,previous budget added" : "budget updated", updatedBudget)
+            new ApiResponse(200, "budget updated", updatedBudget)
         )
 })
 
@@ -80,7 +89,7 @@ const editExpense = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required")
     }
 
-    const expenseDoc = await Expense.findOne({userId , _id : expenseId })
+    const expenseDoc = await Expense.findOne({ userId, _id: expenseId })
     const userDoc = await Users.findById(req.user._id)
     userDoc.remainingBudget += expenseDoc.amount
 
@@ -126,10 +135,10 @@ const deleteExpense = asyncHandler(async (req, res) => {
     const { ans } = req.body
     const user = await Users.findById(req.user._id)
     const expense = new ExpenseTracker(user.budget, user._id)
-    const { newBudget , userAns } = await expense.delExpense(expenseId, ans)
+    const { newBudget, userAns } = await expense.delExpense(expenseId, ans)
     return res.status(200)
         .json(
-            new ApiResponse(200, "Expense deleted" , { newBudget , userAns })
+            new ApiResponse(200, "Expense deleted", { newBudget, userAns })
         )
 
 
@@ -146,7 +155,7 @@ const getExpenseCategory = asyncHandler(async (req, res) => {
         userId
     }
     const expensesData = await paginate(Expense, options)
-    if (!expensesData.fetchedDoc.length ) {
+    if (!expensesData.fetchedDoc.length) {
         return res.status(200)
             .json(
                 new ApiResponse(200, "No expense found by category", expensesData)
@@ -160,7 +169,7 @@ const getExpenseCategory = asyncHandler(async (req, res) => {
 const getExpenseById = asyncHandler(async (req, res) => {
     const { expenseId } = req.params
     const userId = req.user._id
-    const getExpense = await Expense.findOne({ _id : expenseId, userId })
+    const getExpense = await Expense.findOne({ _id: expenseId, userId })
     if (!getExpense) {
         return res.status(200)
             .json(
@@ -173,11 +182,11 @@ const getExpenseById = asyncHandler(async (req, res) => {
         )
 })
 
-const updateMonthlyCrendentials = asyncHandler(async (req , res) => {
+const updateMonthlyCrendentials = asyncHandler(async (req, res) => {
 
-    const {userId} = req.user._id
+    const { userId } = req.user._id
     const expense = new ExpenseTracker(userId)
-    
+
     const updatedCredentials = await expense.updateBudgetAndIncome()
 
     return updatedCredentials

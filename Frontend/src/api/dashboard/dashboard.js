@@ -6,7 +6,7 @@ let dashboardCacheVersion = 0
 
 const endpointPaths = {
   budget: "/expenses/budget",
-  incomeAndBalance: "/user/income-and-balance",
+  incomeAndBalance: "/user/income-bankbalance",
   goals: "/dashboard/goal-progress",
   loans: "/dashboard/loan-progress",
   alerts: "/dashboard/goal-loan-alerts",
@@ -144,6 +144,18 @@ export function invalidateDashboardCache() {
   dashboardCacheVersion += 1
   dashboardCache = null
   dashboardRequest = null
+}
+
+export async function addToNetIncome(amount) {
+  const response = await apiClient.patch("/user/update-income", { netIncome: amount })
+  invalidateDashboardCache()
+  return response.data?.data
+}
+
+export async function addToNetBudget(amount) {
+  const response = await apiClient.patch("/expenses/update-budget", { netbudget: amount })
+  invalidateDashboardCache()
+  return response.data?.data
 }
 
 export function getDashboardData({ forceRefresh = false } = {}) {
