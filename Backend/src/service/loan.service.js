@@ -6,6 +6,8 @@ import { isValidObjectId } from "mongoose"
 import pushToHistory from "../utils/pushToHistory.js"
 import { convertToSnakeCase } from "../utils/convertToSnakeCase.js"
 import { History } from "../models/history/history.models.js"
+
+const autoDeductionTasks = new Map();
 export class LoanService {
     constructor(userId, config = {}) {
         this.userId = userId,
@@ -163,7 +165,7 @@ export class LoanService {
     async autoDeductAmt() {
         try {
 
-            const autoDeductionTasks = new Map();
+
             const userId = this.userId;
             const taskKey = String(userId);
             const query = {
