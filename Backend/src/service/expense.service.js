@@ -133,7 +133,10 @@ export class ExpenseTracker {
 
     async updateBudgetAndIncome() {
 
-        cron.schedule("0 0 * * " , async() => {
+        const user = await Users.findOne({_id : this.userId})
+        if(!user.autoApplyMonthly) return null;
+        const updationDay = new Date(user.payDate || user.createdAt).getDate()
+        cron.schedule(`0 0 ${updationDay} * ` , async() => {
             const user = await Users.findOne({_id : this.userId})
             user.remainingBudget += user.budget
             user.netIncome += user.income

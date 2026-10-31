@@ -22,7 +22,7 @@ const updateIncome = asyncHandler(async(req,res) => {
         )
 })
 
-export const getIncomeAndBackBalance = asyncHandler(async (req, res) => {
+const getIncomeAndBackBalance = asyncHandler(async (req, res) => {
 
     const user = await Users.findById(req.user._id)
     return res.status(200)
@@ -33,3 +33,8 @@ export const getIncomeAndBackBalance = asyncHandler(async (req, res) => {
             })
         )
 })
+
+export {
+    getIncomeAndBackBalance,
+    updateIncome
+}

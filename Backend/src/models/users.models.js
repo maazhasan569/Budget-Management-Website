@@ -65,6 +65,12 @@ const usersSchema = new mongoose.Schema({
         type: String,
         unique: true,
         sparse: true
+    },
+    payDate : {
+        type : Date,
+    },
+    autoApplyMonthly : {
+        type : Boolean
     }
 
 },
