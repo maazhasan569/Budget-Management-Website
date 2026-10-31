@@ -71,7 +71,10 @@ const usersSchema = new mongoose.Schema({
     },
     autoApplyMonthly : {
         type : Boolean
-    }
+    },
+    lastAppliedAt : { // last user paydate
+        type : Date
+    },
 
 },
     {

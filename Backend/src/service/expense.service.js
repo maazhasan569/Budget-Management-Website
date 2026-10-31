@@ -5,6 +5,7 @@ import { paginate } from "../utils/pagination.js"
 import cron from "node-cron"
 import pushToHistory from "../utils/pushToHistory.js"
 
+const existingTask = new Map()
 export class ExpenseTracker {
     constructor(budget, userId) {
         if (!budget || budget <= 0) {
@@ -130,10 +131,12 @@ export class ExpenseTracker {
             throw new ApiError(500, err.message)
         }
     }
+
+    
     async updateBudgetAndIncome() {
   const taskKey = String(this.userId);
 
-
+if(user.payDate === user.lastAppliedAt) return null;
   const old = existingTask.get(taskKey);
   if (old) {
     old.stop();
@@ -143,8 +146,10 @@ export class ExpenseTracker {
   const user = await Users.findOne({ _id: this.userId });
   if (!user || !user.autoApplyMonthly) return null;
   const day = Math.min(new Date(user.payDate || user.createdAt).getDate(), 28);
+
         const task = cron.schedule(`0 0 ${day} * *  ` , async() => {
             const user = await Users.findOne({_id : this.userId})
+
             user.remainingBudget += user.budget
             user.netIncome += user.income
             const updatedUser = await user.save()
