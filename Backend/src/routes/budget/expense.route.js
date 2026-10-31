@@ -7,7 +7,8 @@ import {
      getExpenseCategory,
      getExpenseById,
      deleteExpense,
-     updatedBudget
+     updatedBudget,
+     updateMonthlyCrendentials
 
 } from "../../controllers/budget/expense.controller.js";
 import { verfiyJWTAccessToken } from "../../middlewares/verifyJWT.middleware.js";
@@ -17,7 +18,7 @@ router.route("/budget").get(verfiyJWTAccessToken,getBudget)
 router.route("/update-budget").patch(verfiyJWTAccessToken,updatedBudget)
 router.route("/create-expense").post(verfiyJWTAccessToken,createExpense)
 router.route("/category").get(verfiyJWTAccessToken,getExpenseCategory)
-
+router.route("/update-crendentials").put(verfiyJWTAccessToken,updateMonthlyCrendentials)
 router.route("/edit-expense/:expenseId").put(verfiyJWTAccessToken,editExpense)
 router.route("/:expenseId").get(verfiyJWTAccessToken,getExpenseById)
 router.route("/:expenseId").delete(verfiyJWTAccessToken,deleteExpense)

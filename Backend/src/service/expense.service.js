@@ -2,7 +2,7 @@ import ApiError from "../utils/ApiError.js"
 import { Expense } from "../models/budget/expense.models.js"
 import { Users } from "../models/users.models.js"
 import { paginate } from "../utils/pagination.js"
-
+import cron from "node-cron"
 import pushToHistory from "../utils/pushToHistory.js"
 
 export class ExpenseTracker {
@@ -131,6 +131,19 @@ export class ExpenseTracker {
         }
     }
 
+    async updateBudgetAndIncome() {
+
+        cron.schedule("0 0 * * " , async() => {
+            const user = await Users.findOne({_id : this.userId})
+            user.remainingBudget += user.budget
+            user.netIncome += user.income
+            const updatedUser = await user.save()
+            return {
+                income : updatedUser.netIncome,
+                netBudget : updatedUser.remainingBudget
+            }
+        })
+    }
 
 
 }

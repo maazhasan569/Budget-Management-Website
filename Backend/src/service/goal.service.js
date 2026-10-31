@@ -39,6 +39,7 @@ export class GoalService {
             throw new ApiError(400, "enter a valid targetAmt")
         }
 
+        
     }
     async createGoal() {
         this.setTargetDate(this.duration, this.frequency)

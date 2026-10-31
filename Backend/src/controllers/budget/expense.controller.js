@@ -170,6 +170,16 @@ const getExpenseById = asyncHandler(async (req, res) => {
         )
 })
 
+const updateMonthlyCrendentials = asyncHandler(async (req , res) => {
+
+    const {userId} = req.user._id
+    const expense = new ExpenseTracker(userId)
+    
+    const updatedCredentials = await expense.updateBudgetAndIncome()
+
+    return updatedCredentials
+})
+
 export {
     getBudget,
     createExpense,
@@ -178,5 +188,6 @@ export {
     showAllExpense,
     getExpenseById,
     getExpenseCategory,
-    updatedBudget
+    updatedBudget,
+    updateMonthlyCrendentials
 }
