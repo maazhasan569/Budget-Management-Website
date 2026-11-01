@@ -8,6 +8,7 @@ const updateIncome = asyncHandler(async(req,res) => {
     const { netIncome = 0 , income = 0 } = req.body
     const user = await Users.findById(req.user._id)
     
+    if(income && netIncome) throw new ApiError(400 , "Only one value could be send at a time")
     if(netIncome && netIncome < 0 ) throw new ApiError(400 , "Invalid net Income")
     if(income && income < 0 ) throw new ApiError(400 , "Invalid Income")   
 
@@ -41,8 +42,14 @@ const updateUserPaymentSettings = asyncHandler(async (req, res) => {
   if (payDate !== undefined) updates.payDate = payDate;
   if (autoApplyMonthly !== undefined) updates.autoApplyMonthly = autoApplyMonthly;
 
-  
+  if(autoApplyMonthly && !payDate || !autoApplyMonthly && payDate){
+    throw new ApiError(400 , "payday or autoApplyMonthly is required")
+  }else if (updates.autoApplyMonthly === false){
+    updates.payDate = null
+  }
 
+
+  console.log(updates)
   const user = await Users.findByIdAndUpdate(
     req.user._id,
     { $set: updates },

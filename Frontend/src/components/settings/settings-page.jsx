@@ -62,7 +62,7 @@ function settingsFromProfile(profile) {
     budget: profile.budget == null ? "" : String(profile.budget),
     currency: profile.currency ?? "",
     payDate: formatDateInput(profile.payDate),
-    autoApplyMonthly: profile.autoApplyMonthly ?? false,
+    autoApplyMonthly: false,
   }
 }
 
@@ -225,7 +225,7 @@ export function SettingsContent() {
           payDate: settings.payDate
             ? `${settings.payDate}T00:00:00.000Z`
             : null,
-          autoApplyMonthly: settings.autoApplyMonthly,
+          autoApplyMonthly: settings.autoApplyMonthly === true,
         })
       }
 
