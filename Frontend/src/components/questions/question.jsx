@@ -67,6 +67,8 @@ export function QuestionsPage() {
     })
 
     const [errors, setErrors] = useState({})
+    const [submissionError, setSubmissionError] = useState("")
+    const [submitting, setSubmitting] = useState(false)
 
     const [currencies, setCurrencies] = useState([])
     const [currenciesLoading, setCurrenciesLoading] = useState(false)
@@ -117,6 +119,7 @@ export function QuestionsPage() {
     }, [step, currencies.length])
 
     function setAnswer(key, value) {
+        setSubmissionError("")
         setAnswers((previous) => ({
             ...previous,
             [key]: value,
@@ -191,11 +194,10 @@ export function QuestionsPage() {
     }
 
     async function handleNext() {
+        if (submitting) return
         if (!validateStep()) return
 
         if (stepIndex === STEPS.length - 1) {
-            // Convert numeric strings before sending the answers
-            // to your onboarding API.
             const payload = {
                 ...answers,
                 income: Number(answers.income),
@@ -203,9 +205,18 @@ export function QuestionsPage() {
                 budget: Number(answers.budget),
             }
 
-            await submitAnswers(payload)       
-            navigate("/dashboard")
-            // Connect your onboarding submission API here.
+            setSubmissionError("")
+            setSubmitting(true)
+            try {
+                await submitAnswers(payload)
+                navigate("/dashboard")
+            } catch (error) {
+                setSubmissionError(
+                    error.message || "We couldn’t finish setting up your account. Please try again.",
+                )
+            } finally {
+                setSubmitting(false)
+            }
             return 
         }
 
@@ -566,13 +577,13 @@ export function QuestionsPage() {
                                             align="start"
                                             className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
                                         >
-                                            <Command className="bg-transparent text-slate-100">
+                                            <Command className="currency-command bg-transparent text-slate-100">
                                                 <CommandInput
                                                     placeholder="Search currency..."
-                                                    className="border-slate-700"
+                                                    className="border-slate-700 text-slate-100 placeholder:text-slate-400"
                                                 />
 
-                                                <CommandList className="max-h-60">
+                                                <CommandList className="currency-command-list max-h-60">
                                                     <CommandEmpty>
                                                         No currency found.
                                                     </CommandEmpty>
@@ -586,7 +597,7 @@ export function QuestionsPage() {
                                                                     setAnswer("currency", currency.code)
                                                                     setCurrencyPopoverOpen(false)
                                                                 }}
-                                                                className="cursor-pointer rounded-md border-0 bg-transparent px-3 py-2 text-slate-200 shadow-none hover:bg-slate-800 aria-selected:bg-slate-800 aria-selected:text-white"
+                                                                className="currency-command-item cursor-pointer px-3 py-2"
                                                             >
                                                                 <Check
                                                                     className={cn(
@@ -640,6 +651,11 @@ export function QuestionsPage() {
                         </div>
 
                         {/* Navigation stays at the bottom of the same panel */}
+                        {submissionError && (
+                            <p className="mb-3 text-sm text-red-400" role="alert">
+                                {submissionError}
+                            </p>
+                        )}
                         <div className="mt-5 flex shrink-0 gap-3 border-t border-slate-800 pt-4 sm:mt-7 sm:pt-5">
                             {stepIndex > 0 && (
                                 <Button
@@ -655,9 +671,12 @@ export function QuestionsPage() {
                             <Button
                                 type="button"
                                 onClick={handleNext}
+                                disabled={submitting}
                                 className="h-11 flex-1 bg-emerald-500 font-semibold text-slate-950 hover:bg-emerald-400"
                             >
-                                {stepIndex === STEPS.length - 1
+                                {submitting
+                                    ? "Finishing setup…"
+                                    : stepIndex === STEPS.length - 1
                                     ? "Finish setup"
                                     : "Continue"}
                             </Button>
@@ -672,4 +691,3 @@ export function QuestionsPage() {
         </main>
     )
 }
-

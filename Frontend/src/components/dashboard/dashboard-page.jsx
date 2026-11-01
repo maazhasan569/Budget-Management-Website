@@ -21,6 +21,7 @@ import {
   getCachedDashboardData,
   getDashboardData,
 } from "@/api/dashboard/dashboard"
+import { getFriendlyErrorMessage } from "@/api/errors"
 import { CategoryPieChart } from "@/components/charts/category-pie-chart"
 import { SpendingTrendChart } from "@/components/charts/spending-trend-chart"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
@@ -422,11 +423,7 @@ export function DashboardPage() {
       setAmountTarget(null)
       setReloadKey((key) => key + 1)
     } catch (error) {
-      setAmountError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Couldn’t add the amount. Please try again.",
-      )
+      setAmountError(getFriendlyErrorMessage(error, "Couldn’t add the amount. Please try again."))
       setReloadKey((key) => key + 1)
     } finally {
       setSavingAmount(false)

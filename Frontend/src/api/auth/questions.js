@@ -1,4 +1,5 @@
 import apiClient from "../axiosClient";
+import { toFriendlyError } from "@/api/errors"
 import { setSelectedCurrency } from "@/lib/currency"
 
 export const submitAnswers = async (questionData) => {
@@ -7,6 +8,6 @@ export const submitAnswers = async (questionData) => {
         setSelectedCurrency(response.data?.data?.currency ?? questionData.currency)
         return response.data
     } catch (error) {
-        throw error.response?.data || error.message;
+        throw toFriendlyError(error, "We couldn’t finish setting up your account. Please try again.")
     }
 }

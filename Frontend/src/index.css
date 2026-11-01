@@ -182,25 +182,48 @@ html {
 /* Finch currency dropdown scrollbar */
 .currency-command-list {
   scrollbar-width: thin;
-  scrollbar-color: #475569 #111a2e;
+  scrollbar-color: #475569 transparent;
+  overscroll-behavior: contain;
 }
 
 .currency-command-list::-webkit-scrollbar {
-  width: 7px;
+  width: 6px;
 }
 
 .currency-command-list::-webkit-scrollbar-track {
-  background: #111a2e;
-  border-radius: 8px;
+  background: transparent;
 }
 
 .currency-command-list::-webkit-scrollbar-thumb {
   background: #475569;
-  border-radius: 8px;
+  border: 1px solid #111a2e;
+  border-radius: 999px;
 }
 
 .currency-command-list::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #10b981;
+}
+
+.currency-command [data-slot="command-input-wrapper"] {
+  padding: 0 0 0.5rem;
+}
+
+.currency-command [data-slot="input-group"] {
+  border-color: rgb(71 85 105 / 55%);
+  background: rgb(15 23 42 / 65%);
+}
+
+.currency-command-item {
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+  color: #cbd5e1 !important;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.currency-command-item:hover,
+.currency-command-item[data-selected="true"] {
+  background: rgb(16 185 129 / 12%) !important;
+  color: #f8fafc !important;
 }
 
 .task-dialog-scroll {

@@ -36,7 +36,9 @@ export function AuthCard({ initialMode = "sign-in" }) {
     email: "",
     password: "",
   })
-  const [serverError, setServerError] = useState(() => oauthError || "")
+  const [serverError, setServerError] = useState(() =>
+    oauthError ? "We couldn’t sign you in with Google. Please try again or use email and password." : "",
+  )
 
   // Catch errors returned from OAuth redirect callbacks
   useEffect(() => {

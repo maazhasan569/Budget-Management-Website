@@ -1,4 +1,5 @@
 import apiClient from "@/api/axiosClient"
+import { getFriendlyErrorMessage } from "@/api/errors"
 
 const BASE_PATH = "/tasks"
 
@@ -9,9 +10,9 @@ function responseData(response) {
 function taskError(error, fallback) {
   const message = error?.response?.data?.message
   if (typeof message === "string" && /model\.findone is not a function/i.test(message)) {
-    return new Error("The server could not save this task to history. Please check the task history integration.", { cause: error })
+    return new Error("We couldn’t save this task right now. Please try again.", { cause: error })
   }
-  return new Error(typeof message === "string" ? message : fallback, { cause: error })
+  return new Error(getFriendlyErrorMessage(error, fallback), { cause: error })
 }
 
 function normalizeTaskPage(data, page, limit) {

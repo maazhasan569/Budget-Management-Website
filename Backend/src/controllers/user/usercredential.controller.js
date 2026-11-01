@@ -42,7 +42,7 @@ const updateUserPaymentSettings = asyncHandler(async (req, res) => {
   if (payDate !== undefined) updates.payDate = payDate;
   if (autoApplyMonthly !== undefined) updates.autoApplyMonthly = autoApplyMonthly;
 
-  if(autoApplyMonthly && !payDate || !autoApplyMonthly && payDate){
+  if(autoApplyMonthly && !payDate){
     throw new ApiError(400 , "payday or autoApplyMonthly is required")
   }else if (updates.autoApplyMonthly === false){
     updates.payDate = null

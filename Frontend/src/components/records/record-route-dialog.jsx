@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { AlertCircle, RotateCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { getFriendlyErrorMessage } from "@/api/errors"
 import {
   Dialog,
   DialogContent,
@@ -112,9 +113,7 @@ export function RecordRouteDialog({ id, type, getRecord, onClose }) {
           setResult({
             requestKey,
             record: null,
-            error: requestError?.response?.data?.message ||
-              requestError?.message ||
-              "Could not load this record.",
+            error: getFriendlyErrorMessage(requestError, "Could not load this record."),
           })
         }
       })

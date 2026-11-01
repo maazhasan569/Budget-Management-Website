@@ -1,4 +1,5 @@
 import apiClient from "../axiosClient";
+import { toFriendlyError } from "@/api/errors"
 import { markAuthenticated } from "./session"
 import { setSelectedCurrency } from "@/lib/currency"
 
@@ -10,7 +11,6 @@ export const signUp = async (userData) => {
     setSelectedCurrency(null)
     return response.data;
   } catch (error) {
-    // Re-throw or format the error response for your UI component
-    throw error.response?.data || error.message;
+    throw toFriendlyError(error, "We couldn’t create your account right now. Please try again.")
   }
 };

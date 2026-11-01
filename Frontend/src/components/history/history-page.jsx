@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { getHistory } from "@/api/history/history"
+import { getFriendlyErrorMessage } from "@/api/errors"
 import { HistorySkeleton } from "@/components/history/history-skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -300,9 +301,7 @@ export function HistoryPageContent() {
           setHistoryResult({
             requestKey,
             data: null,
-            error: requestError?.response?.data?.message ||
-              requestError?.message ||
-              "Check your connection and try again.",
+            error: getFriendlyErrorMessage(requestError, "We couldn’t load your history. Please try again."),
           })
         }
       })

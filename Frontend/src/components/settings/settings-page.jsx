@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns"
 import { CalendarDays, Check, ChevronsUpDown, Loader2, Save } from "lucide-react"
 
 import { fetchCurrencies } from "@/api/external/currency"
+import { getFriendlyErrorMessage } from "@/api/errors"
 import {
   loadUserSettings,
   scheduleMonthlyCredentialsUpdate,
@@ -143,11 +144,7 @@ export function SettingsContent() {
         setSelectedCurrency(loadedSettings.currency)
       } catch (error) {
         if (!cancelled) {
-          setLoadError(
-            error?.response?.data?.message ||
-              error?.message ||
-              "We couldn’t load your settings. Please try again.",
-          )
+          setLoadError(getFriendlyErrorMessage(error, "We couldn’t load your settings. Please try again."))
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -239,11 +236,7 @@ export function SettingsContent() {
       setSelectedCurrency(settings.currency)
       setSuccessMessage("Your settings have been saved.")
     } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "We couldn’t save your settings. Please try again.",
-      )
+      setFormError(getFriendlyErrorMessage(error, "We couldn’t save your settings. Please try again."))
     } finally {
       setSaving(false)
     }
@@ -438,12 +431,12 @@ export function SettingsContent() {
                 align="end"
                 className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
               >
-                <Command className="bg-transparent text-slate-100">
+                <Command className="currency-command bg-transparent text-slate-100">
                   <CommandInput
                     placeholder="Search currencies..."
                     className="h-10 border-slate-700 text-slate-100 placeholder:text-slate-400"
                   />
-                  <CommandList>
+                  <CommandList className="currency-command-list max-h-60">
                     <CommandEmpty>No currency found.</CommandEmpty>
                     <CommandGroup>
                       {currencies.map((currency) => (
@@ -454,7 +447,7 @@ export function SettingsContent() {
                             updateSetting("currency", currency.code)
                             setCurrencyOpen(false)
                           }}
-                          className="text-slate-100 aria-selected:bg-slate-800 aria-selected:text-white"
+                          className="currency-command-item"
                         >
                           <Check
                             className={cn(
