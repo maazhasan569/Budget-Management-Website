@@ -116,7 +116,7 @@ export class TaskService extends FileService {
             }
             let fileData = { fileUrl: task.document, publicId: task.publicId }
             if (this.filePath) {
-                fileData = await this.updateFile(taskId, "Task")
+                fileData = await this.updateFile(taskId, Task)
             }
             const updatedTask = await Task.findOneAndUpdate(
                 { _id: taskId, userId: this.userId },

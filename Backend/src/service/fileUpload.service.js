@@ -40,10 +40,9 @@ export class FileService {
 
         try {
             const modelRecord = await Model.findById(id)
-            if (!modelRecord.document) {
-                throw new ApiError(400, "file not found")
+            if (modelRecord.document) {
+                await this.deleteFromCloudinary(modelRecord.publicId)
             }
-            await this.deleteFromCloudinary(isExistingFile.publicId)
             const { fileUrl, publicId } = await fileUpload(this.filePath)
             const newFile = await Model.findByIdAndUpdate(
                 id,
