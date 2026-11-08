@@ -87,9 +87,9 @@ usersSchema.pre("save", async function () {
     this.password =  await bcrypt.hash(this.password, 10)
 })
 
-usersSchema.methods.isPasswordValid = async function (passcode) {
+usersSchema.methods.isPasswordValid = async function (password) {
     if(!this.password) return
-    return await bcrypt.compare(passcode, this.password)
+    return await bcrypt.compare(password, this.password)
 }
 
 usersSchema.methods.generateAccessToken = function () {

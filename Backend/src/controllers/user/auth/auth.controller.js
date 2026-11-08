@@ -112,7 +112,21 @@ const logInUser = asyncHandler(async (req, res) => {
 
 
 })
+const updatePassword = asyncHandler(async(req,res) => {
+    const {currentPassword , newPassword} = req.body
+    
+    
 
+   const isCurrentPassword =  await isPasswordValid(currentPassword , newPassword)
+
+    return res.status(200).json(
+        new ApiResponse(200 , isCurrentPassword ? 
+            "Password updated" : 
+            "Password cant be updated bcs user doesnt have a old password" ,
+        )
+    )
+
+})
 const getNewAccessToken = asyncHandler(async (req, res) => {
     //send refresh token from frontend
     //verfiy the token to ensure it is valid
@@ -136,7 +150,7 @@ const getNewAccessToken = asyncHandler(async (req, res) => {
         }
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshToken(isUser._id)
-        console.log(refreshToken)
+        
 
         return res.status(201)
             .cookie(
@@ -225,5 +239,6 @@ export {
     logInUser,
     getNewAccessToken,
     logOut,
-    redirectUser
+    redirectUser,
+    updatePassword
 }
