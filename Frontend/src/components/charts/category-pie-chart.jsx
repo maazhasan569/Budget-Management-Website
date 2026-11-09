@@ -14,6 +14,7 @@ export function CategoryPieChart({
   description,
   centerValue,
   centerCaption,
+  valueFormatter,
 }) {
   const chartConfig = {
     amount: {
@@ -47,7 +48,7 @@ export function CategoryPieChart({
           <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent hideLabel valueFormatter={valueFormatter} />}
             />
 
             <Pie

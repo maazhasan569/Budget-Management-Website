@@ -563,6 +563,9 @@ export function DashboardPage() {
             description="Share of your recorded expenses"
             centerValue={`${categoryShare.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`}
             centerCaption="of expenses"
+            valueFormatter={(value) =>
+              `${Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`
+            }
           />
         ) : (
           <ChartEmptyCard
