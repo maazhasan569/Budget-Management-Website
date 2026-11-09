@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken"
 import { OAuth2Client } from "google-auth-library";
 import { generateUsername } from "../../../utils/generateUsername.js";
 import nodemailer from "nodemailer"
+import crypto from "node:crypto"
 
 const createUserAccount = asyncHandler(async (req, res) => {
     try {
@@ -157,7 +158,10 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
   `
     };
     await transporter.sendMail(mailOptions);
-
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , "Password rest email send")
+    )
 })
 
 const resetPassword = asyncHandler(async(req,res) => {
