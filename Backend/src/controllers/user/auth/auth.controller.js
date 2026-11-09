@@ -113,9 +113,20 @@ const logInUser = asyncHandler(async (req, res) => {
 
 
 })
-const updatePassword = asyncHandler(async (req, res) => {
-    const {email ,}
+const resetPassowordEmail = asyncHandler(async (req, res) => {
+    const { email } = req.body
 
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+
+    await Users.findOneAndUpdate(
+        {email},
+        {resetToken : hashedToken}
+    )
 
     const transporter = nodemailer.createTransport({
         service: "gmail",
@@ -125,6 +136,43 @@ const updatePassword = asyncHandler(async (req, res) => {
         }
     });
 
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Reset Your Password",
+
+        text: "Click the link to reset your password.",
+
+        html: `
+    <h2>Password Reset</h2>
+    <p>Click the button below to reset your password.</p>
+    <a href="YOUR_RESET_LINK">Reset Password</a>
+  `
+    };
+
+})
+
+const resetPassword = asyncHandler(async(req,res) => {
+    const {token , newPassword} = req.body
+
+    const hashedToken = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+    const user = await Users.findOne({resetToken : hashedToken})
+
+    if(!user){
+        throw new ApiError(400 , "Invalid or expired token")
+    }
+
+    user.resetToken = undefined
+    user.password = newPassword
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , "Password updated" null)
+    )
 })
 const getNewAccessToken = asyncHandler(async (req, res) => {
     //send refresh token from frontend
