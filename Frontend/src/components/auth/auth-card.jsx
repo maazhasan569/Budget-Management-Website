@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 
 import { GoogleIcon } from "./google-icon"
@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 
 export function AuthCard({ initialMode = "sign-in" }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const isSignIn = initialMode === "sign-in"
@@ -39,6 +40,14 @@ export function AuthCard({ initialMode = "sign-in" }) {
   const [serverError, setServerError] = useState(() =>
     oauthError ? "We couldn’t sign you in with Google. Please try again or use email and password." : "",
   )
+  const [resetSuccess, setResetSuccess] = useState(
+    Boolean(location.state?.passwordResetSuccess),
+  )
+
+  useEffect(() => {
+    if (!location.state?.passwordResetSuccess) return
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, location.state, navigate])
 
   // Catch errors returned from OAuth redirect callbacks
   useEffect(() => {
@@ -110,6 +119,23 @@ export function AuthCard({ initialMode = "sign-in" }) {
       </CardHeader>
 
       <CardContent className="grid gap-4">
+        {isSignIn && resetSuccess && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-lg border border-success/20 bg-success/5 p-3 text-center text-sm text-success"
+          >
+            Password reset complete. Sign in with your new password.
+            <button
+              type="button"
+              className="ml-2 underline underline-offset-4 hover:text-foreground"
+              onClick={() => setResetSuccess(false)}
+              aria-label="Dismiss password reset confirmation"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {/* Exact Server Error Display */}
         {serverError && (
           <div className="rounded-md bg-destructive/15 p-3 text-sm font-medium text-destructive border border-destructive/20 text-center">

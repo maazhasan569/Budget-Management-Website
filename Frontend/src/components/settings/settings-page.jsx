@@ -38,13 +38,13 @@ const EMPTY_SETTINGS = {
 }
 
 const inputClass =
-  "h-10 w-full border-slate-700 bg-[#0B1220] text-white placeholder:text-slate-500 focus-visible:ring-emerald-500 sm:max-w-xs"
+  "h-10 w-full sm:max-w-xs"
 
 const rowClass =
   "grid gap-3 border-b border-border/70 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(220px,320px)] sm:items-center"
 
 const controlClass =
-  "h-10 w-full border-slate-700 bg-[#0B1220] text-white hover:bg-slate-800 hover:text-white sm:ml-auto sm:max-w-xs"
+  "h-10 w-full sm:ml-auto sm:max-w-xs"
 
 function formatDateInput(value) {
   if (!value) return ""
@@ -283,7 +283,7 @@ export function SettingsContent() {
               </SelectContent>
             </Select>
             {errors.identity && (
-              <p id="settings-identity-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+              <p id="settings-identity-error" className="text-sm text-destructive sm:col-start-2" role="alert">
                 {errors.identity}
               </p>
             )}
@@ -307,7 +307,7 @@ export function SettingsContent() {
               className={inputClass}
             />
             {errors.income && (
-              <p id="settings-income-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+              <p id="settings-income-error" className="text-sm text-destructive sm:col-start-2" role="alert">
                 {errors.income}
               </p>
             )}
@@ -331,7 +331,7 @@ export function SettingsContent() {
               className={inputClass}
             />
             {errors.budget && (
-              <p id="settings-budget-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+              <p id="settings-budget-error" className="text-sm text-destructive sm:col-start-2" role="alert">
                 {errors.budget}
               </p>
             )}
@@ -375,7 +375,7 @@ export function SettingsContent() {
               </PopoverContent>
             </Popover>
             {errors.payDate && (
-              <p id="settings-pay-date-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+              <p id="settings-pay-date-error" className="text-sm text-destructive sm:col-start-2" role="alert">
                 {errors.payDate}
               </p>
             )}
@@ -424,17 +424,17 @@ export function SettingsContent() {
                       ? `${selectedCurrency.name} (${selectedCurrency.code})`
                       : settings.currency || "Search or select currency..."}
                   </span>
-                  <ChevronsUpDown className="ml-2 size-4 shrink-0 text-slate-400" />
+                  <ChevronsUpDown className="ml-2 size-4 shrink-0 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent
                 align="end"
-                className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
+                className="w-[--radix-popover-trigger-width] border-border bg-popover p-1 text-popover-foreground shadow-xl"
               >
-                <Command className="currency-command bg-transparent text-slate-100">
+                <Command className="currency-command bg-transparent text-popover-foreground">
                   <CommandInput
                     placeholder="Search currencies..."
-                    className="h-10 border-slate-700 text-slate-100 placeholder:text-slate-400"
+                    className="h-10 border-border text-foreground placeholder:text-muted-foreground"
                   />
                   <CommandList className="currency-command-list max-h-60">
                     <CommandEmpty>No currency found.</CommandEmpty>
@@ -465,7 +465,7 @@ export function SettingsContent() {
               </PopoverContent>
             </Popover>
             {errors.currency && (
-              <p id="settings-currency-error" className="text-sm text-red-400 sm:col-start-2" role="alert">
+              <p id="settings-currency-error" className="text-sm text-destructive sm:col-start-2" role="alert">
                 {errors.currency}
               </p>
             )}
@@ -477,7 +477,7 @@ export function SettingsContent() {
             </p>
           )}
           {successMessage && (
-            <p className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300" role="status">
+            <p className="mb-4 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm text-success" role="status">
               {successMessage}
             </p>
           )}

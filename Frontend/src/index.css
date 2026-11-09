@@ -160,6 +160,24 @@
 html {
   scroll-behavior: smooth;
 }
+@keyframes site-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.site-page-enter {
+  animation: site-page-enter 280ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-page-enter {
+    animation: none;
+  }
+}
 @keyframes finch-logo-pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.035); opacity: 0.9; }
@@ -182,7 +200,7 @@ html {
 /* Finch currency dropdown scrollbar */
 .currency-command-list {
   scrollbar-width: thin;
-  scrollbar-color: #475569 transparent;
+  scrollbar-color: color-mix(in srgb, var(--muted-foreground) 75%, transparent) transparent;
   overscroll-behavior: contain;
 }
 
@@ -195,13 +213,13 @@ html {
 }
 
 .currency-command-list::-webkit-scrollbar-thumb {
-  background: #475569;
-  border: 1px solid #111a2e;
+  background: var(--muted-foreground);
+  border: 1px solid var(--popover);
   border-radius: 999px;
 }
 
 .currency-command-list::-webkit-scrollbar-thumb:hover {
-  background: #10b981;
+  background: var(--primary);
 }
 
 .currency-command [data-slot="command-input-wrapper"] {
@@ -209,21 +227,21 @@ html {
 }
 
 .currency-command [data-slot="input-group"] {
-  border-color: rgb(71 85 105 / 55%);
-  background: rgb(15 23 42 / 65%);
+  border-color: color-mix(in srgb, var(--border) 65%, transparent);
+  background: color-mix(in srgb, var(--muted) 65%, transparent);
 }
 
 .currency-command-item {
   border-radius: 0.5rem !important;
   background: transparent !important;
-  color: #cbd5e1 !important;
+  color: var(--popover-foreground) !important;
   transition: background-color 120ms ease, color 120ms ease;
 }
 
 .currency-command-item:hover,
 .currency-command-item[data-selected="true"] {
-  background: rgb(16 185 129 / 12%) !important;
-  color: #f8fafc !important;
+  background: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+  color: var(--popover-foreground) !important;
 }
 
 .task-dialog-scroll {

@@ -33,75 +33,74 @@ const secondaryNavigation = [
 ]
 
 function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
+  function renderNavigationLink({ label, to, icon: Icon }) {
+    return (
+      <NavLink
+        key={to}
+        to={to}
+        onClick={onNavigate}
+        className={({ isActive }) =>
+          `group relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-[background-color,color,box-shadow] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring ${
+            isActive
+              ? "active bg-sidebar-accent text-sidebar-accent-foreground shadow-sm shadow-primary/5 before:absolute before:inset-y-2.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-primary"
+              : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
+          }`
+        }
+      >
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-background/70 group-[.active]:bg-background">
+          <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+        </span>
+        <span className="flex-1">{label}</span>
+        <span
+          aria-hidden="true"
+          className="size-1.5 rounded-full bg-sidebar-primary opacity-0 transition-opacity group-[.active]:opacity-100"
+        />
+      </NavLink>
+    )
+  }
+
   return (
-    <>
-      <div className="flex h-[76px] items-center gap-3 border-b border-sidebar-border px-5">
-        <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="pointer-events-none absolute -left-20 -top-20 size-56 rounded-full bg-sidebar-primary/5 blur-3xl" aria-hidden="true" />
+      <div className="relative flex h-[84px] shrink-0 items-center gap-3 border-b border-sidebar-border/80 px-5">
+        <div className="flex size-10 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-md shadow-sidebar-primary/20 ring-1 ring-sidebar-primary/15">
           <Wallet className="size-5" aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <p className="font-display text-xl font-semibold leading-none">Finch</p>
-          <p className="mt-1 text-xs text-muted-foreground">Money, in focus</p>
+          <p className="mt-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">MONEY, IN FOCUS</p>
         </div>
       </div>
 
-      <nav aria-label="Main navigation" className="flex-1 space-y-1 px-3 py-6">
-        <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+      <nav aria-label="Main navigation" className="relative flex-1 space-y-1 overflow-y-auto px-3 py-6">
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
           Workspace
         </p>
-        {navigation.map(({ label, to, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
-              }`
-            }
-          >
-            <Icon className="size-[18px] shrink-0" aria-hidden="true" />
-            {label}
-          </NavLink>
-        ))}
+        {navigation.map(renderNavigationLink)}
 
-        <p className="mb-3 mt-8 px-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        <div className="mx-3 mb-4 mt-7 border-t border-sidebar-border/70" />
+        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
           Personal
         </p>
-        {secondaryNavigation.map(({ label, to, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              `group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-foreground"
-              }`
-            }
-          >
-            <Icon className="size-[18px] shrink-0" aria-hidden="true" />
-            {label}
-          </NavLink>
-        ))}
+        {secondaryNavigation.map(renderNavigationLink)}
       </nav>
 
-      <div className="border-t border-sidebar-border p-3">
-        <div className="mb-3 flex items-center gap-3 rounded-xl bg-sidebar-accent/60 p-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <CircleHelp className="size-4" aria-hidden="true" />
+      <div className="relative shrink-0 border-t border-sidebar-border/80 p-3">
+        <div className="mb-3 overflow-hidden rounded-xl border border-sidebar-border/80 bg-gradient-to-br from-sidebar-accent/80 to-sidebar-accent/30 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary/10 text-sidebar-primary">
+              <CircleHelp className="size-4" aria-hidden="true" />
+            </div>
+            <span className="rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+              Your pace
+            </span>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium">Your money, your pace</p>
-            <p className="text-xs text-muted-foreground">A clearer view starts here.</p>
-          </div>
+          <p className="text-sm font-semibold">Your money, your pace</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">A clearer view starts here.</p>
         </div>
         <Button
           variant="ghost"
-          className="h-10 w-full justify-start gap-3 px-3 text-muted-foreground hover:text-foreground"
+          className="h-10 w-full justify-start gap-3 rounded-xl px-3 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           onClick={onLogout}
           disabled={isLoggingOut}
         >
@@ -109,7 +108,7 @@ function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
           {isLoggingOut ? "Signing out…" : "Log out"}
         </Button>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -138,7 +137,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-dvh bg-background text-foreground lg:flex">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-sidebar-border/80 bg-sidebar text-sidebar-foreground shadow-[8px_0_32px_-28px_var(--foreground)] lg:flex">
         <SidebarContent onLogout={handleLogout} isLoggingOut={isLoggingOut} />
       </aside>
 
@@ -196,7 +195,7 @@ export function AppShell() {
           </Button>
         </header>
 
-        <main className="mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-9 lg:px-10 lg:py-10">
+        <main className="site-page-enter mx-auto w-full max-w-[1440px] px-4 py-7 sm:px-7 sm:py-9 lg:px-10 lg:py-10">
           <Outlet />
         </main>
       </div>

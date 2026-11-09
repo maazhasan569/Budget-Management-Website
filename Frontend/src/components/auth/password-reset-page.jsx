@@ -1,6 +1,7 @@
-import { useState } from "react"
-import { Link, useSearchParams } from "react-router-dom"
-import { ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { motion, useReducedMotion } from "framer-motion"
+import { ArrowLeft, Loader2, Mail } from "lucide-react"
 
 import { resetPassword, sendPasswordResetEmail } from "@/api/auth/password"
 import { Button } from "@/components/ui/button"
@@ -18,8 +19,12 @@ import { LogoHeader } from "@/components/auth/logo-header"
 
 function PasswordResetFrame({ children, description, title }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm border-border bg-card text-card-foreground shadow-lg">
+    <main className="site-page-enter relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+        <div className="absolute left-1/2 top-1/2 size-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute left-[18%] top-[20%] size-40 rounded-full bg-success/5 blur-3xl" />
+      </div>
+      <Card className="relative w-full max-w-sm border-border/80 bg-card/95 text-card-foreground shadow-xl shadow-primary/5 backdrop-blur">
         <CardHeader className="space-y-3 text-center">
           <LogoHeader />
           <CardTitle className="text-2xl font-semibold">{title}</CardTitle>
@@ -70,17 +75,26 @@ export function ForgotPasswordPage() {
     >
       <CardContent className="grid gap-4">
         {sent ? (
-          <div className="grid justify-items-center gap-3 rounded-lg border border-border bg-muted/40 p-5 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <motion.div
+            className="grid justify-items-center gap-3 rounded-xl border border-success/20 bg-success/5 p-5 text-center"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <span className="flex size-12 items-center justify-center rounded-full bg-success/10 text-success">
               <Mail className="size-5" aria-hidden="true" />
             </span>
-            <p className="text-sm text-muted-foreground">
-              The link is valid for 15 minutes. Check your spam folder if it doesn’t arrive.
+            <p role="status" aria-live="polite" className="text-sm leading-relaxed text-foreground">
+              We’ve sent a password reset email to <span className="font-medium">{email.trim()}</span>.
+              Open the link in that email to choose a new password.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              The link expires in 15 minutes. If it’s not in your inbox, check your spam folder.
             </p>
             <Button type="button" variant="outline" onClick={() => setSent(false)}>
               Try another email
             </Button>
-          </div>
+          </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
@@ -130,6 +144,8 @@ export function ForgotPasswordPage() {
 }
 
 export function ResetPasswordPage() {
+  const navigate = useNavigate()
+  const reduceMotion = useReducedMotion()
   const [searchParams] = useSearchParams()
   const token = searchParams.get("token")?.trim() ?? ""
   const [password, setPassword] = useState("")
@@ -137,6 +153,20 @@ export function ResetPasswordPage() {
   const [error, setError] = useState("")
   const [updated, setUpdated] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!updated) return undefined
+
+    const redirectTimer = window.setTimeout(
+      () => navigate("/auth/login", {
+        replace: true,
+        state: { passwordResetSuccess: true },
+      }),
+      reduceMotion ? 1200 : 2400,
+    )
+
+    return () => window.clearTimeout(redirectTimer)
+  }, [navigate, reduceMotion, updated])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -177,15 +207,55 @@ export function ResetPasswordPage() {
     >
       <CardContent className="grid gap-4">
         {updated ? (
-          <div className="grid justify-items-center gap-3 rounded-lg border border-border bg-muted/40 p-5 text-center">
-            <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <ShieldCheck className="size-5" aria-hidden="true" />
-            </span>
-            <p className="text-sm text-muted-foreground">Your account is ready to use again.</p>
-            <Button asChild className="w-full">
-              <Link to="/auth/login">Continue to sign in</Link>
+          <motion.div
+            role="status"
+            aria-live="polite"
+            className="grid justify-items-center gap-4 rounded-xl border border-success/20 bg-success/5 p-6 text-center"
+            initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+          >
+            <motion.span
+              className="relative flex size-16 items-center justify-center rounded-full bg-success/10 text-success"
+              initial={reduceMotion ? false : { scale: 0.7 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 15, delay: 0.08 }}
+            >
+              <motion.span
+                className="absolute inset-0 rounded-full border border-success/30"
+                initial={reduceMotion ? false : { scale: 0.7, opacity: 0 }}
+                animate={{ scale: 1.35, opacity: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut", delay: 0.18 }}
+                aria-hidden="true"
+              />
+              <svg viewBox="0 0 24 24" className="size-8" fill="none" aria-hidden="true">
+                <motion.path
+                  d="m5 12.5 4.5 4.5L19 7"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  initial={reduceMotion ? false : { pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 0.45, ease: "easeOut", delay: 0.2 }}
+                />
+              </svg>
+            </motion.span>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Your password has been updated.</p>
+              <p className="text-sm text-muted-foreground">Taking you back to sign in…</p>
+            </div>
+            <Button
+              type="button"
+              className="w-full"
+              onClick={() => navigate("/auth/login", {
+                replace: true,
+                state: { passwordResetSuccess: true },
+              })}
+            >
+              Continue to sign in
             </Button>
-          </div>
+          </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">

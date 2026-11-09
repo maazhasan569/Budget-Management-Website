@@ -36,15 +36,27 @@ function toFiniteNumber(value) {
 }
 
 async function fetchDashboardData() {
-  const initialResults = await Promise.allSettled([
+  const [
+    budgetResult,
+    incomeAndBalanceResult,
+    goalsResult,
+    loansResult,
+    alertsResult,
+    flaggedResult,
+    trendsResult,
+    categoriesResult,
+    scoreResult,
+  ] = await Promise.allSettled([
     requestData(endpointPaths.budget),
     requestData(endpointPaths.incomeAndBalance),
     requestData(endpointPaths.goals),
     requestData(endpointPaths.loans),
+    requestData(endpointPaths.alerts),
+    requestData(endpointPaths.flagged),
     requestData(endpointPaths.trends),
+    requestData(endpointPaths.categories),
+    requestData(endpointPaths.score),
   ])
-
-  const [budgetResult, incomeAndBalanceResult, goalsResult, loansResult, trendsResult] = initialResults
 
   const budgetUnavailable =
     budgetResult.status === "rejected" && budgetResult.reason?.response?.status === 404
@@ -62,53 +74,34 @@ async function fetchDashboardData() {
     hasGoalOrLoanData ||
     expenseData.length > 0
 
-  let alerts = []
-  let flagged = { flaggedGoals: [], flaggedLoans: [] }
-  let alertsError = false
-  let flaggedError = false
-  if (hasGoalOrLoanData) {
-    const [alertsResult, flaggedResult] = await Promise.allSettled([
-      requestData(endpointPaths.alerts),
-      requestData(endpointPaths.flagged),
-    ])
-    alerts = resultValue(alertsResult, [])
-    flagged = resultValue(flaggedResult, flagged)
-    alertsError = hasRequestError(alertsResult)
-    flaggedError = hasRequestError(flaggedResult)
-  }
-
-  let categoryPercentages = {}
+  const alerts = resultValue(alertsResult, [])
+  const flagged = resultValue(flaggedResult, { flaggedGoals: [], flaggedLoans: [] })
+  const categoryUnavailable =
+    categoriesResult.status === "rejected" &&
+    categoriesResult.reason?.response?.status === 400
+  const categoryPercentages = categoryUnavailable
+    ? {}
+    : resultValue(categoriesResult, {})
   let score = 100
   const errors = {
     budget: hasRequestError(budgetResult) && !budgetUnavailable,
     incomeAndBalance: hasRequestError(incomeAndBalanceResult),
     goals: hasRequestError(goalsResult),
     loans: hasRequestError(loansResult),
-    alerts: alertsError,
-    flagged: flaggedError,
+    alerts: hasGoalOrLoanData && hasRequestError(alertsResult),
+    flagged: hasGoalOrLoanData && hasRequestError(flaggedResult),
     trends: hasRequestError(trendsResult),
-    categories: false,
+    categories: hasRequestError(categoriesResult) && !categoryUnavailable,
     score: false,
   }
 
-  if (expenseData.length > 0) {
-    try {
-      categoryPercentages = (await requestData(endpointPaths.categories)) ?? {}
-    } catch (error) {
-      // The backend uses 400 to indicate that no expenses exist for this user.
-      if (error.response?.status !== 400) errors.categories = true
-    }
-  }
-
   if (hasScoreInputs) {
-    try {
-      const fetchedScore = await requestData(endpointPaths.score)
+    if (scoreResult.status === "fulfilled") {
+      const fetchedScore = scoreResult.value
       const numericScore = Number(fetchedScore)
       if (Number.isFinite(numericScore)) score = numericScore
       else errors.score = true
-    } catch {
-      errors.score = true
-    }
+    } else errors.score = true
   }
 
   return {

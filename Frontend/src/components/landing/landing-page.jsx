@@ -9,7 +9,7 @@ export function LandingPage() {
   const location = useLocation()
 
   return (
-    <div>
+    <div className="site-page-enter">
       {location.state?.logoutError && (
         <p role="alert" className="border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-center text-sm text-destructive">
           {location.state.logoutError} Your local session has been cleared.

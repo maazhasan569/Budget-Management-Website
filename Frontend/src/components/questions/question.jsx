@@ -52,7 +52,7 @@ const INCOME_OPTIONS = [500, 1000, 2000, 3500, 5000]
 const BANK_BALANCE_OPTIONS = [ 500, 1000, 5000, 10000]
 
 const inputClass =
-    "h-11 border-slate-700 bg-[#0B1220] text-white placeholder:text-slate-500 focus-visible:ring-emerald-500"
+    "h-11 border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 
 export function QuestionsPage() {
     const [stepIndex, setStepIndex] = useState(0)
@@ -243,8 +243,8 @@ export function QuestionsPage() {
         cn(
             "flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-3 text-sm transition-colors",
             selected
-                ? "border-emerald-500 bg-emerald-500/10 text-white"
-                : "border-slate-700 bg-[#0B1220] text-slate-300 hover:border-slate-600 hover:bg-slate-800/60"
+                ? "border-primary bg-primary/10 text-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-accent"
         )
 
     function AmountOptions({
@@ -268,7 +268,7 @@ export function QuestionsPage() {
                         <RadioGroupItem
                             id={`${name}-${amount}`}
                             value={String(amount)}
-                            className="border-slate-500 text-emerald-500"
+                            className="border-primary text-primary"
                         />
                         {amount.toLocaleString()}
                     </Label>
@@ -278,11 +278,11 @@ export function QuestionsPage() {
     }
 
     return (
-        <main className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#0B1220] text-slate-100">
+        <main className="site-page-enter relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
 
             {/* Top-attached progress bar */}
             <div
-                className="absolute inset-x-0 top-0 z-20 h-1 bg-slate-800"
+                className="absolute inset-x-0 top-0 z-20 h-1 bg-muted"
                 role="progressbar"
                 aria-label="Onboarding progress"
                 aria-valuenow={progress}
@@ -290,23 +290,23 @@ export function QuestionsPage() {
                 aria-valuemax={100}
             >
                 <div
-                    className="h-full bg-emerald-500 transition-[width] duration-500 ease-out"
+                    className="h-full bg-primary transition-[width] duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 />
             </div>
 
             {/* Header: logo is deliberately not a link */}
-            <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-slate-800 px-5 pt-1 sm:px-8 lg:px-12">
+            <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5 pt-1 sm:px-8 lg:px-12">
                 <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Wallet className="h-5 w-5" />
                     </span>
-                    <span className="text-xl font-bold tracking-tight text-white">
+                    <span className="text-xl font-bold tracking-tight text-foreground">
                         Finch
                     </span>
                 </div>
 
-                <span className="text-sm text-slate-400">
+                <span className="text-sm text-muted-foreground">
                     {stepIndex + 1} of {STEPS.length}
                 </span>
             </header>
@@ -317,15 +317,15 @@ export function QuestionsPage() {
 
                     {/* Fixed-height heading area */}
                     <div className="mb-5 shrink-0 sm:mb-7">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                             Personalize your experience
                         </p>
 
-                        <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                             {STEP_TITLES[stepIndex]}
                         </h1>
 
-                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-base">
+                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                             {step === "identity" &&
                                 "Tell us a little about yourself so we can personalize your financial dashboard."}
 
@@ -344,7 +344,7 @@ export function QuestionsPage() {
                     </div>
 
                     {/* Stable question panel: does not resize between steps */}
-                    <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-slate-800 bg-[#111A2E] p-4 sm:p-7 lg:p-9">
+                    <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-border bg-card p-4 sm:p-7 lg:p-9">
 
                         {/* Consistent question content region */}
                         <div className="min-h-0 flex-1">
@@ -352,7 +352,7 @@ export function QuestionsPage() {
                             {/* Step 1: Identity */}
                             {step === "identity" && (
                                 <div className="space-y-4">
-                                    <Label className="text-base font-medium text-slate-200">
+                                    <Label className="text-base font-medium text-foreground">
                                         Which best describes you?
                                     </Label>
 
@@ -374,7 +374,7 @@ export function QuestionsPage() {
                                                 <RadioGroupItem
                                                     id={`identity-${option.value}`}
                                                     value={option.value}
-                                                    className="border-slate-500 text-emerald-500"
+                                                    className="border-primary text-primary"
                                                 />
                                                 {option.label}
                                             </Label>
@@ -382,7 +382,7 @@ export function QuestionsPage() {
                                     </RadioGroup>
 
                                     {errors.identity && (
-                                        <p className="text-sm text-red-400" role="alert">
+                                        <p className="text-sm text-destructive" role="alert">
                                             {errors.identity}
                                         </p>
                                     )}
@@ -392,7 +392,7 @@ export function QuestionsPage() {
                             {/* Step 2: Monthly income */}
                             {step === "income" && (
                                 <div className="space-y-4">
-                                    <Label className="text-base font-medium text-slate-200">
+                                    <Label className="text-base font-medium text-foreground">
                                         What is your monthly income?
                                     </Label>
 
@@ -408,7 +408,7 @@ export function QuestionsPage() {
                                     <div className="space-y-2 pt-2">
                                         <Label
                                             htmlFor="income"
-                                            className="text-sm text-slate-300"
+                                            className="text-sm text-muted-foreground"
                                         >
                                             Or enter your exact income
                                         </Label>
@@ -431,7 +431,7 @@ export function QuestionsPage() {
                                         />
 
                                         {errors.income && (
-                                            <p id="income-error" className="text-sm text-red-400" role="alert">
+                                            <p id="income-error" className="text-sm text-destructive" role="alert">
                                                 {errors.income}
                                             </p>
                                         )}
@@ -442,7 +442,7 @@ export function QuestionsPage() {
                             {/* Step 3: Bank balance */}
                             {step === "bankBalance" && (
                                 <div className="space-y-4">
-                                    <Label className="text-base font-medium text-slate-200">
+                                    <Label className="text-base font-medium text-foreground">
                                         What is your current bank balance?
                                     </Label>
 
@@ -458,7 +458,7 @@ export function QuestionsPage() {
                                     <div className="space-y-2 pt-2">
                                         <Label
                                             htmlFor="bankBalance"
-                                            className="text-sm text-slate-300"
+                                            className="text-sm text-muted-foreground"
                                         >
                                             Or enter your exact balance
                                         </Label>
@@ -483,7 +483,7 @@ export function QuestionsPage() {
                                         />
 
                                         {errors.bankBalance && (
-                                            <p id="bank-balance-error" className="text-sm text-red-400" role="alert">
+                                            <p id="bank-balance-error" className="text-sm text-destructive" role="alert">
                                                 {errors.bankBalance}
                                             </p>
                                         )}
@@ -496,12 +496,12 @@ export function QuestionsPage() {
                                 <div className="max-w-xl space-y-3">
                                     <Label
                                         htmlFor="budget"
-                                        className="text-base font-medium text-slate-200"
+                                        className="text-base font-medium text-foreground"
                                     >
                                         What is your monthly budget?
                                     </Label>
 
-                                    <p className="text-sm text-slate-400">
+                                    <p className="text-sm text-muted-foreground">
                                         Enter the total amount you plan to spend each month.
                                     </p>
 
@@ -523,7 +523,7 @@ export function QuestionsPage() {
                                     />
 
                                     {errors.budget && (
-                                        <p id="budget-error" className="text-sm text-red-400" role="alert">
+                                        <p id="budget-error" className="text-sm text-destructive" role="alert">
                                             {errors.budget}
                                         </p>
                                     )}
@@ -533,11 +533,11 @@ export function QuestionsPage() {
                             {/* Step 5: Searchable currency combobox */}
                             {step === "currency" && (
                                 <div className="max-w-xl space-y-3">
-                                    <Label className="text-base font-medium text-slate-200">
+                                    <Label className="text-base font-medium text-foreground">
                                         Which currency do you use?
                                     </Label>
 
-                                    <p className="text-sm text-slate-400">
+                                    <p className="text-sm text-muted-foreground">
                                         Search by currency name or code.
                                     </p>
 
@@ -552,7 +552,7 @@ export function QuestionsPage() {
                                                 role="combobox"
                                                 aria-expanded={currencyPopoverOpen}
                                                 disabled={currenciesLoading}
-                                                className="h-12 w-full justify-between border-slate-700 bg-[#0B1220] font-normal text-slate-100 hover:bg-slate-800 hover:text-white"
+                                                className="h-12 w-full justify-between font-normal"
                                             >
                                                 <span className="flex min-w-0 items-center gap-2 truncate">
                                                     {currenciesLoading ? (
@@ -569,18 +569,18 @@ export function QuestionsPage() {
                                                     )}
                                                 </span>
 
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                                             </Button>
                                         </PopoverTrigger>
 
                                         <PopoverContent
                                             align="start"
-                                            className="w-[--radix-popover-trigger-width] border-slate-800 bg-[#111A2E] p-1 text-slate-100 shadow-xl"
+                                            className="w-[--radix-popover-trigger-width] border-border bg-popover p-1 text-popover-foreground shadow-xl"
                                         >
-                                            <Command className="currency-command bg-transparent text-slate-100">
+                                            <Command className="currency-command bg-transparent text-popover-foreground">
                                                 <CommandInput
                                                     placeholder="Search currency..."
-                                                    className="border-slate-700 text-slate-100 placeholder:text-slate-400"
+                                                    className="border-border text-foreground placeholder:text-muted-foreground"
                                                 />
 
                                                 <CommandList className="currency-command-list max-h-60">
@@ -601,7 +601,7 @@ export function QuestionsPage() {
                                                             >
                                                                 <Check
                                                                     className={cn(
-                                                                        "mr-2 h-4 w-4 shrink-0 text-emerald-400",
+                                                                        "mr-2 h-4 w-4 shrink-0 text-primary",
                                                                         answers.currency === currency.code
                                                                             ? "opacity-100"
                                                                             : "opacity-0"
@@ -612,7 +612,7 @@ export function QuestionsPage() {
                                                                     {currency.name}
                                                                 </span>
 
-                                                                <span className="ml-3 shrink-0 text-xs text-slate-400">
+                                                                <span className="ml-3 shrink-0 text-xs text-muted-foreground">
                                                                     {currency.code} · {currency.symbol}
                                                                 </span>
                                                             </CommandItem>
@@ -625,7 +625,7 @@ export function QuestionsPage() {
 
                                     {currenciesError && (
                                         <div className="space-y-2">
-                                            <p className="text-sm text-red-400" role="alert">
+                                            <p className="text-sm text-destructive" role="alert">
                                                 {currenciesError}
                                             </p>
 
@@ -634,7 +634,6 @@ export function QuestionsPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={handleRetryCurrencies}
-                                                className="border-slate-700 hover:bg-slate-800"
                                             >
                                                 Try again
                                             </Button>
@@ -642,7 +641,7 @@ export function QuestionsPage() {
                                     )}
 
                                     {errors.currency && (
-                                        <p className="text-sm text-red-400" role="alert">
+                                        <p className="text-sm text-destructive" role="alert">
                                             {errors.currency}
                                         </p>
                                     )}
@@ -652,17 +651,17 @@ export function QuestionsPage() {
 
                         {/* Navigation stays at the bottom of the same panel */}
                         {submissionError && (
-                            <p className="mb-3 text-sm text-red-400" role="alert">
+                            <p className="mb-3 text-sm text-destructive" role="alert">
                                 {submissionError}
                             </p>
                         )}
-                        <div className="mt-5 flex shrink-0 gap-3 border-t border-slate-800 pt-4 sm:mt-7 sm:pt-5">
+                        <div className="mt-5 flex shrink-0 gap-3 border-t border-border pt-4 sm:mt-7 sm:pt-5">
                             {stepIndex > 0 && (
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={handleBack}
-                                    className="h-11 min-w-24 border-slate-700 bg-transparent text-slate-200 hover:bg-slate-800 hover:text-white"
+                                    className="h-11 min-w-24"
                                 >
                                     Back
                                 </Button>
@@ -672,7 +671,7 @@ export function QuestionsPage() {
                                 type="button"
                                 onClick={handleNext}
                                 disabled={submitting}
-                                className="h-11 flex-1 bg-emerald-500 font-semibold text-slate-950 hover:bg-emerald-400"
+                                className="h-11 flex-1 font-semibold"
                             >
                                 {submitting
                                     ? "Finishing setup…"
@@ -685,7 +684,7 @@ export function QuestionsPage() {
                 </div>
             </section>
 
-            <footer className="flex h-10 shrink-0 items-center justify-center border-t border-slate-800 px-4 text-center text-xs text-slate-500">
+            <footer className="flex h-10 shrink-0 items-center justify-center border-t border-border px-4 text-center text-xs text-muted-foreground">
                 Your financial information helps personalize your experience.
             </footer>
         </main>
