@@ -35,7 +35,7 @@ const usersSchema = new mongoose.Schema({
     },
     resetTokenExpiry: {
         type : Date
-    }
+    },
     bankBalance : {
         type : Number,
     },

@@ -6,7 +6,8 @@ import
     logOut,
     getNewAccessToken, 
     redirectUser,
-    updatePassword
+    resetPassowordEmail,
+    resetPassword
 } from "../../controllers/user/auth/auth.controller.js"
 import {
     loginUrl,
@@ -18,7 +19,8 @@ const router = Router()
 
 router.route("/create-account").post(createUserAccount)
 router.route("/login").post(logInUser)
-router.route("/update-password").patch(updatePassword) 
+router.route("/send-email").post(resetPassowordEmail)
+router.route("/reset-password").post(resetPassword) 
 router.route("/redirect").get(verfiyJWTAccessToken,redirectUser)
 router.route("/refresh-token").get(getNewAccessToken)
 router.route("/google/registor").get(registorUrl)

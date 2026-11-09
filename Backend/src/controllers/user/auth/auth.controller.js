@@ -123,7 +123,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         .update(resetToken)
         .digest("hex");
 
-    await Users.findOneAndUpdate(
+    const user = await Users.findOneAndUpdate(
         {email},
         {
             resetToken : hashedToken,
@@ -131,6 +131,9 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         }
     )
 
+    if(!user){
+        throw new ApiError(400 , "User not found")
+    }
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -139,7 +142,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         }
     });
 
-    const REDIRECTION_LINK = `${process.env.CORS_ORIGIN}/reset-password` || "http://localhost:5173/reset-password"
+    const FRONTEND_URL = process.env.CORS_ORIGIN || "http://localhost:5173";
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -150,9 +153,10 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         html: `
     <h2>Password Reset</h2>
     <p>Click the button below to reset your password.</p>
-    <a href=${REDIRECTION_LINK}>Reset Password</a>
+    <a href="${FRONTEND_URL}/reset-password?token=${resetToken}">Reset Password</a>
   `
     };
+    await transporter.sendMail(mailOptions);
 
 })
 
@@ -164,7 +168,10 @@ const resetPassword = asyncHandler(async(req,res) => {
         .update(token)
         .digest("hex");
 
-    const user = await Users.findOne({resetToken : hashedToken})
+    const user = await Users.findOne({
+        resetToken : hashedToken,
+        resetTokenExpiry: { $gt: Date.now() }
+    })
 
     if(!user){
         throw new ApiError(400 , "Invalid or expired token")
@@ -174,6 +181,7 @@ const resetPassword = asyncHandler(async(req,res) => {
     user.resetTokenExpiry = undefined
     user.password = newPassword
 
+    await user.save()
     return res.status(200)
     .json(
         new ApiResponse(200 , "Password updated" ,  null)
@@ -292,5 +300,7 @@ export {
     getNewAccessToken,
     logOut,
     redirectUser,
-    updatePassword
+    resetPassowordEmail,
+    resetPassword
+
 }
