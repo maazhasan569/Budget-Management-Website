@@ -8,7 +8,14 @@ import {
 import { AuthSessionContext } from "@/components/auth/auth-session-context"
 
 function isAuthPage(pathname) {
-  return ["/auth/login", "/auth/signup", "/sign-in", "/sign-up"].includes(pathname)
+  return [
+    "/auth/login",
+    "/auth/signup",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/reset-password",
+  ].includes(pathname)
 }
 
 export function AuthSessionProvider({ children }) {

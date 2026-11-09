@@ -2,6 +2,8 @@ const DEFAULT_ERROR = "We couldn’t complete that request. Please try again."
 
 const friendlyMessages = [
   [/invalid email or password|email or password is incorrect/i, "Email or password is incorrect. Check your details and try again."],
+  [/user not found/i, "We couldn’t find an account with that email address. Check it and try again."],
+  [/invalid or expired token/i, "This password reset link is invalid or has expired. Request a new one."],
   [/unauthorized|invalid access.?token|invalid refresh token|token (?:not found|expired)/i, "Your session may have expired. Sign in and try again."],
   [/invalid income.*budget must be below monthly income/i, "Your budget must be lower than your monthly income."],
   [/invalid bank balance/i, "Enter a valid bank balance."],

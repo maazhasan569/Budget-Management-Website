@@ -148,7 +148,6 @@ export class TaskService extends FileService {
         try {
 
             const task = await Task.findOne({ _id: taskId, userId: this.userId })
-            await this.deleteFile(taskId, Task)
             task.status = "Deleted"
             await task.save()
             const deletedTask = await pushToHistory(Task, this.userId, taskId, "tasks")

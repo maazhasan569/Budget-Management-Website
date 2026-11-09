@@ -5,6 +5,8 @@ import { AuthRouteGuard } from "@/components/auth/auth-route-guard"
 import { BrandLoader } from "@/components/ui/brand-loader"
 
 const AuthRoutePage = lazy(() => import("@/components/auth/auth-route-page").then((module) => ({ default: module.AuthRoutePage })))
+const ForgotPasswordPage = lazy(() => import("@/components/auth/password-reset-page").then((module) => ({ default: module.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import("@/components/auth/password-reset-page").then((module) => ({ default: module.ResetPasswordPage })))
 const LandingPage = lazy(() => import("@/components/landing/landing-page").then((module) => ({ default: module.LandingPage })))
 const AppShell = lazy(() => import("@/components/layout/app-shell").then((module) => ({ default: module.AppShell })))
 const loadSectionPages = () => import("@/components/layout/section-pages")
@@ -26,6 +28,8 @@ function App() {
         </Route>
         <Route path="/auth/login" element={<AuthRoutePage initialMode="sign-in" />} />
         <Route path="/auth/signup" element={<AuthRoutePage initialMode="sign-up" />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/sign-in" element={<Navigate to="/auth/login" replace />} />
         <Route path="/sign-up" element={<Navigate to="/auth/signup" replace />} />
         <Route element={<AuthRouteGuard />}>

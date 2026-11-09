@@ -158,12 +158,12 @@ export function AuthCard({ initialMode = "sign-in" }) {
               <Label htmlFor="password">Password</Label>
 
               {isSignIn && (
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-foreground transition-colors"
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
                 >
                   Forgot password?
-                </button>
+                </Link>
               )}
             </div>
 

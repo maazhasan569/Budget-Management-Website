@@ -143,7 +143,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         }
     });
 
-    const FRONTEND_URL = process.env.CORS_ORIGIN || "http://localhost:5173";
+    
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -154,7 +154,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         html: `
     <h2>Password Reset</h2>
     <p>Click the button below to reset your password.</p>
-    <a href="${FRONTEND_URL}/reset-password?token=${resetToken}">Reset Password</a>
+    <a href="${process.env.CORS_ORIGIN}/reset-password?token=${resetToken}">Reset Password</a>
   `
     };
     await transporter.sendMail(mailOptions);
