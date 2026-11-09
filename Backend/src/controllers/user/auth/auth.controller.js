@@ -7,6 +7,7 @@ import { generateAccessAndRefreshToken } from "../../../utils/generateJwtToken.j
 import jwt from "jsonwebtoken"
 import { OAuth2Client } from "google-auth-library";
 import { generateUsername } from "../../../utils/generateUsername.js";
+import nodemailer from "nodemailer"
 
 const createUserAccount = asyncHandler(async (req, res) => {
     try {
@@ -112,19 +113,17 @@ const logInUser = asyncHandler(async (req, res) => {
 
 
 })
-const updatePassword = asyncHandler(async(req,res) => {
-    const {currentPassword , newPassword} = req.body
-    
-    
+const updatePassword = asyncHandler(async (req, res) => {
+    const {email ,}
 
-   const isCurrentPassword =  await isPasswordValid(currentPassword , newPassword)
 
-    return res.status(200).json(
-        new ApiResponse(200 , isCurrentPassword ? 
-            "Password updated" : 
-            "Password cant be updated bcs user doesnt have a old password" ,
-        )
-    )
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASSWORD
+        }
+    });
 
 })
 const getNewAccessToken = asyncHandler(async (req, res) => {
@@ -150,7 +149,7 @@ const getNewAccessToken = asyncHandler(async (req, res) => {
         }
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshToken(isUser._id)
-        
+
 
         return res.status(201)
             .cookie(
