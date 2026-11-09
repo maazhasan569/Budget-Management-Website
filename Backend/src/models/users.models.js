@@ -30,6 +30,12 @@ const usersSchema = new mongoose.Schema({
         default: undefined,
 
     },
+    resetToken:{
+        type : String,
+    },
+    resetTokenExpiry: {
+        type : Date
+    }
     bankBalance : {
         type : Number,
     },

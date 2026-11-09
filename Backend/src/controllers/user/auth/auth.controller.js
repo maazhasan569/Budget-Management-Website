@@ -125,7 +125,10 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
 
     await Users.findOneAndUpdate(
         {email},
-        {resetToken : hashedToken}
+        {
+            resetToken : hashedToken,
+            resetTokenExpiry :  Date.now() + 15 * 60 * 1000
+        }
     )
 
     const transporter = nodemailer.createTransport({
@@ -136,6 +139,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         }
     });
 
+    const REDIRECTION_LINK = `${process.env.CORS_ORIGIN}/reset-password` || "http://localhost:5173/reset-password"
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -146,7 +150,7 @@ const resetPassowordEmail = asyncHandler(async (req, res) => {
         html: `
     <h2>Password Reset</h2>
     <p>Click the button below to reset your password.</p>
-    <a href="YOUR_RESET_LINK">Reset Password</a>
+    <a href=${REDIRECTION_LINK}>Reset Password</a>
   `
     };
 
@@ -167,11 +171,12 @@ const resetPassword = asyncHandler(async(req,res) => {
     }
 
     user.resetToken = undefined
+    user.resetTokenExpiry = undefined
     user.password = newPassword
 
     return res.status(200)
     .json(
-        new ApiResponse(200 , "Password updated" null)
+        new ApiResponse(200 , "Password updated" ,  null)
     )
 })
 const getNewAccessToken = asyncHandler(async (req, res) => {
