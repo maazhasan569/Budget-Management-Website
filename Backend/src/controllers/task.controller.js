@@ -162,7 +162,7 @@ const markTaskComplete = asyncHandler(async (req, res) => {
 })
 
 const delTaskFileAttachment = asyncHandler(async(req,res) => {
-    const {taskId} = req.body
+    const { taskId } = req.params
     const user = req.user._id
 
     const file = new FileService(user)

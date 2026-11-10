@@ -130,3 +130,14 @@ export async function deleteTask(taskId) {
     throw taskError(error, "We couldn’t remove this task. Please try again.")
   }
 }
+
+export async function deleteTaskAttachment(taskId) {
+  try {
+    const response = await apiClient.post(
+      `${BASE_PATH}/del-task/${encodeURIComponent(taskId)}`,
+    )
+    return responseData(response)
+  } catch (error) {
+    throw taskError(error, "We couldn’t delete this attachment. Please try again.")
+  }
+}

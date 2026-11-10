@@ -59,24 +59,25 @@ export class FileService {
     }
 
     async deleteFile(id , Model) {
-        try {
-            
-            
-            const modelRecord = await Model.findone({_id : id , userId : this.userId})
-            if(!modelRecord.document && !modelRecord.publicId) return {}
-            await this.deleteFromCloudinary(modelRecord.publicId)
-            const response = await Model.findByIdAndUpdate(
-                id,
-                {
-                    document : null,
-                    publicId : null
-                }
-            )
-               
-            return response
-        }catch(err){
-            throw new ApiError(500 , err.message)
-    }
+        const modelRecord = await Model.findOne({ _id: id, userId: this.userId })
+        if (!modelRecord) {
+            throw new ApiError(404, "Task not found")
+        }
+        if (!modelRecord.document && !modelRecord.publicId) return modelRecord
+
+        await this.deleteFromCloudinary(modelRecord.publicId)
+        const response = await Model.findOneAndUpdate(
+            { _id: id, userId: this.userId },
+            {
+                document: null,
+                publicId: null,
+            },
+            { new: true }
+        )
+        if (!response) {
+            throw new ApiError(404, "Task not found")
+        }
+
+        return response
     }
 }
-

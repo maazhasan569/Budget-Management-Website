@@ -12,6 +12,7 @@ import {
   Eye,
   FileText,
   ListTodo,
+  Loader2,
   Paperclip,
   Plus,
   RotateCw,
@@ -19,7 +20,7 @@ import {
   X,
 } from "lucide-react"
 
-import { completeTask, createTask, deleteTask, getTaskCategories, getTasks, updateTask } from "@/api/tasks/tasks"
+import { completeTask, createTask, deleteTask, deleteTaskAttachment, getTaskCategories, getTasks, updateTask } from "@/api/tasks/tasks"
 import { EmptyDataState } from "@/components/dashboard/empty-data-state"
 import {
   Attachment,
@@ -461,36 +462,106 @@ function TaskDeleteDialog({ task, onOpenChange, onConfirm }) {
   )
 }
 
-function TaskCard({ task, onView, onEdit, onComplete, onDelete, busy }) {
+function TaskAttachmentDeleteDialog({ task, onOpenChange, onConfirm }) {
+  const [deleting, setDeleting] = useState(false)
+  const [error, setError] = useState("")
+
+  async function handleDelete() {
+    setDeleting(true)
+    setError("")
+    try {
+      await onConfirm(task._id)
+      onOpenChange(false)
+    } catch (deleteError) {
+      setError(deleteError.message || "We couldn’t delete this attachment. Please try again.")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(nextOpen) => !deleting && onOpenChange(nextOpen)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl">Delete attachment?</DialogTitle>
+          <DialogDescription>
+            This will permanently delete the file attached to “{task.name}”. The task itself will stay in your list.
+          </DialogDescription>
+        </DialogHeader>
+        {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Keep file</Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            {deleting ? (
+              <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Trash2 className="mr-1 size-4" aria-hidden="true" />
+            )}
+            {deleting ? "Deleting…" : "Delete file"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TaskCard({ task, onView, onEdit, onComplete, onDelete, onDeleteAttachment, busy }) {
   const status = TASK_STATUSES[task.status] ?? { label: task.status || "In progress", variant: "outline" }
   const hasImage = task.document && fileIsImage(task.document)
 
   return (
     <article className="flex flex-col gap-4 rounded-xl border border-border/80 bg-card p-4 transition-colors hover:bg-muted/20 sm:flex-row sm:items-start sm:p-5">
       {task.document && (hasImage ? (
-        <a
-          href={task.document}
-          target="_blank"
-          rel="noreferrer"
-          aria-label={`Open image attachment for ${task.name}`}
-          className="block w-full overflow-hidden rounded-lg border border-border sm:w-40"
-        >
-          <img
-            src={task.document}
-            alt={`Attachment for ${task.name}`}
-            className="h-28 w-full object-cover"
-          />
-        </a>
+        <div className="group/attachment relative w-full sm:w-40">
+          <a
+            href={task.document}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`Open image attachment for ${task.name}`}
+            className="block w-full overflow-hidden rounded-lg border border-border"
+          >
+            <img
+              src={task.document}
+              alt={`Attachment for ${task.name}`}
+              className="h-28 w-full object-cover"
+            />
+          </a>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            aria-label={`Delete attachment from ${task.name}`}
+            title="Delete attachment"
+            disabled={busy}
+            onClick={() => onDeleteAttachment(task)}
+            className="absolute right-2 top-2 size-8 shadow-md"
+          >
+            <Trash2 aria-hidden="true" />
+          </Button>
+        </div>
       ) : (
-        <a
-          href={task.document}
-          target="_blank"
-          rel="noreferrer"
-          className="flex w-fit items-center gap-2 self-start rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-primary hover:bg-muted"
-        >
-          <FileText className="size-4" aria-hidden="true" />
-          Open attached PDF
-        </a>
+        <div className="flex w-fit items-center gap-2 self-start">
+          <a
+            href={task.document}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-primary hover:bg-muted"
+          >
+            <FileText className="size-4" aria-hidden="true" />
+            Open attached PDF
+          </a>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            aria-label={`Delete attachment from ${task.name}`}
+            title="Delete attachment"
+            disabled={busy}
+            onClick={() => onDeleteAttachment(task)}
+          >
+            <Trash2 aria-hidden="true" />
+          </Button>
+        </div>
       ))}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -585,6 +656,7 @@ export function FinancialTasksPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editingTask, setEditingTask] = useState(null)
   const [deletingTask, setDeletingTask] = useState(null)
+  const [deletingAttachmentTask, setDeletingAttachmentTask] = useState(null)
   const [busyTaskId, setBusyTaskId] = useState(null)
   const [actionError, setActionError] = useState("")
   const categoryOptions = useMemo(() => {
@@ -675,6 +747,23 @@ export function FinancialTasksPage() {
       await deleteTask(taskId)
       if (tasks.length === 1 && page > 1) setPage((current) => current - 1)
       else setReloadKey((key) => key + 1)
+    } finally {
+      setBusyTaskId(null)
+    }
+  }
+
+  async function handleDeleteAttachment(taskId) {
+    setBusyTaskId(taskId)
+    try {
+      await deleteTaskAttachment(taskId)
+      setTasks((currentTasks) => currentTasks.map((task) =>
+        task._id === taskId ? { ...task, document: null, publicId: null } : task
+      ))
+      setEditingTask((currentTask) =>
+        currentTask?._id === taskId
+          ? { ...currentTask, document: null, publicId: null }
+          : currentTask
+      )
     } finally {
       setBusyTaskId(null)
     }
@@ -791,6 +880,7 @@ export function FinancialTasksPage() {
                   onEdit={setEditingTask}
                   onComplete={handleComplete}
                   onDelete={setDeletingTask}
+                  onDeleteAttachment={setDeletingAttachmentTask}
                 />
               ))}
             </div>
@@ -829,6 +919,13 @@ export function FinancialTasksPage() {
           task={deletingTask}
           onOpenChange={(open) => { if (!open) setDeletingTask(null) }}
           onConfirm={handleDelete}
+        />
+      )}
+      {deletingAttachmentTask && (
+        <TaskAttachmentDeleteDialog
+          task={deletingAttachmentTask}
+          onOpenChange={(open) => { if (!open) setDeletingAttachmentTask(null) }}
+          onConfirm={handleDeleteAttachment}
         />
       )}
     </div>
