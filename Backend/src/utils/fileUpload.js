@@ -18,7 +18,6 @@ const fileUpload = async (filePath) => {
             resource_type: "auto",
         })
 
-        console.log("file uploaded ",upload)
         return {fileUrl : upload.secure_url , publicId : upload.public_id}
     } catch (err) {
         console.log(err)

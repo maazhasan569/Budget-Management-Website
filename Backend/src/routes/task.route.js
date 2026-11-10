@@ -9,7 +9,8 @@ import {
     markTaskComplete,
     getAllTasks,
     getTaskByCategory,
-    getTaskById
+    getTaskById,
+    delTaskFileAttachment
 } from "../controllers/task.controller.js";
 
 
@@ -51,5 +52,8 @@ router.route("/:taskId/mark-complete").put(
     verfiyJWTAccessToken,
     markTaskComplete
 )
-
+router.route("/del-task/:taskId").post(
+    verfiyJWTAccessToken,
+    delTaskFileAttachment
+)
 export default router

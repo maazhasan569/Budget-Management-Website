@@ -62,7 +62,7 @@ export class FileService {
         try {
             
             
-            const modelRecord = await Model.findById(id)
+            const modelRecord = await Model.findone({_id : id , userId : this.userId})
             if(!modelRecord.document && !modelRecord.publicId) return {}
             await this.deleteFromCloudinary(modelRecord.publicId)
             const response = await Model.findByIdAndUpdate(

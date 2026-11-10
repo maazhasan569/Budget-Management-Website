@@ -4,6 +4,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { Task } from "../models/dailyLife/task.models.js";
 import ApiError from "../utils/ApiError.js";
 import { paginate } from "../utils/pagination.js";
+import { FileService } from "../service/fileUpload.service.js";
 
 
 const getAllTasks = asyncHandler(async (req, res) => {
@@ -160,6 +161,23 @@ const markTaskComplete = asyncHandler(async (req, res) => {
         )
 })
 
+const delTaskFileAttachment = asyncHandler(async(req,res) => {
+    const {taskId} = req.body
+    const user = req.user._id
+
+    const file = new FileService(user)
+    await file.deleteFile(taskId,Task)
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , "File attachment deleted" )
+    )
+
+
+
+
+})
+
 
 export {
     createTask,
@@ -168,5 +186,7 @@ export {
     markTaskComplete,
     getAllTasks,
     getTaskByCategory,
-    getTaskById
+    getTaskById,
+    delTaskFileAttachment,
+
 }
