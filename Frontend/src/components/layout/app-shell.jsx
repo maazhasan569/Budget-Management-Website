@@ -18,6 +18,7 @@ import {
 
 import { logOut } from "@/api/auth/logout"
 import { Button } from "@/components/ui/button"
+import { BrandLoader } from "@/components/ui/brand-loader"
 
 const navigation = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
@@ -114,12 +115,14 @@ function SidebarContent({ onNavigate, onLogout }) {
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const logoutInProgress = useRef(false)
   const navigate = useNavigate()
 
   async function handleLogout() {
     if (logoutInProgress.current) return
     logoutInProgress.current = true
+    setIsLoggingOut(true)
     let logoutFailed = false
 
     try {
@@ -133,6 +136,14 @@ export function AppShell() {
       })
       logoutInProgress.current = false
     }
+  }
+
+  if (isLoggingOut) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <BrandLoader />
+      </main>
+    )
   }
 
   return (

@@ -62,7 +62,6 @@ const PAGE_SIZE = 10
 const ALL_CATEGORIES = "__all_task_categories__"
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/gif", "application/pdf"]
-const COMMON_CATEGORIES = ["Bills", "Banking", "Insurance", "Tax"]
 const TASK_STATUSES = {
   in_progress: { label: "In progress", variant: "outline" },
   Completed: { label: "Completed", variant: "secondary" },
@@ -679,7 +678,7 @@ export function FinancialTasksPage() {
   const [actionError, setActionError] = useState("")
   const categoryOptions = useMemo(() => {
     const categoriesByKey = new Map()
-    for (const item of [...COMMON_CATEGORIES, ...categories, ...tasks.map((task) => task.category)]) {
+    for (const item of [...categories, ...tasks.map((task) => task.category)]) {
       const trimmed = item?.trim()
       if (trimmed && !categoriesByKey.has(trimmed.toLocaleLowerCase())) {
         categoriesByKey.set(trimmed.toLocaleLowerCase(), trimmed)
