@@ -268,10 +268,18 @@ export function AuthCard({ initialMode = "sign-in" }) {
 
           <Link
             to={isSignIn ? "/auth/signup" : "/auth/login"}
-            onClick={() => {
+            aria-disabled={isLoading}
+            tabIndex={isLoading ? -1 : undefined}
+            onClick={(event) => {
+              if (isLoading) {
+                event.preventDefault()
+                return
+              }
               setServerError("")
             }}
-            className="font-medium text-primary hover:underline cursor-pointer"
+            className={`font-medium text-primary hover:underline ${
+              isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"
+            }`}
           >
             {isSignIn ? "Create an account" : "Sign in"}
           </Link>
