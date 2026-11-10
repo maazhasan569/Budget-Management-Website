@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
@@ -204,8 +205,8 @@ function ExpenseFormDialog({ open, onOpenChange, expense, categories, currency, 
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-              {saving ? "Saving…" : editing ? "Save changes" : "Add expense"}
+            <Button type="submit" disabled={saving} aria-label={saving ? "Saving expense" : undefined} aria-busy={saving}>
+              {saving ? <Spinner aria-hidden="true" /> : editing ? "Save changes" : "Add expense"}
             </Button>
           </DialogFooter>
         </form>
@@ -290,8 +291,8 @@ function DeleteExpenseDialog({ expense, open, onOpenChange, onDelete }) {
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Cancel</Button>
-            <Button type="submit" variant="destructive" disabled={deleting}>
-              <Trash2 className="mr-2 size-4" aria-hidden="true" />{deleting ? "Removing…" : "Confirm removal"}
+            <Button type="submit" variant="destructive" disabled={deleting} aria-label={deleting ? "Removing expense" : undefined} aria-busy={deleting}>
+              {deleting ? <Spinner aria-hidden="true" /> : <><Trash2 className="mr-2 size-4" aria-hidden="true" />Confirm removal</>}
             </Button>
           </DialogFooter>
         </form>
@@ -565,9 +566,9 @@ export function ExpensesPage() {
           </CardHeader>
           <CardContent className="space-y-3 pt-3" aria-busy={listRefreshing}>
             {listRefreshing && (
-              <p role="status" className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                Updating expense list…
-              </p>
+              <div role="status" aria-label="Refreshing expense list" className="flex justify-center rounded-lg bg-muted/50 py-2">
+                <Spinner className="text-primary" aria-hidden="true" />
+              </div>
             )}
             {listFailed && (
               <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">

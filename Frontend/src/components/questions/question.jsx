@@ -552,14 +552,13 @@ export function QuestionsPage() {
                                                 role="combobox"
                                                 aria-expanded={currencyPopoverOpen}
                                                 disabled={currenciesLoading}
+                                                aria-label={currenciesLoading ? "Loading currencies" : undefined}
+                                                aria-busy={currenciesLoading}
                                                 className="h-12 w-full justify-between font-normal"
                                             >
                                                 <span className="flex min-w-0 items-center gap-2 truncate">
                                                     {currenciesLoading ? (
-                                                        <>
-                                                            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                                                            Loading currencies...
-                                                        </>
+                                                        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
                                                     ) : selectedCurrency ? (
                                                         `${selectedCurrency.name} (${selectedCurrency.code})`
                                                     ) : answers.currency ? (
@@ -672,9 +671,11 @@ export function QuestionsPage() {
                                 onClick={handleNext}
                                 disabled={submitting}
                                 className="h-11 flex-1 font-semibold"
+                                aria-label={submitting ? "Finishing setup" : undefined}
+                                aria-busy={submitting}
                             >
                                 {submitting
-                                    ? "Finishing setup…"
+                                    ? <Loader2 className="mx-auto size-4 animate-spin" aria-hidden="true" />
                                     : stepIndex === STEPS.length - 1
                                     ? "Finish setup"
                                     : "Continue"}

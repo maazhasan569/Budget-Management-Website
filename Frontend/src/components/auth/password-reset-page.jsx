@@ -120,12 +120,9 @@ export function ForgotPasswordPage() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting} aria-label={submitting ? "Sending reset link" : undefined} aria-busy={submitting}>
               {submitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                  Sending link…
-                </>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
                 "Send reset link"
               )}
@@ -243,7 +240,9 @@ export function ResetPasswordPage() {
             </motion.span>
             <div className="space-y-1">
               <p className="font-medium text-foreground">Your password has been updated.</p>
-              <p className="text-sm text-muted-foreground">Taking you back to sign in…</p>
+              <div role="status" aria-label="Returning to sign in" className="flex justify-center py-1">
+                <Loader2 className="size-4 animate-spin text-primary" aria-hidden="true" />
+              </div>
             </div>
             <Button
               type="button"
@@ -297,12 +296,9 @@ export function ResetPasswordPage() {
                 {error}
               </p>
             )}
-            <Button type="submit" className="w-full" disabled={submitting || !token}>
+            <Button type="submit" className="w-full" disabled={submitting || !token} aria-label={submitting ? "Updating password" : undefined} aria-busy={submitting}>
               {submitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
-                  Updating password…
-                </>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
                 "Update password"
               )}

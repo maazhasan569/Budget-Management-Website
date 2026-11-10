@@ -141,7 +141,7 @@ export function RecordRouteDialog({ id, type, getRecord, onClose }) {
             {record ? RECORD_TITLES[type]?.(record) : "Record details"}
           </DialogTitle>
           <DialogDescription>
-            {loading ? "Loading the selected record…" : `Details for this ${type.slice(0, -1)}.`}
+            {`Details for this ${type.slice(0, -1)}.`}
           </DialogDescription>
         </DialogHeader>
 

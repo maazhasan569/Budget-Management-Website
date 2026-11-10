@@ -482,13 +482,13 @@ export function SettingsContent() {
             </p>
           )}
           <div className="flex justify-end border-t border-border/70 pt-5">
-            <Button type="submit" disabled={!hasChanges || saving}>
+            <Button type="submit" disabled={!hasChanges || saving} aria-label={saving ? "Saving settings" : undefined} aria-busy={saving}>
               {saving ? (
-                <Loader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Save className="mr-2 size-4" aria-hidden="true" />
               )}
-              {saving ? "Saving..." : "Save changes"}
+              {!saving && "Save changes"}
             </Button>
           </div>
         </form>

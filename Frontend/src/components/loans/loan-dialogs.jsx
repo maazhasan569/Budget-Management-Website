@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import {
   RadioGroup,
   RadioGroupItem,
@@ -159,9 +160,8 @@ export function LoanFormDialog({ open, onOpenChange, loan, currency, onSave }) {
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-              <CircleDollarSign className="mr-2 size-4" aria-hidden="true" />
-              {saving ? "Saving…" : editing ? "Save changes" : "Create loan"}
+            <Button type="submit" disabled={saving} aria-label={saving ? "Saving loan" : undefined} aria-busy={saving}>
+              {saving ? <Spinner aria-hidden="true" /> : <><CircleDollarSign className="mr-2 size-4" aria-hidden="true" />{editing ? "Save changes" : "Create loan"}</>}
             </Button>
           </DialogFooter>
         </form>
@@ -213,8 +213,8 @@ export function LoanPaymentDialog({ open, onOpenChange, loan, currency, onPay })
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-              <HandCoins className="mr-2 size-4" aria-hidden="true" />{saving ? "Recording…" : "Record payment"}
+            <Button type="submit" disabled={saving} aria-label={saving ? "Recording payment" : undefined} aria-busy={saving}>
+              {saving ? <Spinner aria-hidden="true" /> : <><HandCoins className="mr-2 size-4" aria-hidden="true" />Record payment</>}
             </Button>
           </DialogFooter>
         </form>
@@ -270,8 +270,8 @@ export function DeleteLoanDialog({ open, onOpenChange, loan, currency, onDelete 
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Keep loan</Button>
-            <Button type="submit" variant="destructive" disabled={deleting}>
-              <Trash2 className="mr-2 size-4" aria-hidden="true" />{deleting ? "Removing…" : "Confirm removal"}
+            <Button type="submit" variant="destructive" disabled={deleting} aria-label={deleting ? "Removing loan" : undefined} aria-busy={deleting}>
+              {deleting ? <Spinner aria-hidden="true" /> : <><Trash2 className="mr-2 size-4" aria-hidden="true" />Confirm removal</>}
             </Button>
           </DialogFooter>
         </form>

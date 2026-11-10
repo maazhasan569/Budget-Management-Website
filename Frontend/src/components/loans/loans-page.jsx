@@ -36,6 +36,7 @@ import {
 import { LoansSkeleton } from "@/components/loans/loans-skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Card,
   CardContent,
@@ -430,7 +431,11 @@ export function LoansPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3 pt-4" aria-busy={refreshing}>
-                {refreshing && <p role="status" className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">Updating your loans…</p>}
+                {refreshing && (
+                  <div role="status" aria-label="Refreshing loans" className="flex justify-center rounded-lg bg-muted/50 py-2">
+                    <Spinner className="text-primary" aria-hidden="true" />
+                  </div>
+                )}
                 {listError && (
                   <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
                     <span className="text-muted-foreground">Couldn’t refresh this list. Your last loaded loans are still shown.</span>

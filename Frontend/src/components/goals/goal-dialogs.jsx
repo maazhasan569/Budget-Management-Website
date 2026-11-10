@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Select,
@@ -148,9 +149,8 @@ export function GoalFormDialog({ open, onOpenChange, goal, currency, onSave }) {
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-              <CircleDollarSign className="mr-2 size-4" aria-hidden="true" />
-              {saving ? "Saving…" : editing ? "Save changes" : "Create goal"}
+            <Button type="submit" disabled={saving} aria-label={saving ? "Saving goal" : undefined} aria-busy={saving}>
+              {saving ? <Spinner aria-hidden="true" /> : <><CircleDollarSign className="mr-2 size-4" aria-hidden="true" />{editing ? "Save changes" : "Create goal"}</>}
             </Button>
           </DialogFooter>
         </form>
@@ -204,8 +204,8 @@ export function GoalContributionDialog({ open, onOpenChange, goal, currency, onC
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-              <HandCoins className="mr-2 size-4" aria-hidden="true" />{saving ? "Recording…" : "Record contribution"}
+            <Button type="submit" disabled={saving} aria-label={saving ? "Recording contribution" : undefined} aria-busy={saving}>
+              {saving ? <Spinner aria-hidden="true" /> : <><HandCoins className="mr-2 size-4" aria-hidden="true" />Record contribution</>}
             </Button>
           </DialogFooter>
         </form>
@@ -248,8 +248,8 @@ export function DeleteGoalDialog({ open, onOpenChange, goal, currency, onDelete 
           {formError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Keep goal</Button>
-            <Button type="submit" variant="destructive" disabled={deleting}>
-              <Trash2 className="mr-2 size-4" aria-hidden="true" />{deleting ? "Removing…" : "Confirm removal"}
+            <Button type="submit" variant="destructive" disabled={deleting} aria-label={deleting ? "Removing goal" : undefined} aria-busy={deleting}>
+              {deleting ? <Spinner aria-hidden="true" /> : <><Trash2 className="mr-2 size-4" aria-hidden="true" />Confirm removal</>}
             </Button>
           </DialogFooter>
         </form>

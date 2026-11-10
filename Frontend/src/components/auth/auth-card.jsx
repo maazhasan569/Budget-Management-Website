@@ -91,7 +91,6 @@ export function AuthCard({ initialMode = "sign-in" }) {
         messages[statusCode] ||
         "We couldn't complete your request. Please try again."
       setServerError(message)
-    } finally {
       setIsLoading(false)
     }
   }
@@ -227,12 +226,11 @@ export function AuthCard({ initialMode = "sign-in" }) {
             type="submit"
             className="w-full font-medium"
             disabled={!isFormValid || isLoading}
+            aria-label={isLoading ? (isSignIn ? "Signing in" : "Creating account") : undefined}
+            aria-busy={isLoading}
           >
             {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isSignIn ? "Signing In..." : "Creating Account..."}
-              </>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             ) : (
               isSignIn ? "Sign In" : "Create Account"
             )}

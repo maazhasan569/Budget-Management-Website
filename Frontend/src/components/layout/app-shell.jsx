@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { NavLink, Outlet, useNavigate } from "react-router-dom"
 import { AnimatePresence, motion } from "framer-motion"
 import {
@@ -32,7 +32,7 @@ const secondaryNavigation = [
   { label: "History", to: "/history", icon: Activity },
 ]
 
-function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
+function SidebarContent({ onNavigate, onLogout }) {
   return (
     <>
       <div className="flex h-[76px] items-center gap-3 border-b border-sidebar-border px-5">
@@ -103,10 +103,9 @@ function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
           variant="ghost"
           className="h-10 w-full justify-start gap-3 px-3 text-muted-foreground hover:text-foreground"
           onClick={onLogout}
-          disabled={isLoggingOut}
         >
           <LogOut className="size-[18px]" aria-hidden="true" />
-          {isLoggingOut ? "Signing out…" : "Log out"}
+          Log out
         </Button>
       </div>
     </>
@@ -115,12 +114,12 @@ function SidebarContent({ onNavigate, onLogout, isLoggingOut }) {
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const logoutInProgress = useRef(false)
   const navigate = useNavigate()
 
   async function handleLogout() {
-    if (isLoggingOut) return
-    setIsLoggingOut(true)
+    if (logoutInProgress.current) return
+    logoutInProgress.current = true
     let logoutFailed = false
 
     try {
@@ -132,14 +131,14 @@ export function AppShell() {
         replace: true,
         state: logoutFailed ? { logoutError: "We couldn’t reach the server to finish signing you out." } : null,
       })
-      setIsLoggingOut(false)
+      logoutInProgress.current = false
     }
   }
 
   return (
     <div className="min-h-dvh bg-background text-foreground lg:flex">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
-        <SidebarContent onLogout={handleLogout} isLoggingOut={isLoggingOut} />
+        <SidebarContent onLogout={handleLogout} />
       </aside>
 
       <AnimatePresence>
@@ -176,7 +175,6 @@ export function AppShell() {
               <SidebarContent
                 onNavigate={() => setMobileOpen(false)}
                 onLogout={handleLogout}
-                isLoggingOut={isLoggingOut}
               />
             </motion.aside>
           </motion.div>
@@ -191,7 +189,7 @@ export function AppShell() {
             </Button>
             <span className="font-display text-xl font-semibold">Finch</span>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Log out" onClick={handleLogout} disabled={isLoggingOut}>
+          <Button variant="ghost" size="icon" aria-label="Log out" onClick={handleLogout}>
             <LogOut className="size-5" />
           </Button>
         </header>

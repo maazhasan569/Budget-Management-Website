@@ -10,6 +10,7 @@ import {
   CircleDollarSign,
   Flag,
   Goal,
+  Loader2,
   Plus,
   ShieldCheck,
   Wallet,
@@ -668,8 +669,8 @@ export function DashboardPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={savingAmount || !amount.trim()}>
-                {savingAmount ? "Adding…" : "Add amount"}
+              <Button type="submit" disabled={savingAmount || !amount.trim()} aria-label={savingAmount ? "Adding amount" : undefined} aria-busy={savingAmount}>
+                {savingAmount ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : "Add amount"}
               </Button>
             </DialogFooter>
           </form>

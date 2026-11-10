@@ -413,9 +413,20 @@ function TaskFormDialog({ open, onOpenChange, onSave, categories, task }) {
           </div>
           <DialogFooter className="mx-0 mb-0 rounded-b-xl border-t border-border bg-popover px-5 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-            <Button type="submit" disabled={saving}>
-            {isEditing ? <Edit2 className="mr-1 size-4" aria-hidden="true" /> : <Plus className="mr-1 size-4" aria-hidden="true" />}
-            {saving ? (isEditing ? "Saving…" : "Creating…") : (isEditing ? "Save changes" : "Create task")}
+            <Button
+              type="submit"
+              disabled={saving}
+              aria-label={saving ? (isEditing ? "Saving task" : "Creating task") : undefined}
+              aria-busy={saving}
+            >
+            {saving ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <>
+                {isEditing ? <Edit2 className="mr-1 size-4" aria-hidden="true" /> : <Plus className="mr-1 size-4" aria-hidden="true" />}
+                {isEditing ? "Save changes" : "Create task"}
+              </>
+            )}
             </Button>
           </DialogFooter>
         </form>
@@ -453,8 +464,14 @@ function TaskDeleteDialog({ task, onOpenChange, onConfirm }) {
         {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Keep task</Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            <Trash2 className="mr-1 size-4" aria-hidden="true" />{deleting ? "Moving…" : "Move to history"}
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleting}
+            aria-label={deleting ? "Moving task to history" : undefined}
+            aria-busy={deleting}
+          >
+            {deleting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <><Trash2 className="mr-1 size-4" aria-hidden="true" />Move to history</>}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -491,13 +508,14 @@ function TaskAttachmentDeleteDialog({ task, onOpenChange, onConfirm }) {
         {error && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={deleting}>Keep file</Button>
-          <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-            {deleting ? (
-              <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Trash2 className="mr-1 size-4" aria-hidden="true" />
-            )}
-            {deleting ? "Deleting…" : "Delete file"}
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleting}
+            aria-label={deleting ? "Deleting attachment" : undefined}
+            aria-busy={deleting}
+          >
+            {deleting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <><Trash2 className="mr-1 size-4" aria-hidden="true" />Delete file</>}
           </Button>
         </DialogFooter>
       </DialogContent>
