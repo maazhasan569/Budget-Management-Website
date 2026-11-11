@@ -55,6 +55,9 @@ export function GoalFormDialog({ open, onOpenChange, goal, currency, onSave }) {
     if (!duration.trim() || !Number.isFinite(term) || term <= 0) {
       return setFormError("Choose a goal term greater than zero.")
     }
+    if (type === "Monthly" && term > 11) {
+      return setFormError("A monthly timeline cannot be more than 11 months. Choose Yearly for a longer timeline.")
+    }
     if (type === "Yearly" && !Number.isInteger(term)) {
       return setFormError("Enter a whole number of years.")
     }
@@ -88,7 +91,7 @@ export function GoalFormDialog({ open, onOpenChange, goal, currency, onSave }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="goal-name">Goal name</Label>
             <Input id="goal-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Emergency fund" autoComplete="off" />
@@ -102,7 +105,7 @@ export function GoalFormDialog({ open, onOpenChange, goal, currency, onSave }) {
             <div className="space-y-2">
               <Label htmlFor="goal-duration">Timeline</Label>
               <div className="flex gap-2">
-                <Input id="goal-duration" className="min-w-0" type="number" min="1" step="1" inputMode="numeric" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="1" />
+                <Input id="goal-duration" className="min-w-0" type="number" min="1" max={type === "Monthly" ? 11 : undefined} step="1" inputMode="numeric" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="1" />
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger className="w-[116px] shrink-0" aria-label="Goal timeline unit">
                     <SelectValue>{type}</SelectValue>
@@ -113,7 +116,7 @@ export function GoalFormDialog({ open, onOpenChange, goal, currency, onSave }) {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">Set a timeline of at least one month or one year.</p>
+              <p className="text-xs text-muted-foreground">Monthly timelines can be up to 11 months; choose Yearly for longer timelines.</p>
             </div>
           </div>
 

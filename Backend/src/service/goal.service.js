@@ -91,7 +91,7 @@ export class GoalService {
             };
 
             const hasAutoGoals = await Goal.exists(query);
-            const existingTask = autoDeductionTasks.get(taskKey);
+            const existingTask = autoDeductionTasks.get(taskKey);//ensure only one crone job per user
 
             if (!hasAutoGoals) {
                 if (existingTask) {
@@ -109,7 +109,7 @@ export class GoalService {
 
             const task = cron.schedule("0 0 * * *", async () => {
                 // Fetch current loan documents on every scheduled run.
-                const latestGoals = await Goal.find(query);
+                const latestGoals = await Goal.find(query); //even when the user is unauthenticated since crone will have the userid in query obj
 
                 if (!latestGoals.length) {
                     task.stop();
@@ -132,7 +132,7 @@ export class GoalService {
 
             return { autodeductionLoan: true, alreadyScheduled: false };
         } catch (err) {
-            throw new ApiError(400, err.message);
+            throw new ApiError(400, err);
         }
     }
 

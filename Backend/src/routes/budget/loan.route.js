@@ -21,7 +21,7 @@ router.route("/").get(verfiyJWTAccessToken, getAllLoans)
 router.route("/category").get(verfiyJWTAccessToken, getLoansByCategory)
 router.route("/amt-paid").get(verfiyJWTAccessToken, loansAmtPaid)
 router.route("/amt-remaining").get(verfiyJWTAccessToken, loansAmtRemaining)
-router.route("/auto-deduct").post(autoDeduction)
+router.route("/auto-deduct").post(verfiyJWTAccessToken,autoDeduction)
 
 router.route("/manual-deduct/:loanId").post(verfiyJWTAccessToken, manualDeduction)
 router.route("/:loanId").delete(verfiyJWTAccessToken, deleteLoan)

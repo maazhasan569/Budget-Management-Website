@@ -66,6 +66,9 @@ export function LoanFormDialog({ open, onOpenChange, loan, currency, onSave }) {
     if (!duration.trim() || !Number.isFinite(term) || term <= 0) {
       return setFormError("Choose a loan term of at least one month.")
     }
+    if (loanType === "Monthly" && term > 11) {
+      return setFormError("A monthly term cannot be more than 11 months. Choose Yearly for a longer term.")
+    }
     if (loanType === "Yearly" && !Number.isInteger(term)) {
       return setFormError("Enter a whole number of years.")
     }
@@ -99,7 +102,7 @@ export function LoanFormDialog({ open, onOpenChange, loan, currency, onSave }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="loan-name">Loan name</Label>
             <Input id="loan-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Car loan" autoComplete="off" />
@@ -113,7 +116,7 @@ export function LoanFormDialog({ open, onOpenChange, loan, currency, onSave }) {
             <div className="space-y-2">
               <Label htmlFor="loan-duration">Term</Label>
               <div className="flex gap-2">
-                <Input id="loan-duration" className="min-w-0" type="number" min="1" step="1" inputMode="numeric" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="1" />
+                <Input id="loan-duration" className="min-w-0" type="number" min="1" max={loanType === "Monthly" ? 11 : undefined} step="1" inputMode="numeric" value={duration} onChange={(event) => setDuration(event.target.value)} placeholder="1" />
                 <Select value={loanType} onValueChange={setLoanType}>
                   <SelectTrigger className="w-[116px] shrink-0" aria-label="Loan term unit">
                     <SelectValue>{loanType}</SelectValue>
@@ -124,7 +127,7 @@ export function LoanFormDialog({ open, onOpenChange, loan, currency, onSave }) {
                   </SelectContent>
                 </Select>
               </div>
-              <p className="text-xs text-muted-foreground">Minimum term: one month or one year.</p>
+              <p className="text-xs text-muted-foreground">Monthly terms can be up to 11 months; choose Yearly for longer terms.</p>
             </div>
           </div>
 
