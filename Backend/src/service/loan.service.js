@@ -250,7 +250,7 @@ export class LoanService {
                 if (this.loanTargetAmt === this.totalPaid + deductAmt) {
                     loan.status = "Completed";
                     loan.totalDeductions += 1;
-                    
+
                     const savedLoan = await loan.save();
                     await pushToHistory(
                         Loan,
@@ -357,6 +357,8 @@ export class LoanService {
 
             if (this.loanTargetAmt === this.totalPaid + amount) {
                 loan.status = "Completed"
+                loan.totalDeductions += 1
+                
                 const updatedLoan = await loan.save()
                 await pushToHistory(Loan, this.userId, updatedLoan._id, "loans")
                 return { updatedLoan, pushToHistory: true }
