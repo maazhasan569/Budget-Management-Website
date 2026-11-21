@@ -249,6 +249,8 @@ export class GoalService {
 
             if (this.targetAmount === this.goalBalance + amount) {
                 goal.status = "Achieved"
+                goal.totalDeductions += 1
+                
                 const updatedGoal = await goal.save()
                 await pushToHistory(Goal, this.userId, updatedGoal._id, "goals")
                 return { updatedGoal, pushedToHistory: true }
