@@ -164,8 +164,9 @@ export class GoalService {
 
                 if (this.targetAmount === this.goalBalance + deductAmt) {
                     goal.status = "Achieved";
-                    const savedGoal = await goal.save();
+                    goal.totalDeductions += 1
 
+                    const savedGoal = await goal.save();
                     await pushToHistory(
                         Goal,
                         this.userId,
